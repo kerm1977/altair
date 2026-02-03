@@ -1,6 +1,19 @@
 @echo off
 setlocal enabledelayedexpansion
 
+:: Aseguramos que el script trabaje en su propio directorio
+cd /d "%~dp0"
+
+echo ==========================================
+echo    CONFIGURACION DE SALIDA
+echo ==========================================
+:: PREGUNTA AL USUARIO EL NOMBRE
+set /p CUSTOM_NAME="--> Nombre para tu APK (Sin extension, Enter para 'miapp'): "
+
+:: Si el usuario solo da Enter, usamos un nombre por defecto
+if "%CUSTOM_NAME%"=="" set CUSTOM_NAME=miapp
+
+echo.
 echo ==========================================
 echo    BUSCANDO JAVA (PRIORIDAD: 17 LTS)
 echo ==========================================
@@ -70,8 +83,7 @@ if exist variables.gradle (
     echo } >> variables.gradle
 )
 
-:: --- 4. GENERAR SCRIPT DE FORZADO (FORCE_COMPAT.GRADLE) ---
-:: Usamos escritura linea por linea para evitar errores de parentesis en Batch
+:: --- 4. GENERAR SCRIPT DE FORZADO ---
 echo [CFG] Creando script de anulacion de version Java y correccion Kotlin...
 
 echo allprojects { > force_compat.gradle
@@ -86,7 +98,7 @@ echo                 } >> force_compat.gradle
 echo             } >> force_compat.gradle
 echo         } >> force_compat.gradle
 echo     } >> force_compat.gradle
-echo     // 2. Corregir duplicados de clases Kotlin (Conflictos 1.6 vs 1.8) >> force_compat.gradle
+echo     // 2. Corregir duplicados de clases Kotlin >> force_compat.gradle
 echo     configurations.all { >> force_compat.gradle
 echo         resolutionStrategy { >> force_compat.gradle
 echo             force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22' >> force_compat.gradle
@@ -102,19 +114,43 @@ echo ==========================================
 call gradlew.bat --stop
 
 echo ==========================================
-echo    COMPILANDO CON FORZADO DE JAVA 17...
+echo    COMPILANDO APK: %CUSTOM_NAME%
 echo ==========================================
 
-:: AQUI ESTA LA CLAVE: --init-script force_compat.gradle
 call gradlew.bat assembleDebug -Dorg.gradle.java.home="%JAVA_HOME%" --init-script force_compat.gradle --no-daemon
 
 if %ERRORLEVEL% EQU 0 (
     echo.
     echo ==========================================
-    echo    EXITO TOTAL - APK CREADO
+    echo    EXITO - MOVIENDO A CARPETA LIMPIA
     echo ==========================================
+    
+    set "SOURCE_FILE=app\build\outputs\apk\debug\app-debug.apk"
+    
+    :: Definimos la ruta de destino subiendo un nivel (a miapp/apks)
+    set "TARGET_DIR=..\apks"
+    set "TARGET_FILE=!TARGET_DIR!\%CUSTOM_NAME%.apk"
+    
+    :: 1. Crear carpeta miapp/apks si no existe
+    if not exist "!TARGET_DIR!" (
+        echo [INFO] La carpeta apks no existe. Creandola...
+        mkdir "!TARGET_DIR!"
+    )
+    
+    :: 2. Borrar si ya existia un APK con ese nombre
+    if exist "!TARGET_FILE!" del "!TARGET_FILE!"
+    
+    :: 3. Mover el archivo generado a la carpeta limpia
+    move /y "!SOURCE_FILE!" "!TARGET_FILE!" >nul
+    
+    :: Limpieza
     del force_compat.gradle
-    explorer "app\build\outputs\apk\debug"
+    
+    echo.
+    echo [OK] LISTO! Tu APK esta en: miapp\apks\%CUSTOM_NAME%.apk
+    
+    :: Abrir la carpeta de destino
+    explorer "!TARGET_DIR!"
 ) else (
     echo.
     echo [ERROR] Fallo la compilacion.

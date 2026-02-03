@@ -8,17 +8,28 @@ echo ==========================================
 echo    PERSONALIZACION DE TU APP
 echo ==========================================
 
-:: 1. PREGUNTA EL NOMBRE (Para el APK y para el icono en el celular)
+:: 1. PREGUNTA EL NOMBRE
 set /p CUSTOM_NAME="--> Nombre de tu App (Ej: MiTienda): "
 if "%CUSTOM_NAME%"=="" set CUSTOM_NAME=miapp
 
-:: 2. PREGUNTA POR EL ICONO
+:: 2. PREGUNTA POR EL ICONO (CON SI/NO)
 echo.
-echo (Opcional) Arrastra aqui tu imagen .PNG para usarla como icono.
-echo Si no pones nada, se usara el logo por defecto de Capacitor.
-set /p ICON_PATH="--> Ruta del Icono: "
+echo Desea cambiar el icono de la aplicacion?
+set /p ASK_ICON="--> Escribe S (Si) o N (No): "
+
+set "ICON_PATH="
+if /i "%ASK_ICON%"=="S" goto :REQUEST_ICON
+if /i "%ASK_ICON%"=="SI" goto :REQUEST_ICON
+goto :SKIP_ICON_INPUT
+
+:REQUEST_ICON
+echo.
+echo [INFO] Arrastra aqui tu imagen (Soporta PNG y JPG):
+set /p ICON_PATH="--> Archivo: "
 :: Limpiamos las comillas que Windows pone al arrastrar archivos
 set "ICON_PATH=!ICON_PATH:"=!"
+
+:SKIP_ICON_INPUT
 
 echo.
 echo ==========================================
@@ -26,7 +37,6 @@ echo    APLICANDO CAMBIOS VISUALES
 echo ==========================================
 
 :: --- A. CAMBIAR NOMBRE VISIBLE (strings.xml) ---
-:: Esto hace que debajo del icono en el celular aparezca el nombre que elegiste
 set "STRINGS_FILE=app\src\main\res\values\strings.xml"
 
 if exist "%STRINGS_FILE%" (
@@ -44,28 +54,64 @@ if exist "%STRINGS_FILE%" (
     echo [WARN] No se encontro strings.xml, el nombre interno no cambiara.
 )
 
-:: --- B. CAMBIAR ICONOS (Si hay imagen) ---
+:: --- B. CAMBIAR ICONOS (CON CONVERSION AUTOMATICA) ---
 if not "%ICON_PATH%"=="" (
     if exist "%ICON_PATH%" (
-        echo [CFG] Reemplazando iconos con tu imagen...
+        echo [CFG] Procesando imagen...
         
-        :: Reemplazamos en todas las calidades (mdpi hasta xxxhdpi)
-        set "RES_FOLDERS=mipmap-mdpi mipmap-hdpi mipmap-xhdpi mipmap-xxhdpi mipmap-xxxhdpi"
+        :: Detectamos si es JPG para convertirlo
+        set "FINAL_ICON=%ICON_PATH%"
+        set "IS_JPG=0"
         
-        for %%D in (!RES_FOLDERS!) do (
-            set "TARGET_DIR=app\src\main\res\%%D"
-            if exist "!TARGET_DIR!" (
-                copy /y "%ICON_PATH%" "!TARGET_DIR!\ic_launcher.png" >nul
-                copy /y "%ICON_PATH%" "!TARGET_DIR!\ic_launcher_round.png" >nul
-                :: Forzamos tambien el foreground para asegurar cambio en versiones nuevas
-                copy /y "%ICON_PATH%" "!TARGET_DIR!\ic_launcher_foreground.png" >nul
+        for %%f in ("%ICON_PATH%") do (
+            if /i "%%~xf"==".jpg" set "IS_JPG=1"
+            if /i "%%~xf"==".jpeg" set "IS_JPG=1"
+        )
+        
+        if "!IS_JPG!"=="1" (
+            echo [AUTO] Detectado JPG. Convirtiendo a PNG para Android...
+            :: Usamos PowerShell para convertir la imagen real a PNG sin perder calidad
+            powershell -Command "Add-Type -AssemblyName System.Drawing; try { [System.Drawing.Image]::FromFile('%ICON_PATH%').Save('icon_temp.png', [System.Drawing.Imaging.ImageFormat]::Png) } catch { exit 1 }"
+            
+            if exist "icon_temp.png" (
+                set "FINAL_ICON=icon_temp.png"
+            ) else (
+                echo [ERROR] No se pudo convertir el JPG. Se intentara usar el original.
             )
         )
-        echo [OK] Iconos actualizados exitosamente.
+        
+        :: Reemplazamos en todas las calidades
+        if exist "!FINAL_ICON!" (
+            echo [CFG] Reemplazando iconos en carpetas mipmap...
+            set "RES_FOLDERS=mipmap-mdpi mipmap-hdpi mipmap-xhdpi mipmap-xxhdpi mipmap-xxxhdpi"
+            
+            for %%D in (!RES_FOLDERS!) do (
+                set "TARGET_DIR=app\src\main\res\%%D"
+                if exist "!TARGET_DIR!" (
+                    copy /y "!FINAL_ICON!" "!TARGET_DIR!\ic_launcher.png" >nul
+                    copy /y "!FINAL_ICON!" "!TARGET_DIR!\ic_launcher_round.png" >nul
+                    copy /y "!FINAL_ICON!" "!TARGET_DIR!\ic_launcher_foreground.png" >nul
+                )
+            )
+            
+            :: Si creamos un temporal, lo borramos
+            if "!IS_JPG!"=="1" del "icon_temp.png"
+            echo [OK] Iconos actualizados exitosamente.
+        )
+        
     ) else (
-        echo [ERROR] No encontre la imagen en esa ruta. Se usara el icono original.
+        echo [ERROR] No encontre el archivo de imagen. Se usara el icono original.
     )
 )
+
+echo.
+echo ==========================================
+echo    SINCRONIZANDO CAMBIOS WEB (CRITICO)
+echo ==========================================
+echo Copiando archivos de 'www' hacia 'android'...
+cd ..
+call npx cap sync android
+cd android
 
 echo.
 echo ==========================================

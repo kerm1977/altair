@@ -46,9 +46,10 @@ const router = {
         const header = document.getElementById('main-header');
 
         try {
-            // 1. Obtener el archivo HTML
-            const response = await fetch(`vistas/${viewName}.html`);
-            if (!response.ok) throw new Error('Vista no encontrada');
+            // Buscamos el archivo directamente en la raíz (ej: "login.html")
+            const response = await fetch(`${viewName}.html`);
+            
+            if (!response.ok) throw new Error(`Vista no encontrada: ${viewName}.html`);
             
             // 2. Extraer texto e inyectar
             const html = await response.text();
@@ -67,7 +68,13 @@ const router = {
 
         } catch (error) {
             console.error('Error cargando vista:', error);
-            ui.toast('Error cargando la pantalla');
+            
+            // Si estamos en file://, damos un mensaje más específico
+            if (window.location.protocol === 'file:') {
+                ui.toast(`Bloqueo de seguridad: No se puede cargar ${viewName}.html`);
+            } else {
+                ui.toast(`Error: No encuentro el archivo ${viewName}.html`);
+            }
         }
     }
 };
@@ -232,6 +239,29 @@ window.addEventListener('beforeinstallprompt', (e) => {
 
 // Arranque
 window.onload = () => {
+    // DIAGNÓSTICO PARA EL USUARIO: Protocolo file://
+    // Esto te avisará si abriste el archivo incorrectamente
+    if (window.location.protocol === 'file:') {
+        ui.modal(`
+            <div class="text-center p-4">
+                <i class="ph-fill ph-warning-octagon text-5xl text-red-500 mb-4"></i>
+                <h3 class="font-bold text-xl mb-2 text-slate-800">Modo de Vista Incorrecto</h3>
+                <p class="text-gray-600 mb-4 text-sm text-left leading-relaxed">
+                    Por seguridad, los navegadores bloquean la carga de vistas cuando abres el <b>index.html</b> con doble clic (Protocolo file://).
+                </p>
+                <div class="bg-indigo-50 p-4 rounded-xl text-left text-sm mb-4 border border-indigo-100">
+                    <p class="font-bold text-indigo-700 mb-2">Cómo probar tu app:</p>
+                    <ul class="list-disc pl-4 text-indigo-600 space-y-1">
+                        <li>Usa la extensión <b>Live Server</b> en VS Code.</li>
+                        <li>O ejecuta <b>npx http-server</b> en la terminal dentro de 'www'.</li>
+                    </ul>
+                </div>
+                <button onclick="ui.closeModal()" class="w-full py-3 rounded-xl bg-slate-900 text-white font-bold shadow-lg shadow-slate-200">Entendido</button>
+            </div>
+        `);
+        return;
+    }
+
     const saved = localStorage.getItem('miApp_current');
     if(saved) {
         app.user = JSON.parse(saved);

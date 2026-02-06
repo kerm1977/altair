@@ -1,6 +1,5 @@
 <div class="bg-slate-50 min-h-full flex flex-col">
     <!-- Header Interno -->
-    <!-- z-50 para asegurar que flote sobre todo lo demás al hacer scroll -->
     <div class="bg-white sticky top-0 z-50 px-6 py-4 border-b border-gray-100 flex items-center justify-between shadow-sm">
         <div class="flex items-center">
             <button onclick="router.navigate('home')" class="p-2 -ml-2 text-slate-500 hover:bg-slate-50 rounded-full transition"><i class="ph ph-arrow-left text-xl"></i></button>
@@ -9,60 +8,69 @@
         <button onclick="app.logout()" class="text-red-500 text-sm font-semibold hover:bg-red-50 px-3 py-1.5 rounded-lg transition">Salir</button>
     </div>
 
-    <!-- Contenedor Principal: relative z-0 crea un nuevo contexto de apilamiento -->
+    <!-- Contenedor Principal -->
     <div class="flex-1 p-6 pt-8 pb-24 relative z-0">
         <form onsubmit="app.updateProfile(event)">
             
-            <!-- Edición de Foto (Estructura Z-Index Corregida) -->
+            <!-- Edición de Foto -->
             <div class="flex flex-col items-center mb-8">
-                <!-- Wrapper relativo con tamaño fijo -->
-                <div class="relative cursor-pointer group w-28 h-28" onclick="document.getElementById('edit-img').click()">
-                    
-                    <!-- 1. Placeholder (Fondo) - z-0 -->
-                    <div id="edit-placeholder" class="absolute inset-0 w-full h-full rounded-full bg-slate-200 flex items-center justify-center border-4 border-white shadow-lg z-0">
-                        <i class="ph-fill ph-user text-5xl text-slate-400"></i>
+                <div class="relative cursor-pointer group w-28 h-28" onclick="document.getElementById('edit-img-input').click()">
+                    <div class="w-28 h-28 rounded-full bg-indigo-100 border-4 border-white shadow-lg overflow-hidden relative">
+                        <img id="edit-img-preview" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <i class="ph-fill ph-camera text-white text-2xl"></i>
+                        </div>
                     </div>
-
-                    <!-- 2. Imagen Real (Encima) - z-10 -->
-                    <!-- Se muestra sobre el placeholder cuando tiene src -->
-                    <img id="edit-preview" src="" class="hidden absolute inset-0 w-full h-full rounded-full object-cover border-4 border-white shadow-lg group-active:scale-95 transition-transform bg-gray-200 z-10">
-                    
-                    <!-- 3. Botón Flotante (Tope) - z-20 -->
-                    <div class="absolute bottom-0 right-0 bg-slate-900 text-white p-2.5 rounded-full shadow-lg z-20 pointer-events-none ring-4 ring-slate-50">
+                    <div class="absolute bottom-0 right-0 w-8 h-8 bg-indigo-600 rounded-full border-2 border-white flex items-center justify-center text-white shadow-md z-10">
                         <i class="ph-bold ph-pencil-simple text-sm"></i>
                     </div>
                 </div>
-                
-                <input type="file" id="edit-img" class="hidden" accept="image/*" 
-                       onchange="ui.openImageEditor(this, 'edit-preview')">
+                <input type="file" id="edit-img-input" class="hidden" accept="image/*" onchange="app.handleImageUpload(this, 'edit-img-preview')">
+                <p class="text-xs text-slate-400 mt-3 font-medium">Toca para cambiar foto</p>
             </div>
 
-            <!-- Edición Completa de Datos -->
-            <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 space-y-4 mb-6">
-                <h3 class="text-xs font-bold text-indigo-600 uppercase">Información Básica</h3>
-                <input type="text" id="edit-nombre" class="app-input !pl-4" placeholder="Nombre" required oninput="validators.nameInput(event)">
-                <div class="grid grid-cols-2 gap-3">
-                    <input type="text" id="edit-apellido1" class="app-input !pl-4" placeholder="1er Apellido" required oninput="validators.nameInput(event)">
-                    <input type="text" id="edit-apellido2" class="app-input !pl-4" placeholder="2do Apellido" required oninput="validators.nameInput(event)">
+            <!-- Datos Básicos -->
+            <div class="space-y-4 mb-8">
+                <div class="input-wrapper">
+                    <i class="ph ph-user input-icon"></i>
+                    <input type="text" id="edit-usuario" class="app-input" placeholder="Nombre de Usuario">
                 </div>
-                <input type="text" id="edit-cedula" class="app-input !pl-4 bg-gray-50 text-gray-500" readonly>
-                <input type="date" id="edit-nacimiento" class="app-input !pl-4">
-            </div>
-
-            <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 space-y-4 mb-6">
-                <h3 class="text-xs font-bold text-indigo-600 uppercase">Contacto</h3>
-                <input type="tel" id="edit-movil" class="app-input !pl-4" placeholder="Móvil" maxlength="8" oninput="validators.numberInput(event)">
-                <input type="tel" id="edit-telefono" class="app-input !pl-4" placeholder="Fijo" maxlength="8" oninput="validators.numberInput(event)">
-                <input type="email" id="edit-email" class="app-input !pl-4" placeholder="Email">
-            </div>
-
-            <div class="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 space-y-4">
-                <h3 class="text-xs font-bold text-indigo-600 uppercase">Seguridad</h3>
-                <input type="text" id="edit-usuario" class="app-input !pl-4" placeholder="Usuario" required oninput="validators.userInput(event)">
                 
-                <div class="border-t border-gray-100 pt-4 mt-2">
-                    <p class="text-xs font-bold text-slate-400 uppercase mb-3">Cambiar Contraseña</p>
-                    
+                <div class="input-wrapper opacity-75">
+                    <i class="ph ph-envelope-simple input-icon"></i>
+                    <input type="email" id="edit-email" class="app-input bg-gray-50" placeholder="Correo" disabled>
+                </div>
+            </div>
+
+            <!-- CONFIGURACIÓN BIOMÉTRICA (NUEVO) -->
+            <div id="bio-settings-container" class="hidden mb-8 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                            <i class="ph-fill ph-fingerprint text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-slate-700 text-sm">Biometría</h3>
+                            <p class="text-xs text-slate-400">Usar huella para entrar</p>
+                        </div>
+                    </div>
+                    <!-- Toggle Switch -->
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="bio-toggle" class="sr-only peer" onchange="app.toggleBiometry(this)">
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Cambio de Contraseña -->
+            <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-1 h-full bg-indigo-500"></div>
+                <h3 class="font-bold text-slate-700 mb-4 flex items-center gap-2">
+                    <i class="ph-bold ph-lock-key text-indigo-500"></i>
+                    Seguridad
+                </h3>
+                
+                <div class="space-y-3">
                     <div class="input-wrapper">
                         <input type="password" id="edit-pass-old" class="app-input !pl-4" placeholder="Contraseña Actual">
                         <i class="ph ph-eye toggle-pass" onclick="ui.togglePass('edit-pass-old', this)"></i>
@@ -86,7 +94,8 @@
         <!-- Zona de Peligro -->
         <div class="mt-12 pt-8 border-t border-gray-200">
             <button onclick="app.deleteAccountInit()" class="w-full py-4 text-red-600 font-bold bg-red-50 rounded-xl border border-red-100 flex items-center justify-center gap-2 hover:bg-red-100 transition">
-                <i class="ph-fill ph-trash"></i> Eliminar mi cuenta
+                <i class="ph-bold ph-trash"></i>
+                Eliminar Cuenta
             </button>
         </div>
     </div>

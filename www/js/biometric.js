@@ -1,8 +1,8 @@
 const biometricLogic = {
-    // 1. Verificar si el hardware soporta biometría
+    // 1. Verificar disponibilidad real de Hardware
     checkBiometryAvailability: async () => {
         try {
-            // Si no es nativo (Web), retornamos falso
+            // Si estamos en Web (no nativo), retornamos false para ocultar el botón
             if (!window.Capacitor || !window.Capacitor.isNative) return false;
             
             const result = await window.Capacitor.Plugins.NativeBiometric.isAvailable();
@@ -13,104 +13,74 @@ const biometricLogic = {
         }
     },
 
-    // 2. Ejecutar Login Biométrico
+    // 2. Ejecutar Login Biométrico ESTRICTO
     loginBiometry: async () => {
         try {
-            // Verificar si hay credenciales guardadas
-            const saved = localStorage.getItem('miApp_remember');
-            if (!saved) {
-                return ui.toast("Error: No hay credenciales guardadas.");
+            // A. Verificar credenciales guardadas en el llavero biométrico
+            const savedBio = localStorage.getItem('miApp_bio_creds');
+            if (!savedBio) {
+                return ui.toast("Activa la biometría en tu perfil primero");
             }
 
-            // Verificar hardware
-            const isAvailable = await biometricLogic.checkBiometryAvailability();
+            // B. Verificar Hardware
+            const isAvailable = await biometricLogic.checkBiometryAvailability(); // Usamos referencia interna
             if (!isAvailable) {
-                return ui.toast("Tu dispositivo no soporta biometría");
+                return ui.toast("Biometría no disponible en este dispositivo");
             }
 
-            // Solicitar Huella/Rostro
+            // C. VERIFICACIÓN OBLIGATORIA (El núcleo de la seguridad)
+            // Esto llama al sensor nativo (FaceID / TouchID)
             await window.Capacitor.Plugins.NativeBiometric.verifyIdentity({
-                reason: "Acceso a MiApp",
-                title: "Autenticación",
-                subtitle: "Usa tu huella o rostro",
-                description: "Verifica tu identidad para continuar"
+                reason: "Acceso Seguro",
+                title: "Autenticación Requerida",
+                subtitle: "Verifica tu identidad",
+                description: "Toca el sensor para entrar",
+                maxAttempts: 5
+            })
+            .then(() => {
+                // D. SOLO si la promesa se resuelve (éxito), procedemos
+                ui.toast("Identidad Verificada 🔓");
+                
+                const { email, pass } = JSON.parse(savedBio);
+                
+                // Login silencioso contra la base de datos
+                db.find(email, pass).then(user => {
+                    if (user) {
+                        app.startSession(user);
+                    } else {
+                        ui.toast("Tus credenciales cambiaron. Inicia sesión manual.");
+                    }
+                });
             });
 
-            // Si pasa la verificación, obtenemos credenciales del storage
-            const { email, password } = JSON.parse(saved);
-
-            // Usamos la DB para el login real
-            const user = await db.find(email, password);
-            
-            if (user) {
-                app.startSession(user);
-                ui.toast("Acceso concedido");
-            } else {
-                ui.toast("Las credenciales guardadas han expirado");
-            }
-
         } catch (error) {
-            console.error("Error Biometría:", error);
-            // Ignorar error si el usuario canceló
-            if (error && error.message && !error.message.includes("Canceled")) {
-                ui.toast("No se pudo verificar la identidad");
+            console.error("Fallo Biometría:", error);
+            // Si el usuario cancela o falla la huella, NO entra
+            if (error.message && error.message.includes("Canceled")) {
+                 return; // Cancelado por usuario, no hacemos nada
             }
+            ui.toast("Acceso Denegado 🔒");
         }
     },
 
-    // 3. Controlar visibilidad del botón en el Login
+    // 3. UI: Mostrar botón solo si hay credenciales Y hardware
     updateBiometricUI: async () => {
         const btn = document.getElementById('btn-biometric');
         if (!btn) return;
 
-        // Requisitos: 
-        // 1. App Nativa
-        // 2. Credenciales guardadas ('miApp_remember')
-        // 3. Usuario activó la opción explícitamente ('miApp_bio_enabled')
+        // ¿Tenemos credenciales guardadas para biometría?
+        const hasBioCreds = localStorage.getItem('miApp_bio_creds');
+        const isEnabled = localStorage.getItem('miApp_bio_enabled') === 'true';
         
-        const isNative = window.Capacitor && window.Capacitor.isNative;
-        const hasCredentials = localStorage.getItem('miApp_remember');
-        const isEnabledByUser = localStorage.getItem('miApp_bio_enabled') === 'true';
-        
-        if (isNative && hasCredentials && isEnabledByUser) {
-            const available = await biometricLogic.checkBiometryAvailability();
-            if (available) {
-                btn.classList.remove('hidden');
-                btn.classList.add('flex');
-                return;
-            }
-        }
-        
-        // Si no cumple, ocultar
-        btn.classList.add('hidden');
-        btn.classList.remove('flex');
-    },
+        // Verificar hardware real
+        const hardwareOk = await biometricLogic.checkBiometryAvailability();
 
-    // 4. NUEVO: Activar/Desactivar desde Perfil
-    togglePreference: async (enable, currentUser) => {
-        if (enable) {
-            // Verificar hardware antes de activar
-            const available = await biometricLogic.checkBiometryAvailability();
-            if (!available) {
-                throw new Error("Dispositivo no compatible");
-            }
-
-            // Guardar preferencia
-            localStorage.setItem('miApp_bio_enabled', 'true');
-            
-            // CRÍTICO: Para que funcione el login biométrico, debemos guardar las credenciales
-            // Si el usuario no tenía "Recordarme", lo forzamos aquí para que funcione la biometría
-            if (currentUser && currentUser.email && currentUser.password) {
-                localStorage.setItem('miApp_remember', JSON.stringify({
-                    email: currentUser.email,
-                    password: currentUser.password
-                }));
-            }
+        if (hasBioCreds && isEnabled && hardwareOk) {
+            btn.classList.remove('hidden');
+            btn.classList.add('flex');
         } else {
-            // Desactivar
-            localStorage.removeItem('miApp_bio_enabled');
-            // Opcional: ¿Queremos borrar las credenciales guardadas también? 
-            // Por ahora solo desvinculamos la biometría.
+            btn.classList.add('hidden');
+            btn.classList.remove('flex');
         }
     }
 };

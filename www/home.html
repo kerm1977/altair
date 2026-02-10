@@ -1,36 +1,9 @@
-<div class="p-6">
-    <!-- Tarjeta de Bienvenida -->
-    <div class="bg-slate-900 rounded-3xl p-6 text-white shadow-xl shadow-slate-300 mb-8 relative overflow-hidden">
-        <div class="absolute -right-10 -top-10 w-40 h-40 bg-indigo-500 rounded-full opacity-20 blur-3xl"></div>
-        <div class="relative z-10">
-            <p class="text-slate-300 text-sm mb-1">Bienvenido de nuevo,</p>
-            <h2 id="home-user-display" class="text-2xl font-bold">Cargando...</h2>
-            <div class="mt-6 inline-flex items-center gap-2 bg-white/10 px-4 py-2 rounded-xl backdrop-blur-sm">
-                <div class="w-2 h-2 rounded-full bg-green-400"></div>
-                <span class="text-xs font-medium">Estado: Conectado</span>
-            </div>
-        </div>
-    </div>
-
-    <!-- Grid de Acciones -->
-    <h3 class="font-bold text-slate-800 mb-4">Acciones Rápidas</h3>
-    <div class="grid grid-cols-2 gap-4">
-        
-        <!-- Botón Perfil -->
-        <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center gap-3 active:scale-95 transition cursor-pointer" onclick="router.navigate('perfil')">
-            <div class="w-12 h-12 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-2xl">
-                <i class="ph-fill ph-files"></i>
-            </div>
-            <span class="font-semibold text-sm text-slate-600">Mis Datos</span>
-        </div>
-
-        <!-- NUEVO: Botón Dashboard -->
-        <div class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex flex-col items-center gap-3 active:scale-95 transition cursor-pointer" onclick="router.navigate('dashboard')">
-            <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center text-2xl">
-                <i class="ph-fill ph-sliders-horizontal"></i>
-            </div>
-            <span class="font-semibold text-sm text-slate-600">Configuración</span>
-        </div>
-
+<div class="p-6 flex flex-col items-center justify-center min-h-[80vh]">
+    <h1 class="text-3xl font-black text-slate-800 uppercase tracking-tighter">este es el home</h1>
+    <p class="text-slate-500 mt-2">Bienvenido a la tribu</p>
+    
+    <div class="mt-8 grid grid-cols-2 gap-4 w-full max-w-xs">
+        <button onclick="router.navigate('dashboard')" class="p-4 bg-indigo-100 text-indigo-700 rounded-2xl font-bold">Ir al Dashboard</button>
+        <button onclick="router.navigate('perfil')" class="p-4 bg-slate-100 text-slate-700 rounded-2xl font-bold">Ver Perfil</button>
     </div>
 </div>

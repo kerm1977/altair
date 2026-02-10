@@ -1,5 +1,6 @@
 {
-	"appId": "com.miapp.local",
-	"appName": "MiApp",
-	"webDir": "www"
+	"appId": "com.tribuplay.app",
+	"appName": "TribuPlay",
+	"webDir": "www",
+	"bundledWebRuntime": false
 }

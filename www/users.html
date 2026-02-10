@@ -1,0 +1,164 @@
+<div class="app-container fade-in bg-white min-h-screen">
+    
+    <!-- VISTA 1: LISTADO DE USUARIOS (DIRECTORIO) -->
+    <div id="users-list-view">
+        
+        <!-- HEADER CON BOTÓN VOLVER AL MENU PRINCIPAL -->
+        <div class="d-flex align-items-center justify-content-between mb-4 mt-2">
+            <button onclick="ViewControllers.users.closeModule()" class="btn btn-light rounded-circle shadow-sm flex-center border" style="width: 45px; height: 45px;">
+                <i class="ph-bold ph-arrow-left text-dark fs-5"></i>
+            </button>
+            <div class="text-end">
+                <h2 class="fw-black mb-0 text-slate-800 h4">Directorio</h2>
+                <small class="text-muted">Miembros de la Tribu</small>
+            </div>
+        </div>
+
+        <!-- Buscador -->
+        <div class="input-wrapper mb-4 shadow-sm position-relative">
+            <i class="ph ph-magnifying-glass text-muted position-absolute top-50 start-0 translate-middle-y ms-3 fs-5"></i>
+            <input type="text" id="user-search" class="form-control form-control-lg ps-5 border-0 bg-light" placeholder="Buscar por nombre o cédula..." oninput="ViewControllers.users.filterUsers(this.value)" style="border-radius: 1rem;">
+        </div>
+
+        <!-- Lista de Tarjetas -->
+        <div id="users-list-container" class="mb-5 pb-5">
+            <!-- Se llena dinámicamente -->
+            <div class="text-center py-5 opacity-50">
+                <div class="spinner-border text-primary" role="status"></div>
+                <p class="mt-2 small">Cargando directorio...</p>
+            </div>
+        </div>
+
+        <!-- Botón Flotante Agregar -->
+        <div class="position-fixed bottom-0 start-0 end-0 p-3 pb-4 pointer-events-none" style="z-index: 100; max-width: 600px; margin: 0 auto;">
+            <div class="pointer-events-auto">
+                <button onclick="ViewControllers.users.showCreateForm()" class="btn btn-primary w-100 py-3 rounded-pill shadow-lg fw-bold d-flex align-items-center justify-content-center gap-2" style="font-size: 1.1rem;">
+                    <i class="ph-bold ph-user-plus"></i>
+                    NUEVO MIEMBRO
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- VISTA 2: FORMULARIO DE USUARIO (Crear / Editar / Ver) -->
+    <div id="user-form-view" class="hidden pb-5">
+        
+        <!-- Cabecera Formulario -->
+        <div class="d-flex align-items-center justify-content-between mb-4 pt-2">
+            <!-- Botón Volver a la Lista -->
+            <button onclick="ViewControllers.users.backToList()" class="btn btn-light rounded-circle me-3 flex-center shadow-sm" style="width: 48px; height: 48px;">
+                <i class="ph-bold ph-arrow-left fs-5"></i>
+            </button>
+            <h2 class="h5 fw-black mb-0 flex-grow-1 text-end text-primary" id="form-title">Ficha de Usuario</h2>
+        </div>
+
+        <form id="user-form" onsubmit="event.preventDefault();">
+            <!-- ID Oculto -->
+            <input type="hidden" id="u-id">
+
+            <!-- BLOQUE 1: IDENTIFICACIÓN -->
+            <div class="card border-0 shadow-sm mb-3 bg-light rounded-4 overflow-hidden">
+                <div class="card-header bg-transparent border-0 pt-3 pb-0">
+                    <h6 class="text-uppercase text-muted small fw-bold mb-0 d-flex align-items-center gap-2">
+                        <i class="ph-fill ph-identification-card text-primary"></i> Identificación
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label small text-muted fw-bold">Nombre</label>
+                        <input type="text" id="u-nombre" class="form-control fw-bold" placeholder="Nombre" disabled oninput="ViewControllers.users.validateInput(this, 'name')">
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small text-muted fw-bold">1er Apellido</label>
+                            <input type="text" id="u-apellido1" class="form-control" disabled oninput="ViewControllers.users.validateInput(this, 'name')">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small text-muted fw-bold">2do Apellido</label>
+                            <input type="text" id="u-apellido2" class="form-control" disabled oninput="ViewControllers.users.validateInput(this, 'name')">
+                        </div>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <label class="form-label small text-muted fw-bold">Cédula</label>
+                            <input type="number" id="u-cedula" class="form-control font-monospace" disabled>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small text-muted fw-bold">Pasaporte</label>
+                            <input type="text" id="u-pasaporte" class="form-control" placeholder="Opcional" disabled oninput="ViewControllers.users.validateInput(this, 'passport')">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BLOQUE 2: CONTACTO Y DATOS -->
+            <div class="card border-0 shadow-sm mb-3 bg-light rounded-4 overflow-hidden">
+                <div class="card-header bg-transparent border-0 pt-3 pb-0">
+                    <h6 class="text-uppercase text-muted small fw-bold mb-0 d-flex align-items-center gap-2">
+                        <i class="ph-fill ph-info text-primary"></i> Datos Personales
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label small text-muted fw-bold">Email</label>
+                        <input type="email" id="u-email" class="form-control" placeholder="correo@ejemplo.com" disabled oninput="ViewControllers.users.validateInput(this, 'email')">
+                    </div>
+                    
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small text-muted fw-bold">Teléfono (Casa)</label>
+                            <input type="tel" id="u-telefono" class="form-control" placeholder="8 dígitos" maxlength="8" disabled oninput="ViewControllers.users.validateInput(this, 'phone')">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small text-muted fw-bold">Móvil (Celular)</label>
+                            <input type="tel" id="u-movil" class="form-control" placeholder="8 dígitos" maxlength="8" disabled oninput="ViewControllers.users.validateInput(this, 'phone')">
+                        </div>
+                    </div>
+
+                    <div class="row g-2">
+                        <div class="col-7">
+                            <label class="form-label small text-muted fw-bold">Fecha Nacimiento</label>
+                            <input type="date" id="u-nacimiento" class="form-control" disabled>
+                        </div>
+                        <div class="col-5">
+                            <label class="form-label small text-muted fw-bold">Puntos</label>
+                            <select id="u-puntos" class="form-select" disabled>
+                                <option value="No">No</option>
+                                <option value="Si">Sí ⭐</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BLOQUE 3: ESTADO -->
+            <div class="card border-0 shadow-sm mb-4 rounded-4">
+                <div class="card-body">
+                    <label class="form-label small text-primary fw-bold">Estado del Usuario</label>
+                    <select id="u-estado" class="form-select form-select-lg fw-bold border-2 border-primary" onchange="ViewControllers.users.handleStatusChange()" disabled>
+                        <option value="Activo">Activo 🟢</option>
+                        <option value="Inactivo">Inactivo ⚪</option>
+                        <option value="Incapacitado">Incapacitado 🏥</option>
+                        <option value="Eliminar">Eliminar 🔴</option>
+                    </select>
+
+                    <!-- Advertencia Motivacional (Oculta por defecto) -->
+                    <div id="delete-warning-box" class="hidden mt-3 p-3 bg-danger-subtle rounded-4 border border-danger">
+                        <div class="d-flex gap-3">
+                            <i class="ph-fill ph-heart-break text-danger fs-1"></i>
+                            <div>
+                                <h6 class="fw-bold text-danger mb-1">¡Atención!</h6>
+                                <p class="small text-dark mb-0 lh-sm">
+                                    "Antes de Eliminar debes comunicarte con la Persona para incentivarlo a volver motivandole" ❤️
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BOTONES DE ACCIÓN (Se inyectan vía JS) -->
+            <div id="form-actions" class="d-grid gap-2 pb-5"></div>
+        </form>
+    </div>
+</div>

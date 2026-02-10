@@ -2,53 +2,383 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>MiApp Profesional</title>
-    
-    <!-- Estilos -->
+    <!-- FIX CRÍTICO IOS: viewport-fit=cover permite usar toda la pantalla -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>TribuPlay - Pagos</title>
+
+    <!-- Scripts de Capacitor (Necesario para plugins nativos) -->
+    <script src="capacitor.js"></script>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Tailwind (Mantenido para compatibilidad con componentes previos) -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Iconos Phosphor -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <link rel="stylesheet" href="css/styles.css">
+    <!-- html2canvas para exportar PNG -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-dark: #3730a3;
+            --bg-page: #f8fafc;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+
+            /* Variables de Safe Area (Muesca/Notch IOS) */
+            --sat: env(safe-area-inset-top);
+            --sab: env(safe-area-inset-bottom);
+            --sal: env(safe-area-inset-left);
+            --sar: env(safe-area-inset-right);
+        }
+
+        body {
+            background-color: var(--bg-page);
+            font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
+            
+            /* Safe Area Padding + Espacio inferior original */
+            padding-top: var(--sat);
+            padding-left: var(--sal);
+            padding-right: var(--sar);
+            padding-bottom: calc(220px + var(--sab)); 
+            
+            -webkit-tap-highlight-color: transparent;
+            overscroll-behavior-y: none;
+        }
+
+        /* Utilidades de Visibilidad */
+        .hidden { display: none !important; }
+        .flex-center { display: flex; align-items: center; justify-content: center; }
+
+        /* Contenedor Principal */
+        .app-container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 1.25rem;
+        }
+
+        /* Tarjetas Estilo Premium */
+        .app-card {
+            background: #ffffff;
+            border-radius: 1.5rem;
+            border: 1px solid #e2e8f0;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Inputs Optimizados para Táctil */
+        .form-label {
+            font-weight: 800;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.4rem;
+        }
+
+        .form-control, .form-select {
+            border-radius: 1rem;
+            padding: 0.85rem 1rem;
+            font-size: 1rem;
+            border: 2px solid #cbd5e1;
+            transition: all 0.2s;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+            outline: none;
+        }
+
+        /* Botón Principal */
+        .btn-main {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 1.2rem;
+            border-radius: 1.25rem;
+            font-weight: 800;
+            width: 100%;
+            font-size: 1.15rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            box-shadow: 0 10px 20px -5px rgba(79, 70, 229, 0.4);
+            transition: transform 0.1s active;
+        }
+
+        .btn-main:active { transform: scale(0.96); }
+
+        /* Barra de Totales Flotante Inferior */
+        .totals-bar {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #0f172a;
+            color: white;
+            padding: 1.5rem;
+            /* Ajuste para Notch inferior en iOS */
+            padding-bottom: calc(1.5rem + var(--sab));
+            border-radius: 2rem 2rem 0 0;
+            z-index: 1000;
+            box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.3);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* Tarjeta de Evento en Lista */
+        .event-item-card {
+            background: #ffffff;
+            border-radius: 1.25rem;
+            border: 1px solid #e2e8f0;
+            padding: 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            transition: background 0.2s;
+        }
+        .event-item-card:active { background: #f1f5f9; }
+
+        /* Estilo Caminante */
+        .walker-card {
+            border-left: 8px solid var(--primary) !important;
+            transition: transform 0.2s;
+        }
+        .walker-card:active { transform: scale(0.98); }
+
+        /* Fila de Pago Individual */
+        .payment-item {
+            background: #f1f5f9;
+            border-radius: 1rem;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border: 1px solid #e2e8f0;
+        }
+
+        /* Modales (Confirmación 3 Pasos y Creación) */
+        #modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(8px);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+
+        .modal-box {
+            background: white;
+            width: 100%;
+            max-width: 420px;
+            border-radius: 2.25rem;
+            padding: 2.5rem 2rem;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        /* Toast (Notificaciones Emergentes) */
+        #toast {
+            position: fixed;
+            top: calc(1.5rem + var(--sat)); /* Ajuste seguro */
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            background: #0f172a;
+            color: white;
+            padding: 0.85rem 2rem;
+            border-radius: 3rem;
+            font-weight: 700;
+            z-index: 3000;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+            pointer-events: none;
+            white-space: nowrap;
+            opacity: 0;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.3s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Utilidades de Color Indigo */
+        .bg-indigo-50 { background-color: #f5f3ff; }
+        .text-indigo-600 { color: #4f46e5; }
+        .text-indigo-800 { color: #3730a3; }
+        .border-indigo-100 { border-color: #e0e7ff; }
+
+        .cursor-pointer { cursor: pointer; }
+
+        /* Estilo para el menú desplegable de exportar */
+        .dropdown-menu {
+            min-width: 180px;
+            border-radius: 1.25rem;
+            border: none;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+        }
+        
+        /* Contenedor del Router - CORREGIDO: Evita espacio en blanco si está vacío */
+        #router-outlet:not(:empty) { min-height: 100vh; }
+    </style>
 </head>
-<body class="bg-gray-100 h-screen flex justify-center sm:items-center">
+<body>
 
-    <!-- Contenedor App (Simulación Móvil) -->
-    <div id="app-container" class="w-full h-full sm:h-[850px] sm:w-[420px] bg-white sm:rounded-[40px] sm:shadow-2xl overflow-hidden relative flex flex-col">
+    <!-- PUNTO DE MONTAJE DEL ROUTER (Aquí se cargarán users.html y otras vistas) -->
+    <div id="router-outlet"></div>
+
+    <!-- PANTALLA INICIAL (Por defecto visible, se oculta al navegar) -->
+    <div class="app-container" id="main-app-container">
         
-        <!-- HEADER GLOBAL (Se oculta/muestra según la vista) -->
-        <header id="main-header" class="hidden bg-white/95 backdrop-blur-sm px-6 py-4 border-b border-gray-100 flex justify-between items-center sticky top-0 z-30">
-            <h1 class="text-xl font-bold text-slate-800 tracking-tight">MiApp</h1>
-            <div class="flex items-center gap-3">
-                <button id="pwa-install-btn" class="hidden text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full transition active:scale-95">
-                    INSTALAR
-                </button>
-                <button onclick="router.navigate('perfil')" class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-gray-50 text-gray-600 transition">
-                    <i class="ph-fill ph-gear text-2xl"></i>
+        <!-- PANTALLA 1: LISTADO DE EVENTOS GUARDADOS -->
+        <div id="start-view" class="text-center py-5 fade-in">
+            <div class="mb-5 mt-4">
+                <i class="ph-fill ph-ticket text-primary" style="font-size: 5.5rem;"></i>
+            </div>
+            <h1 class="fw-black mb-3 h2">TribuPlay Pagos</h1>
+            <p class="text-muted mb-5 fs-6 px-3">Gestión multievento con exportación profesional.</p>
+            
+            <!-- BOTÓN NUEVO: GESTIÓN DE USUARIOS (INTEGRADO AQUÍ) -->
+            <div class="px-2 mb-4">
+                <button onclick="window.router.navigate('users'); document.getElementById('main-app-container').classList.add('hidden');" class="btn btn-outline-primary w-100 py-3 rounded-4 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2 border-2">
+                    <i class="ph-bold ph-users-three fs-5"></i>
+                    GESTIONAR USUARIOS
                 </button>
             </div>
-        </header>
-
-        <!-- ÁREA DE INYECCIÓN DE VISTAS (Aquí JS pegará el contenido) -->
-        <main id="router-outlet" class="flex-1 overflow-y-auto no-scrollbar relative bg-slate-50">
-            <!-- El contenido de login.html, home.html, etc. se cargará aquí -->
-            <div class="flex items-center justify-center h-full text-gray-400">
-                <i class="ph ph-spinner animate-spin text-4xl"></i>
+            
+            <div class="d-flex align-items-center justify-content-between mb-3 px-2">
+                <h5 class="fw-bold text-muted small text-uppercase mb-0">Mis Archivos</h5>
             </div>
-        </main>
 
-        <!-- Componentes Globales (Toast y Modales) -->
-        <div id="toast" class="absolute top-4 left-1/2 -translate-x-1/2 bg-slate-800 text-white px-6 py-3 rounded-full shadow-xl text-sm font-medium transition-all duration-300 opacity-0 -translate-y-10 pointer-events-none z-50"></div>
-        
-        <div id="modal-overlay" class="hidden absolute inset-0 bg-black/60 z-50 backdrop-blur-sm flex items-center justify-center p-6">
-            <div id="modal-content" class="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl animate-[fadeIn_0.2s_ease-out]"></div>
+            <!-- Contenedor donde se inyectan los eventos desde la DB -->
+            <div id="saved-events-list" class="text-start mb-5">
+                <!-- Dinámico -->
+                <div class="text-center py-4 opacity-50 small">Cargando eventos guardados...</div>
+            </div>
+
+            <div class="px-2">
+                <button onclick="paymentsApp.showNewEventModal()" class="btn-main shadow-lg">
+                    <i class="ph-bold ph-plus-circle"></i>
+                    NUEVA ACTIVIDAD
+                </button>
+                
+                <!-- BOTONES DE RESPALDO Y RESTAURACIÓN JSON -->
+                <div class="d-flex gap-2 mt-3">
+                    <button onclick="paymentsApp.exportAllToJSON()" class="btn btn-light w-50 py-3 rounded-4 shadow-sm fw-bold text-muted small">
+                        <i class="ph-bold ph-download-simple me-2"></i>Respaldo JSON
+                    </button>
+                    <button onclick="paymentsApp.triggerImport()" class="btn btn-light w-50 py-3 rounded-4 shadow-sm fw-bold text-muted small">
+                        <i class="ph-bold ph-upload-simple me-2"></i>Restaurar
+                    </button>
+                </div>
+                <input type="file" id="import-file-input" class="hidden" accept=".json" onchange="paymentsApp.importFromJSON(this)">
+            </div>
+        </div>
+
+        <!-- PANTALLA 2: EDICIÓN DE EVENTO SELECCIONADO -->
+        <div id="event-form" class="hidden">
+            
+            <!-- TARJETA DE CONFIGURACIÓN (COLAPSABLE) -->
+            <div class="app-card fade-in">
+                <!-- Cabecera con Toggle -->
+                <div class="d-flex justify-content-between align-items-center mb-0 cursor-pointer" onclick="paymentsApp.toggleConfig()">
+                    <div class="d-flex align-items-center">
+                        <button onclick="event.stopPropagation(); paymentsApp.backToMain()" class="btn btn-light rounded-circle me-3 flex-center" style="width: 42px; height: 42px;">
+                            <i class="ph ph-arrow-left fs-5"></i>
+                        </button>
+                        <h2 class="h5 fw-bold mb-0 text-primary">Configuración</h2>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <!-- Icono de caret que rotará o cambiará -->
+                        <i id="config-caret" class="ph ph-caret-up fs-4 text-muted"></i>
+                    </div>
+                </div>
+
+                <!-- Contenido Colapsable -->
+                <div id="config-content" class="mt-4">
+                   <div id="dynamic-fields" class="row g-3 mt-1"></div>
+                </div>
+            </div>
+
+            <!-- CABECERA LISTA DE CAMINANTES (COLAPSABLE) -->
+            <div class="d-flex align-items-center justify-content-between mb-3 px-2 cursor-pointer" onclick="paymentsApp.toggleWalkers()">
+                <div class="d-flex align-items-center gap-2">
+                    <h5 class="fw-bold text-muted small text-uppercase mb-0">Lista de Caminantes</h5>
+                    <i id="walkers-caret" class="ph ph-caret-up text-muted"></i>
+                </div>
+                <span id="walker-count" class="badge bg-white text-primary border border-primary rounded-pill">0 Personas</span>
+            </div>
+
+            <!-- CONTENEDOR COLAPSABLE DE CAMINANTES -->
+            <div id="walkers-content">
+                <div id="walkers-container">
+                    <!-- Tarjetas inyectadas dinámicamente -->
+                </div>
+
+                <!-- Botones de Acción para Caminantes -->
+                <div class="mb-5 px-1 d-flex gap-2">
+                    <button onclick="paymentsApp.showRegisteredUsersModal()" class="btn btn-primary w-50 py-3 rounded-pill fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2" style="font-size: 0.9rem;">
+                        <i class="ph-bold ph-users"></i>
+                        Desde Directorio
+                    </button>
+                    
+                    <button onclick="paymentsApp.addWalker()" class="btn btn-outline-primary w-50 py-3 rounded-pill border-2 fw-bold bg-white shadow-sm d-flex align-items-center justify-content-center gap-2" style="font-size: 0.9rem;">
+                        <i class="ph-bold ph-user-plus"></i>
+                        Nuevo
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- PANTALLA 3: FICHA DE DETALLE INDIVIDUAL -->
+        <div id="walker-detail-view" class="hidden">
+            <!-- Se renderiza el contenido de pagos y conversiones -->
         </div>
 
     </div>
 
-    <!-- Lógica de la App -->
+    <!-- BARRA DE TOTALES FIJA (PARA VISTA DE EDICIÓN) -->
+    <div id="totals-area" class="totals-bar hidden"></div>
+
+    <!-- OVERLAY PARA MODALES -->
+    <div id="modal-overlay">
+        <div id="modal-content" class="modal-box shadow-lg"></div>
+    </div>
+
+    <!-- NOTIFICACIONES TOAST -->
+    <div id="toast">Notificación</div>
+
+    <!-- SCRIPTS INTEGRALES -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
+    <!-- Scripts de la Aplicación -->
     <script src="js/db.js"></script>
+    <script src="js/validaciones.js"></script>
+    <script src="js/ui.js"></script>
     <script src="js/biometric.js"></script>
-    <script src="js/app.js"></script>
+    <script src="js/router.js"></script>
+    
+    <!-- 
+      FIX: Eliminamos app.js, logica.js y login.js porque contienen 
+      la redirección forzosa al login. Solo dejamos index.js que inicia
+      el módulo de pagos directamente.
+    -->
+    <script src="js/index.js"></script>
+    <script src="js/img.js"></script>
+    
+    <!-- View Controllers -->
+    <script>window.ViewControllers = window.ViewControllers || {};</script>
+
 </body>
 </html>

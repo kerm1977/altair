@@ -20,8 +20,9 @@
 
     <style>
         :root {
-            --primary: #4f46e5;
-            --primary-dark: #3730a3;
+            /* CAMBIO: Primary ahora es Naranja (Warning Brand) */
+            --primary: #fd7e14; /* Naranja Bootstrap / Brand */
+            --primary-dark: #e65100; /* Naranja Oscuro */
             --bg-page: #f8fafc;
             --text-main: #0f172a;
             --text-muted: #64748b;
@@ -91,7 +92,7 @@
 
         .form-control:focus, .form-select:focus {
             border-color: var(--primary);
-            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+            box-shadow: 0 0 0 4px rgba(253, 126, 20, 0.1); /* Naranja alpha */
             outline: none;
         }
 
@@ -109,11 +110,23 @@
             align-items: center;
             justify-content: center;
             gap: 0.75rem;
-            box-shadow: 0 10px 20px -5px rgba(79, 70, 229, 0.4);
+            box-shadow: 0 10px 20px -5px rgba(253, 126, 20, 0.4); /* Sombra Naranja */
             transition: transform 0.1s active;
         }
 
         .btn-main:active { transform: scale(0.96); }
+
+        /* Estilos personalizados para botones outline naranjas */
+        .btn-outline-custom {
+            color: var(--primary);
+            border-color: var(--primary);
+            background: white;
+        }
+        .btn-outline-custom:hover, .btn-outline-custom:active {
+            background-color: #fff7ed; /* Naranja muy claro */
+            color: var(--primary-dark);
+            border-color: var(--primary-dark);
+        }
 
         /* Barra de Totales Flotante Inferior */
         .totals-bar {
@@ -213,11 +226,11 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Utilidades de Color Indigo */
-        .bg-indigo-50 { background-color: #f5f3ff; }
-        .text-indigo-600 { color: #4f46e5; }
-        .text-indigo-800 { color: #3730a3; }
-        .border-indigo-100 { border-color: #e0e7ff; }
+        /* Utilidades de Color Indigo (AHORA NARANJA) */
+        .bg-indigo-50 { background-color: #fff7ed; } /* Naranja claro */
+        .text-indigo-600 { color: #fd7e14; }
+        .text-indigo-800 { color: #c2410c; }
+        .border-indigo-100 { border-color: #ffedd5; }
 
         .cursor-pointer { cursor: pointer; }
 
@@ -231,6 +244,20 @@
         
         /* Contenedor del Router - CORREGIDO: Evita espacio en blanco si está vacío */
         #router-outlet:not(:empty) { min-height: 100vh; }
+        
+        /* Clases auxiliares para texto naranja */
+        .text-custom-orange { color: #fd7e14 !important; }
+        .border-custom-orange { border-color: #fd7e14 !important; }
+        .btn-custom-orange {
+            background-color: #fd7e14;
+            border-color: #fd7e14;
+            color: white;
+        }
+        .btn-custom-orange:hover, .btn-custom-orange:active {
+            background-color: #e65100;
+            border-color: #e65100;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -243,15 +270,17 @@
         
         <!-- PANTALLA 1: LISTADO DE EVENTOS GUARDADOS -->
         <div id="start-view" class="text-center py-5 fade-in">
-            <div class="mb-5 mt-4">
-                <i class="ph-fill ph-ticket text-primary" style="font-size: 5.5rem;"></i>
+            <div class="mb-4 mt-3">
+                <!-- LOGO DE LA TRIBU -->
+                <img src="logo.png" alt="Logo Tribu" class="img-fluid mx-auto" style="height: 95px; width: auto; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));">
             </div>
-            <h1 class="fw-black mb-3 h2">TribuPlay Pagos</h1>
+            
+            <h1 class="fw-black mb-3 h2">Pago de La Tribu</h1>
             <p class="text-muted mb-5 fs-6 px-3">Gestión multievento con exportación profesional.</p>
             
             <!-- BOTÓN NUEVO: GESTIÓN DE USUARIOS (INTEGRADO AQUÍ) -->
             <div class="px-2 mb-4">
-                <button onclick="window.router.navigate('users'); document.getElementById('main-app-container').classList.add('hidden');" class="btn btn-outline-primary w-100 py-3 rounded-4 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2 border-2">
+                <button onclick="window.router.navigate('users'); document.getElementById('main-app-container').classList.add('hidden');" class="btn btn-outline-custom w-100 py-3 rounded-4 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2 border-2">
                     <i class="ph-bold ph-users-three fs-5"></i>
                     GESTIONAR USUARIOS
                 </button>
@@ -297,7 +326,7 @@
                         <button onclick="event.stopPropagation(); paymentsApp.backToMain()" class="btn btn-light rounded-circle me-3 flex-center" style="width: 42px; height: 42px;">
                             <i class="ph ph-arrow-left fs-5"></i>
                         </button>
-                        <h2 class="h5 fw-bold mb-0 text-primary">Configuración</h2>
+                        <h2 class="h5 fw-bold mb-0 text-custom-orange">Configuración</h2>
                     </div>
                     <div class="d-flex align-items-center gap-2">
                         <!-- Icono de caret que rotará o cambiará -->
@@ -317,7 +346,7 @@
                     <h5 class="fw-bold text-muted small text-uppercase mb-0">Lista de Caminantes</h5>
                     <i id="walkers-caret" class="ph ph-caret-up text-muted"></i>
                 </div>
-                <span id="walker-count" class="badge bg-white text-primary border border-primary rounded-pill">0 Personas</span>
+                <span id="walker-count" class="badge bg-white text-custom-orange border border-custom-orange rounded-pill">0 Personas</span>
             </div>
 
             <!-- CONTENEDOR COLAPSABLE DE CAMINANTES -->
@@ -328,12 +357,12 @@
 
                 <!-- Botones de Acción para Caminantes -->
                 <div class="mb-5 px-1 d-flex gap-2">
-                    <button onclick="paymentsApp.showRegisteredUsersModal()" class="btn btn-primary w-50 py-3 rounded-pill fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2" style="font-size: 0.9rem;">
+                    <button onclick="paymentsApp.showRegisteredUsersModal()" class="btn btn-custom-orange w-50 py-3 rounded-pill fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2" style="font-size: 0.9rem;">
                         <i class="ph-bold ph-users"></i>
                         Desde Directorio
                     </button>
                     
-                    <button onclick="paymentsApp.addWalker()" class="btn btn-outline-primary w-50 py-3 rounded-pill border-2 fw-bold bg-white shadow-sm d-flex align-items-center justify-content-center gap-2" style="font-size: 0.9rem;">
+                    <button onclick="paymentsApp.addWalker()" class="btn btn-outline-custom w-50 py-3 rounded-pill border-2 fw-bold bg-white shadow-sm d-flex align-items-center justify-content-center gap-2" style="font-size: 0.9rem;">
                         <i class="ph-bold ph-user-plus"></i>
                         Nuevo
                     </button>

@@ -188,14 +188,20 @@
             padding: 1.5rem;
         }
 
+        /* MODIFICADO: Scroll interno para el modal */
         .modal-box {
             background: white;
             width: 100%;
             max-width: 420px;
             border-radius: 2.25rem;
-            padding: 2.5rem 2rem;
+            padding: 2.5rem 1.5rem; /* Ajusté padding lateral */
             text-align: center;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            
+            /* PROPIEDADES DE SCROLL */
+            max-height: 90vh; /* Altura máxima del 90% de la pantalla */
+            overflow-y: auto; /* Scroll vertical si se pasa */
+            position: relative; /* Para el botón flotante interno */
         }
 
         /* Toast (Notificaciones Emergentes) */

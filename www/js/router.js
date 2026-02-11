@@ -1,13 +1,13 @@
 /**
  * router.js - Sistema de Navegación SPA
- * Versión Robusta con manejo de errores y carga dinámica.
+ * Versión Robusta con manejo de errores, carga dinámica y soporte de audio persistente.
+ * CORRECCIÓN: Eliminación de home.html y gestión de inercia en reproductor.
  */
 const router = {
     
     // Carga scripts JS dinámicamente y asegura que no se dupliquen
     loadScript: (src) => {
         return new Promise((resolve, reject) => {
-            // Si ya existe, asumimos cargado
             if (document.querySelector(`script[src="${src}"]`)) {
                 resolve();
                 return;
@@ -32,72 +32,90 @@ const router = {
 
     // Navegación principal
     navigate: async (routeName) => {
+        // MEJORA: home.html no existe, si se llama a 'home' o 'index' vamos directo a goHome()
+        if (!routeName || routeName === 'home' || routeName === 'index') {
+            router.goHome();
+            return;
+        }
+
         console.log(`🧭 Navegando a: ${routeName}`);
         
         const outlet = document.getElementById('router-outlet');
         const mainContainer = document.getElementById('main-app-container');
 
-        // 1. Mostrar indicador de carga (opcional, por ahora solo ocultamos el main)
+        // Ocultar menú principal
         if(mainContainer) mainContainer.classList.add('hidden');
 
         try {
-            // 2. Cargar HTML de la vista
-            // Usamos ?v=... para cache busting simple durante desarrollo
+            // Cargar HTML de la vista
             const response = await fetch(`${routeName}.html?v=${Date.now()}`);
-            if (!response.ok) throw new Error(`Vista ${routeName} no encontrada (404)`);
+            if (!response.ok) throw new Error(`Vista ${routeName} no encontrada`);
             
             const html = await response.text();
             
-            // 3. Inyectar en el Outlet
+            // Inyectar en el Outlet
             if (outlet) {
+                // Antes de inyectar, si ya hay contenido, nos aseguramos de no romper procesos
                 outlet.innerHTML = html;
                 outlet.classList.remove('hidden');
             }
 
-            // 4. Cargar el Controlador JS asociado (ej: js/users.js, js/player.js)
-            // Solo intentamos cargar si no es una vista estática pura
-            if (routeName !== 'home' && routeName !== 'index') {
-                try {
-                    await router.loadScript(`js/${routeName}.js`);
-                } catch (scriptErr) {
-                    console.warn(`Nota: No se encontró script para ${routeName}, asumiendo vista estática.`);
-                }
+            // Cargar el Controlador JS asociado
+            try {
+                await router.loadScript(`js/${routeName}.js`);
+            } catch (scriptErr) {
+                console.warn(`Nota: No se encontró script para ${routeName}.`);
             }
 
-            // 5. Inicializar el Controlador (Si existe y tiene init)
-            // Esperamos un pequeño tick para asegurar que el DOM se pintó
+            // Inicializar el Controlador
+            // El delay de 100ms es vital para que el DOM se asiente y el init no encuentre elementos nulos
             setTimeout(async () => {
                 if (window.ViewControllers && window.ViewControllers[routeName] && window.ViewControllers[routeName].init) {
-                    console.log(`▶️ Iniciando controlador: ${routeName}`);
+                    console.log(`▶️ Iniciando módulo: ${routeName}`);
                     await window.ViewControllers[routeName].init();
                 }
-            }, 50);
+            }, 100);
 
         } catch (error) {
             console.error("🚨 Error de Navegación:", error);
-            if(window.ui) window.ui.toast("Error cargando sección: " + routeName);
-            
-            // Restaurar la vista principal si falla
             router.goHome();
         }
     },
 
-    // Volver al menú principal (Home/Index)
+    // Volver al menú principal (Maneja la persistencia de la música)
     goHome: () => {
+        console.log("🏠 Volviendo al inicio - Activando modo fondo");
         const outlet = document.getElementById('router-outlet');
         const mainContainer = document.getElementById('main-app-container');
         
-        // Limpiar outlet y mostrar container principal
-        if (outlet) outlet.innerHTML = '';
-        if (mainContainer) mainContainer.classList.remove('hidden');
-        
-        // Detener música si venimos del player
-        if (window.ViewControllers && window.ViewControllers.player && window.ViewControllers.player.stop) {
-            window.ViewControllers.player.stop();
+        // 1. NOTIFICACIÓN DE FONDO: 
+        // Antes de vaciar el HTML, avisamos al player que pase a modo flotante.
+        // Esto es lo que evita que la música se detenga al borrar el outlet.
+        if (window.ViewControllers && window.ViewControllers.player) {
+            if (typeof window.ViewControllers.player.prepareForBackground === 'function') {
+                window.ViewControllers.player.prepareForBackground();
+            } else if (typeof window.ViewControllers.player.showMiniPlayer === 'function') {
+                window.ViewControllers.player.showMiniPlayer();
+            }
         }
 
-        console.log("🏠 Volviendo al inicio");
+        if (outlet) {
+            // Limpiamos la vista actual para liberar memoria pero el audio ya debe estar en el body.
+            outlet.innerHTML = '';
+            outlet.classList.add('hidden');
+        }
+        
+        if (mainContainer) {
+            mainContainer.classList.remove('hidden');
+        }
+        
+        console.log("✅ Inicio restaurado");
     }
+};
+
+// Capturar el botón físico de "Atrás" en Android y el gesto de atrás en navegadores
+window.onpopstate = function() {
+    router.goHome();
 };
 
 // Exponer globalmente

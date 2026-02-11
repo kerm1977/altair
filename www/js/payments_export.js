@@ -1,23 +1,31 @@
 /**
  * payments_export.js
  * Maneja la lógica de Exportación (JSON, TXT, PNG) y generación de Facturas.
+ * AHORA COMPATIBLE CON ANDROID Y IOS (Filesystem & Share)
  */
 (function() {
 
     const PaymentsExport = {
         
         // --- JSON BACKUP ---
-        toJSON: (data) => {
+        toJSON: async (data) => {
+            const fileName = `backup_tribuplay_${new Date().toISOString().slice(0,10)}.json`;
             const dataStr = JSON.stringify(data, null, 2);
-            const blob = new Blob([dataStr], { type: "application/json" });
-            const url = URL.createObjectURL(blob);
-            
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `backup_tribuplay_${new Date().toISOString().slice(0,10)}.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
+
+            if (window.Capacitor && window.Capacitor.isNative) {
+                // Para texto usamos UTF8 explícito
+                await PaymentsExport.saveNative(fileName, dataStr, 'text/plain', false);
+            } else {
+                // Modo Web
+                const blob = new Blob([dataStr], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            }
         },
 
         fromJSON: (fileInput, callback) => {
@@ -40,7 +48,7 @@
         },
 
         // --- TXT REPORT ---
-        toTXT: (walker, eventOrName, eventPrice, eventCurrency) => {
+        toTXT: async (walker, eventOrName, eventPrice, eventCurrency) => {
             let event = {};
             if (typeof eventOrName === 'object') {
                 event = eventOrName;
@@ -54,7 +62,6 @@
             content += `Actividad: ${event.name || ''}\n`;
             if (event.eventType) content += `Tipo: ${event.eventType} ${event.stage ? '- ' + event.stage : ''}\n`;
             
-            // Lógica de fechas para TXT
             if (event.days) {
                 content += `Duración: ${event.days} día(s)\n`;
                 if (event.days == 1) {
@@ -82,16 +89,68 @@
                 content += `${i+1}. ${p.tipo}: ${paySymbol}${p.monto} (TC: ${rate})  [${dateStr}]\n`;
             });
 
-            const blob = new Blob([content], { type: 'text/plain' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `pago_${(walker.nombre || 'cliente').replace(/\s+/g, '_')}.txt`;
-            link.click();
+            const fileName = `pago_${(walker.nombre || 'cliente').replace(/\s+/g, '_')}.txt`;
+
+            if (window.Capacitor && window.Capacitor.isNative) {
+                await PaymentsExport.saveNative(fileName, content, 'text/plain', false);
+            } else {
+                const blob = new Blob([content], { type: 'text/plain' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(blob);
+                link.download = fileName;
+                link.click();
+            }
+        },
+
+        // --- HELPER NATIVO PARA GUARDAR Y COMPARTIR ---
+        saveNative: async (filename, data, mimeType, isBase64 = false) => {
+            try {
+                if(window.ui) window.ui.toast("Procesando archivo...");
+                
+                const Filesystem = window.Capacitor.Plugins.Filesystem;
+                const Share = window.Capacitor.Plugins.Share;
+                
+                // Usamos DOCUMENTS ahora que vamos a pedir permisos
+                const Directory = 'DOCUMENTS'; 
+
+                const writeOptions = {
+                    path: filename,
+                    data: data,
+                    directory: Directory,
+                    recursive: true
+                };
+                
+                if (!isBase64) {
+                    writeOptions.encoding = 'utf8';
+                }
+
+                // 1. Intentar escribir
+                const result = await Filesystem.writeFile(writeOptions);
+                console.log("Archivo guardado en:", result.uri);
+                
+                if(window.ui) window.ui.toast("Guardado en Documentos");
+
+                // 2. Intentar Compartir (Opcional, si falla no importa porque ya se guardó)
+                try {
+                    await Share.share({
+                        title: filename,
+                        text: 'Comprobante de TribuPlay',
+                        files: [result.uri], 
+                        dialogTitle: 'Enviar Comprobante'
+                    });
+                } catch(shareErr) {
+                    console.log("Compartir cancelado o no soportado, pero el archivo existe.");
+                }
+
+            } catch (e) {
+                console.error("Error Nativo:", e);
+                if(window.ui) window.ui.toast("Error al guardar: " + e.message);
+            }
         },
 
         // --- INVOICE MODAL GENERATION ---
         getInvoiceHTML: (walker, event, totals) => {
-            const { totalPagado, deuda } = totals;
+             const { totalPagado, deuda } = totals;
             const cur = event.currency;
             const dateNow = new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
             const isPaid = deuda <= 0;
@@ -195,6 +254,11 @@
                 : '';
 
             return `
+            <!-- Botón flotante superior para descarga rápida -->
+            <button onclick="paymentsApp.exportInvoicePng()" class="btn btn-light shadow-sm position-absolute top-0 end-0 m-3 rounded-circle flex-center border" style="width:40px;height:40px; z-index:10;" title="Descargar PNG">
+                <i class="ph-bold ph-download-simple text-dark"></i>
+            </button>
+
             <div id="invoice-capture" class="bg-white p-4 text-start relative overflow-hidden" style="max-width: 450px; margin: 0 auto; font-family: sans-serif;">
                 
                 <!-- HEADER -->
@@ -294,12 +358,25 @@
             if(window.ui) window.ui.toast("Generando imagen...");
             
             if(typeof html2canvas !== 'undefined') {
-                html2canvas(element, { scale: 2, backgroundColor: "#ffffff", useCORS: true }).then(canvas => {
-                    const link = document.createElement('a');
-                    link.download = `Comprobante_TribuPlay_${Date.now()}.png`;
-                    link.href = canvas.toDataURL("image/png");
-                    link.click();
-                    if(window.ui) window.ui.toast("Imagen guardada");
+                // OPTIMIZACIÓN CRÍTICA: Bajar escala a 1.5 para evitar crashes de memoria en Android
+                html2canvas(element, { scale: 1.5, backgroundColor: "#ffffff", useCORS: true }).then(async canvas => {
+                    const fileName = `Comprobante_TribuPlay_${Date.now()}.png`;
+                    
+                    if (window.Capacitor && window.Capacitor.isNative) {
+                        // Obtener Base64 Puro (sin el header data:image...)
+                        const base64Data = canvas.toDataURL("image/png").split(',')[1];
+                        await PaymentsExport.saveNative(fileName, base64Data, 'image/png', true);
+                    } else {
+                        // Web
+                        const link = document.createElement('a');
+                        link.download = fileName;
+                        link.href = canvas.toDataURL("image/png");
+                        link.click();
+                    }
+                    if(window.ui) window.ui.toast("Proceso finalizado");
+                }).catch(err => {
+                    console.error("Error html2canvas:", err);
+                    if(window.ui) window.ui.toast("Error generando visualización");
                 });
             } else {
                 console.error("Librería html2canvas no encontrada");

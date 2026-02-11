@@ -1,7 +1,7 @@
 /**
  * index.js
  * Punto de entrada de la aplicación.
- * Responsabilidad: Iniciar DB, Configurar UI global y Router.
+ * Responsabilidad: Iniciar DB, Configurar UI global, Router y PERMISOS.
  */
 (function() {
     
@@ -11,6 +11,10 @@
 
         start: async () => {
             console.log("📱 Iniciando TribuPlay...");
+
+            // 0. SOLICITAR PERMISOS NATIVOS (Android)
+            // Esto es crítico para poder guardar archivos, usar cámara, etc.
+            await AppInit.requestNativePermissions();
 
             // 1. Inicializar Base de Datos (Si existe db.js)
             if (typeof db !== 'undefined') {
@@ -24,13 +28,10 @@
             }
 
             // 2. Cargar Módulo de Pagos (Si estamos en la vista de pagos)
-            // Esto asegura que paymentsApp exista antes de que el usuario haga click
             if (window.router && window.router.loadScript) {
                 try {
-                    // Cargamos el cerebro de pagos
                     await window.router.loadScript('js/payments.js');
                     
-                    // Inicializamos el controlador si existe
                     if (window.ViewControllers && window.ViewControllers.payments) {
                         await window.ViewControllers.payments.init();
                     }
@@ -39,8 +40,46 @@
                 }
             }
 
-            // 3. Ocultar pantalla de carga (si la hubiera) y mostrar la app
+            // 3. Ocultar pantalla de carga
             document.body.classList.add('loaded');
+        },
+
+        // --- GESTIÓN DE PERMISOS ---
+        requestNativePermissions: async () => {
+            // Solo ejecutar en dispositivo real
+            if (!window.Capacitor || !window.Capacitor.isNative) return;
+
+            const { Filesystem, Camera } = window.Capacitor.Plugins;
+
+            try {
+                console.log("🛡️ Solicitando Permisos Nativos...");
+
+                // 1. Permisos de Archivos (Para exportar)
+                if (Filesystem) {
+                    const fsStatus = await Filesystem.checkPermissions();
+                    if (fsStatus.publicStorage !== 'granted') {
+                        await Filesystem.requestPermissions();
+                    }
+                }
+
+                // 2. Permisos de Cámara y Galería
+                // (Requiere haber instalado @capacitor/camera)
+                if (Camera) {
+                    const camStatus = await Camera.checkPermissions();
+                    
+                    // Si falta permiso de Cámara O de Galería (Photos)
+                    if (camStatus.camera !== 'granted' || camStatus.photos !== 'granted') {
+                        // Pedir ambos
+                        await Camera.requestPermissions({ permissions: ['camera', 'photos'] });
+                    }
+                }
+
+                // Nota: Los permisos de micrófono y contactos requieren plugins específicos
+                // y se solicitan usualmente al momento de usar la función, no al inicio.
+
+            } catch (e) {
+                console.warn("⚠️ Error gestionando permisos (¿Falta algún plugin?):", e);
+            }
         }
     };
 

@@ -90,7 +90,8 @@
 
         // --- RENDERIZADO DE LISTA ---
         renderList: () => {
-            const container = document.getElementById('users-list-container');
+            // FIX: Corregido ID para coincidir con users.html (user-list-container)
+            const container = document.getElementById('user-list-container');
             const term = document.getElementById('user-search')?.value.toLowerCase() || '';
             
             if (!container) return;

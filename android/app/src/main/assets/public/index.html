@@ -45,7 +45,7 @@
             padding-top: var(--sat);
             padding-left: var(--sal);
             padding-right: var(--sar);
-            padding-bottom: calc(220px + var(--sab)); 
+            padding-bottom: calc(100px + var(--sab)); 
             
             -webkit-tap-highlight-color: transparent;
             overscroll-behavior-y: none;
@@ -70,6 +70,56 @@
             padding: 1.5rem;
             margin-bottom: 1.5rem;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Atajos / Accesos Rápidos */
+        .shortcut-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 1.5rem;
+        }
+
+        .shortcut-item {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 1.25rem;
+            padding: 1rem;
+            text-align: center;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            cursor: pointer;
+            text-decoration: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .shortcut-item:active {
+            transform: scale(0.95);
+            background-color: #fff7ed;
+            border-color: var(--primary);
+        }
+
+        .shortcut-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 0.85rem;
+            background-color: #fff7ed;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.35rem;
+        }
+
+        .shortcut-label {
+            font-size: 0.7rem;
+            font-weight: 800;
+            color: var(--text-main);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         /* Inputs Optimizados para Táctil */
@@ -137,7 +187,6 @@
             background: #0f172a;
             color: white;
             padding: 1.5rem;
-            /* Ajuste para Notch inferior en iOS */
             padding-bottom: calc(1.5rem + var(--sab));
             border-radius: 2rem 2rem 0 0;
             z-index: 1000;
@@ -145,37 +194,7 @@
             border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        /* Tarjeta de Evento en Lista */
-        .event-item-card {
-            background: #ffffff;
-            border-radius: 1.25rem;
-            border: 1px solid #e2e8f0;
-            padding: 1.25rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-            transition: background 0.2s;
-        }
-        .event-item-card:active { background: #f1f5f9; }
-
-        /* Estilo Caminante */
-        .walker-card {
-            border-left: 8px solid var(--primary) !important;
-            transition: transform 0.2s;
-        }
-        .walker-card:active { transform: scale(0.98); }
-
-        /* Fila de Pago Individual */
-        .payment-item {
-            background: #f1f5f9;
-            border-radius: 1rem;
-            padding: 1rem;
-            margin-bottom: 0.75rem;
-            border: 1px solid #e2e8f0;
-        }
-
-        /* Modales (Confirmación 3 Pasos y Creación) */
+        /* Modales */
         #modal-overlay {
             position: fixed;
             inset: 0;
@@ -188,26 +207,23 @@
             padding: 1.5rem;
         }
 
-        /* MODIFICADO: Scroll interno para el modal */
         .modal-box {
             background: white;
             width: 100%;
             max-width: 420px;
             border-radius: 2.25rem;
-            padding: 2.5rem 1.5rem; /* Ajusté padding lateral */
+            padding: 2.5rem 1.5rem;
             text-align: center;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-            
-            /* PROPIEDADES DE SCROLL */
-            max-height: 90vh; /* Altura máxima del 90% de la pantalla */
-            overflow-y: auto; /* Scroll vertical si se pasa */
-            position: relative; /* Para el botón flotante interno */
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
         }
 
-        /* Toast (Notificaciones Emergentes) */
+        /* Toast */
         #toast {
             position: fixed;
-            top: calc(1.5rem + var(--sat)); /* Ajuste seguro */
+            top: calc(1.5rem + var(--sat));
             left: 50%;
             transform: translateX(-50%) translateY(-20px);
             background: #0f172a;
@@ -232,26 +248,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Utilidades de Color Indigo (AHORA NARANJA) */
-        .bg-indigo-50 { background-color: #fff7ed; } /* Naranja claro */
-        .text-indigo-600 { color: #fd7e14; }
-        .text-indigo-800 { color: #c2410c; }
-        .border-indigo-100 { border-color: #ffedd5; }
-
-        .cursor-pointer { cursor: pointer; }
-
-        /* Estilo para el menú desplegable de exportar */
-        .dropdown-menu {
-            min-width: 180px;
-            border-radius: 1.25rem;
-            border: none;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-        }
-        
-        /* Contenedor del Router - CORREGIDO: Evita espacio en blanco si está vacío */
-        #router-outlet:not(:empty) { min-height: 100vh; }
-        
-        /* Clases auxiliares para texto naranja */
         .text-custom-orange { color: #fd7e14 !important; }
         .border-custom-orange { border-color: #fd7e14 !important; }
         .btn-custom-orange {
@@ -259,57 +255,85 @@
             border-color: #fd7e14;
             color: white;
         }
-        .btn-custom-orange:hover, .btn-custom-orange:active {
-            background-color: #e65100;
-            border-color: #e65100;
-            color: white;
-        }
     </style>
 </head>
 <body>
 
-    <!-- PUNTO DE MONTAJE DEL ROUTER (Aquí se cargarán users.html y otras vistas) -->
+    <!-- PUNTO DE MONTAJE DEL ROUTER -->
     <div id="router-outlet"></div>
 
-    <!-- PANTALLA INICIAL (Por defecto visible, se oculta al navegar) -->
+    <!-- PANTALLA INICIAL -->
     <div class="app-container" id="main-app-container">
         
         <!-- PANTALLA 1: LISTADO DE EVENTOS GUARDADOS -->
         <div id="start-view" class="text-center py-5 fade-in">
             <div class="mb-4 mt-3">
-                <!-- LOGO DE LA TRIBU -->
                 <img src="logo.png" alt="Logo Tribu" class="img-fluid mx-auto" style="height: 95px; width: auto; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));">
             </div>
             
             <h1 class="fw-black mb-3 h2">Pago de La Tribu</h1>
-            <p class="text-muted mb-5 fs-6 px-3">Gestión multievento con exportación profesional.</p>
+            <p class="text-muted mb-5 fs-6 px-3">Gestión multievento con herramientas integradas.</p>
             
-            <!-- BOTÓN NUEVO: GESTIÓN DE USUARIOS (INTEGRADO AQUÍ) -->
+        
+
+            <!-- SECCIÓN DE ACCESOS RÁPIDOS -->
+            <div class="px-2 mb-4 text-start">
+                <h5 class="fw-bold text-muted small text-uppercase mb-3 px-1">Herramientas Tribu</h5>
+                <div class="shortcut-grid">
+                    <a href="calendarioTribu.html" class="shortcut-item">
+                        <div class="shortcut-icon"><i class="ph-bold ph-calendar"></i></div>
+                        <span class="shortcut-label">Calendario</span>
+                    </a>
+                    <a href="lista.html" class="shortcut-item">
+                        <div class="shortcut-icon"><i class="ph-bold ph-list-checks"></i></div>
+                        <span class="shortcut-label">Asistencia</span>
+                    </a>
+                    <a href="pagosTribu.html" class="shortcut-item">
+                        <div class="shortcut-icon"><i class="ph-bold ph-money"></i></div>
+                        <span class="shortcut-label">Pagos Tribu</span>
+                    </a>
+                    <a href="tablapagos.html" class="shortcut-item">
+                        <div class="shortcut-icon"><i class="ph-bold ph-table"></i></div>
+                        <span class="shortcut-label">Tabla Pagos</span>
+                    </a>
+                    <a href="https://www.latribucr.site" target="_blank" class="shortcut-item" style="grid-column: span 2;">
+                        <div class="shortcut-icon" style="background-color: #ecfdf5; color: #10b981;"><i class="ph-bold ph-globe"></i></div>
+                        <span class="shortcut-label">Visitar www.latribucr.site</span>
+                    </a>
+                </div>
+            </div>
+
+            <hr>
+            <br>
+            
+         
+                <!-- GESTIÓN DE USUARIOS -->
             <div class="px-2 mb-4">
                 <button onclick="window.router.navigate('users'); document.getElementById('main-app-container').classList.add('hidden');" class="btn btn-outline-custom w-100 py-3 rounded-4 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2 border-2">
                     <i class="ph-bold ph-users-three fs-5"></i>
-                    GESTIONAR USUARIOS
+                    GESTIONAR DIRECTORIO
                 </button>
             </div>
-            
-            <div class="d-flex align-items-center justify-content-between mb-3 px-2">
-                <h5 class="fw-bold text-muted small text-uppercase mb-0">Mis Archivos</h5>
-            </div>
 
-            <!-- Contenedor donde se inyectan los eventos desde la DB -->
-            <div id="saved-events-list" class="text-start mb-5">
-                <!-- Dinámico -->
-                <div class="text-center py-4 opacity-50 small">Cargando eventos guardados...</div>
-            </div>
+
 
             <div class="px-2">
-                <button onclick="paymentsApp.showNewEventModal()" class="btn-main shadow-lg">
+                <button onclick="paymentsApp.showNewEventModal()" class="btn-main shadow-lg mb-3">
                     <i class="ph-bold ph-plus-circle"></i>
                     NUEVA ACTIVIDAD
                 </button>
+
+            <div class="d-flex align-items-center justify-content-between mb-3 px-2">
+                <h5 class="fw-bold text-muted small text-uppercase mb-0">CAMINATAS Y EVENTOS</h5>
+            </div>
+
+            <div id="saved-events-list" class="text-start mb-5">
+                <div class="text-center py-4 opacity-50 small">Cargando eventos guardados...</div>
                 
-                <!-- BOTONES DE RESPALDO Y RESTAURACIÓN JSON -->
-                <div class="d-flex gap-2 mt-3">
+            </div>
+
+
+                <div class="d-flex gap-2 mt-3 mb-4">
                     <button onclick="paymentsApp.exportAllToJSON()" class="btn btn-light w-50 py-3 rounded-4 shadow-sm fw-bold text-muted small">
                         <i class="ph-bold ph-download-simple me-2"></i>Respaldo JSON
                     </button>
@@ -319,14 +343,18 @@
                 </div>
                 <input type="file" id="import-file-input" class="hidden" accept=".json" onchange="paymentsApp.importFromJSON(this)">
             </div>
+
+            <div class="px-2 mb-3">
+                <button onclick="window.router.navigate('player')" class="btn btn-outline-custom w-100 py-3 rounded-4 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2 border-2">
+                    <i class="ph-bold ph-music-notes-simple fs-5"></i>
+                    MÚSICA DE LA TRIBU
+                </button>
+            </div>
         </div>
 
-        <!-- PANTALLA 2: EDICIÓN DE EVENTO SELECCIONADO -->
+        <!-- PANTALLA 2: EDICIÓN DE EVENTO -->
         <div id="event-form" class="hidden">
-            
-            <!-- TARJETA DE CONFIGURACIÓN (COLAPSABLE) -->
             <div class="app-card fade-in">
-                <!-- Cabecera con Toggle -->
                 <div class="d-flex justify-content-between align-items-center mb-0 cursor-pointer" onclick="paymentsApp.toggleConfig()">
                     <div class="d-flex align-items-center">
                         <button onclick="event.stopPropagation(); paymentsApp.backToMain()" class="btn btn-light rounded-circle me-3 flex-center" style="width: 42px; height: 42px;">
@@ -335,18 +363,14 @@
                         <h2 class="h5 fw-bold mb-0 text-custom-orange">Configuración</h2>
                     </div>
                     <div class="d-flex align-items-center gap-2">
-                        <!-- Icono de caret que rotará o cambiará -->
                         <i id="config-caret" class="ph ph-caret-up fs-4 text-muted"></i>
                     </div>
                 </div>
-
-                <!-- Contenido Colapsable -->
                 <div id="config-content" class="mt-4">
-                   <div id="dynamic-fields" class="row g-3 mt-1"></div>
+                    <div id="dynamic-fields" class="row g-3 mt-1"></div>
                 </div>
             </div>
 
-            <!-- CABECERA LISTA DE CAMINANTES (COLAPSABLE) -->
             <div class="d-flex align-items-center justify-content-between mb-3 px-2 cursor-pointer" onclick="paymentsApp.toggleWalkers()">
                 <div class="d-flex align-items-center gap-2">
                     <h5 class="fw-bold text-muted small text-uppercase mb-0">Lista de Caminantes</h5>
@@ -355,19 +379,13 @@
                 <span id="walker-count" class="badge bg-white text-custom-orange border border-custom-orange rounded-pill">0 Personas</span>
             </div>
 
-            <!-- CONTENEDOR COLAPSABLE DE CAMINANTES -->
             <div id="walkers-content">
-                <div id="walkers-container">
-                    <!-- Tarjetas inyectadas dinámicamente -->
-                </div>
-
-                <!-- Botones de Acción para Caminantes -->
+                <div id="walkers-container"></div>
                 <div class="mb-5 px-1 d-flex gap-2">
                     <button onclick="paymentsApp.showRegisteredUsersModal()" class="btn btn-custom-orange w-50 py-3 rounded-pill fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2" style="font-size: 0.9rem;">
                         <i class="ph-bold ph-users"></i>
                         Desde Directorio
                     </button>
-                    
                     <button onclick="paymentsApp.addWalker()" class="btn btn-outline-custom w-50 py-3 rounded-pill border-2 fw-bold bg-white shadow-sm d-flex align-items-center justify-content-center gap-2" style="font-size: 0.9rem;">
                         <i class="ph-bold ph-user-plus"></i>
                         Nuevo
@@ -376,43 +394,25 @@
             </div>
         </div>
 
-        <!-- PANTALLA 3: FICHA DE DETALLE INDIVIDUAL -->
-        <div id="walker-detail-view" class="hidden">
-            <!-- Se renderiza el contenido de pagos y conversiones -->
-        </div>
-
+        <!-- PANTALLA 3: DETALLE INDIVIDUAL -->
+        <div id="walker-detail-view" class="hidden"></div>
     </div>
 
-    <!-- BARRA DE TOTALES FIJA (PARA VISTA DE EDICIÓN) -->
+    <!-- ÁREAS GLOBALES -->
     <div id="totals-area" class="totals-bar hidden"></div>
-
-    <!-- OVERLAY PARA MODALES -->
-    <div id="modal-overlay">
-        <div id="modal-content" class="modal-box shadow-lg"></div>
-    </div>
-
-    <!-- NOTIFICACIONES TOAST -->
+    <div id="modal-overlay"><div id="modal-content" class="modal-box shadow-lg"></div></div>
     <div id="toast">Notificación</div>
 
-    <!-- SCRIPTS INTEGRALES -->
+    <!-- SCRIPTS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    
-    <!-- Scripts de la Aplicación -->
     <script src="js/db.js"></script>
     <script src="js/validaciones.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/biometric.js"></script>
     <script src="js/router.js"></script>
-    
-    <!-- 
-      FIX: Eliminamos app.js, logica.js y login.js porque contienen 
-      la redirección forzosa al login. Solo dejamos index.js que inicia
-      el módulo de pagos directamente.
-    -->
     <script src="js/index.js"></script>
     <script src="js/img.js"></script>
     
-    <!-- View Controllers -->
     <script>window.ViewControllers = window.ViewControllers || {};</script>
 
 </body>

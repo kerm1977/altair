@@ -41,23 +41,28 @@ const router = {
         if(mainContainer) mainContainer.classList.add('hidden');
 
         try {
-            // 2. Cargar el HTML de la vista (Cache busting para evitar versiones viejas)
-            const htmlResponse = await fetch(`${routeName}.html?v=${Date.now()}`);
+            // 2. Cargar HTML de la vista
+            // Usamos ?v=... para cache busting simple durante desarrollo
+            const response = await fetch(`${routeName}.html?v=${Date.now()}`);
+            if (!response.ok) throw new Error(`Vista ${routeName} no encontrada (404)`);
             
-            if (!htmlResponse.ok) {
-                throw new Error(`Archivo ${routeName}.html no encontrado (${htmlResponse.status})`);
-            }
+            const html = await response.text();
             
-            const htmlContent = await htmlResponse.text();
-
-            // 3. Inyectar HTML en el outlet
+            // 3. Inyectar en el Outlet
             if (outlet) {
-                outlet.innerHTML = htmlContent;
+                outlet.innerHTML = html;
                 outlet.classList.remove('hidden');
             }
 
-            // 4. Cargar el Controlador JS asociado (ej: js/users.js)
-            await router.loadScript(`js/${routeName}.js`);
+            // 4. Cargar el Controlador JS asociado (ej: js/users.js, js/player.js)
+            // Solo intentamos cargar si no es una vista estática pura
+            if (routeName !== 'home' && routeName !== 'index') {
+                try {
+                    await router.loadScript(`js/${routeName}.js`);
+                } catch (scriptErr) {
+                    console.warn(`Nota: No se encontró script para ${routeName}, asumiendo vista estática.`);
+                }
+            }
 
             // 5. Inicializar el Controlador (Si existe y tiene init)
             // Esperamos un pequeño tick para asegurar que el DOM se pintó
@@ -65,29 +70,32 @@ const router = {
                 if (window.ViewControllers && window.ViewControllers[routeName] && window.ViewControllers[routeName].init) {
                     console.log(`▶️ Iniciando controlador: ${routeName}`);
                     await window.ViewControllers[routeName].init();
-                } else {
-                    console.warn(`⚠️ Controlador ${routeName} no encontrado o sin método init()`);
                 }
             }, 50);
 
         } catch (error) {
             console.error("🚨 Error de Navegación:", error);
-            alert("Error cargando la sección: " + error.message);
+            if(window.ui) window.ui.toast("Error cargando sección: " + routeName);
             
             // Restaurar la vista principal si falla
             router.goHome();
         }
     },
 
-    // Volver al menú principal
+    // Volver al menú principal (Home/Index)
     goHome: () => {
         const outlet = document.getElementById('router-outlet');
         const mainContainer = document.getElementById('main-app-container');
         
-        // Limpiar outlet y mostrar home
+        // Limpiar outlet y mostrar container principal
         if (outlet) outlet.innerHTML = '';
         if (mainContainer) mainContainer.classList.remove('hidden');
         
+        // Detener música si venimos del player
+        if (window.ViewControllers && window.ViewControllers.player && window.ViewControllers.player.stop) {
+            window.ViewControllers.player.stop();
+        }
+
         console.log("🏠 Volviendo al inicio");
     }
 };

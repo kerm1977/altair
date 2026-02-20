@@ -8,20 +8,15 @@
     <title>La Tribu</title>
     
     <link href="css/bootstrap.css" rel="stylesheet">
-    <!-- Iconos ultraligeros para la barra de navegación -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     
     <style>
         .pt-safe { padding-top: env(safe-area-inset-top); }
         .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
         
-        /* Animación ultraligera para las transiciones */
-        #app-content { 
-            transition: opacity 0.15s ease-out; 
-        }
+        #app-content { transition: opacity 0.15s ease-out; }
         .fade-out { opacity: 0; }
         
-        /* Estilos de la Barra de Navegación Inferior Móvil */
         .bottom-nav {
             padding-bottom: env(safe-area-inset-bottom);
             background: white;
@@ -35,7 +30,7 @@
             cursor: pointer;
         }
         .nav-item:active { transform: scale(0.95); }
-        .nav-item.active { color: #0d6efd; /* Color activo (Bootstrap primary) */ }
+        .nav-item.active { color: #0d6efd; }
         .nav-item i { font-size: 1.5rem; display: block; line-height: 1.2; }
         .nav-item span { font-size: 0.75rem; font-weight: 500; }
     </style>
@@ -46,12 +41,15 @@
     <header id="app-header" class="bg-white shadow-sm pt-safe d-none transition-all">
         <div class="px-3 py-3 d-flex justify-content-between align-items-center">
             <h5 class="m-0 fw-bold text-dark" id="header-title">Inicio</h5>
-            <!-- Botón de ajustes o notificaciones opcional -->
-            <i class="bi bi-bell text-secondary fs-5"></i>
+            <!-- Botones lado derecho -->
+            <div class="d-flex align-items-center gap-3">
+                <i class="bi bi-bell text-secondary fs-5" id="btn-notificaciones"></i>
+                <!-- Botón de Salir (Oculto por defecto) -->
+                <i class="bi bi-box-arrow-right text-danger fs-5 d-none" id="btn-logout" onclick="hacerLogout()" style="cursor: pointer;" title="Cerrar Sesión"></i>
+            </div>
         </div>
     </header>
 
-    <!-- Contenedor Principal (Donde se inyectan las vistas) -->
     <main id="app-content" class="flex-grow-1 overflow-auto w-100"></main>
 
     <!-- Barra de Navegación Inferior -->
@@ -64,13 +62,13 @@
             <i class="bi bi-people-fill"></i>
             <span>La Tribu</span>
         </a>
-        <a href="#perfil" class="nav-item text-center flex-grow-1" data-view="perfil">
-            <i class="bi bi-person-circle"></i>
-            <span>Perfil</span>
+        <!-- BOTÓN DINÁMICO: Login / Perfil -->
+        <a href="#login" class="nav-item text-center flex-grow-1" data-view="login" id="nav-btn-auth">
+            <i class="bi bi-box-arrow-in-right" id="nav-icon-auth"></i>
+            <span id="nav-text-auth">Ingresar</span>
         </a>
     </nav>
 
-    <!-- RESTAURADO: Script de Bootstrap -->
     <script src="js/bootstrap.js"></script>
 
     <script>
@@ -79,31 +77,75 @@
         const appHeader = document.getElementById('app-header');
         const headerTitle = document.getElementById('header-title');
         
-        // 🚀 CACHÉ EN MEMORIA: El secreto para la máxima velocidad
-        const cacheVistas = {};
+        // ==========================================
+        // 🔐 SISTEMA DE ESTADO GLOBAL Y AUTENTICACIÓN
+        // ==========================================
+        window.isLoggedIn = localStorage.getItem('app_logged_in') === 'true';
 
-        // 🗺️ DICCIONARIO DE RUTAS: Controla qué UI se muestra por vista
+        window.setLoginState = function(state) {
+            window.isLoggedIn = state;
+            localStorage.setItem('app_logged_in', state);
+            actualizarUIAuth();
+        };
+
+        window.hacerLogout = function() {
+            if(confirm('¿Deseas cerrar sesión?')) {
+                window.setLoginState(false);
+                window.location.hash = 'home';
+                cargarVista(); // Forzar actualización visual
+            }
+        };
+
+        function actualizarUIAuth() {
+            const navBtnAuth = document.getElementById('nav-btn-auth');
+            const navIconAuth = document.getElementById('nav-icon-auth');
+            const navTextAuth = document.getElementById('nav-text-auth');
+            const btnLogout = document.getElementById('btn-logout');
+
+            if (window.isLoggedIn) {
+                // Modo Logueado -> Es Perfil
+                navBtnAuth.href = '#perfil';
+                navBtnAuth.dataset.view = 'perfil';
+                navIconAuth.className = 'bi bi-person-circle';
+                navTextAuth.textContent = 'Perfil';
+                btnLogout.classList.remove('d-none'); // Mostrar botón de salir
+            } else {
+                // Modo Invitado -> Es Ingresar
+                navBtnAuth.href = '#login';
+                navBtnAuth.dataset.view = 'login';
+                navIconAuth.className = 'bi bi-box-arrow-in-right';
+                navTextAuth.textContent = 'Ingresar';
+                btnLogout.classList.add('d-none'); // Ocultar botón de salir
+            }
+        }
+
+        // ==========================================
+        // 🗺️ SISTEMA DE NAVEGACIÓN SPA
+        // ==========================================
+        const cacheVistas = {};
         const rutas = {
             'home':     { titulo: 'Inicio',    mostrarNav: true },
             'usuarios': { titulo: 'La Tribu',  mostrarNav: true },
-            'perfil':   { titulo: 'Mi Perfil', mostrarNav: true },
+            'perfil':   { titulo: 'Mi Perfil', mostrarNav: true, requiereLogin: true }, // Ruta Protegida
             'login':    { titulo: 'Acceso',    mostrarNav: false },
             'registro': { titulo: 'Registro',  mostrarNav: false }
         };
 
         async function cargarVista() {
             let hash = window.location.hash.substring(1);
-            
-            // CAMBIO: Si no hay ruta, vamos a 'home' para que sí puedas ver la barra de navegación
             if (!hash) hash = 'home'; 
             
-            // Si la ruta no está registrada, caemos en login por seguridad
             let vistaConfig = rutas[hash] || rutas['login'];
 
-            // 1. Iniciar Animación de salida
+            // 🛡️ Protección de Ruta: Si quiere ir al perfil sin login, lo mandamos a login
+            if (vistaConfig.requiereLogin && !window.isLoggedIn) {
+                window.location.hash = 'login';
+                return;
+            }
+
+            actualizarUIAuth(); // Asegurar que el botón muestre su estado correcto
             contenedor.classList.add('fade-out');
 
-            // 2. Gestionar la UI perimetral (Header y Footer)
             if (vistaConfig.mostrarNav) {
                 appNav.classList.remove('d-none');
                 appHeader.classList.remove('d-none');
@@ -113,31 +155,26 @@
             }
             headerTitle.textContent = vistaConfig.titulo;
 
-            // Iluminar el botón correcto en el Footer Nav
+            // Iluminar tab activo
             document.querySelectorAll('.nav-item').forEach(el => {
                 el.classList.toggle('active', el.dataset.view === hash);
             });
 
-            // 3. Descargar o usar Caché
             try {
                 let html = '';
                 if (cacheVistas[hash]) {
-                    // Carga hiper-rápida desde RAM
                     html = cacheVistas[hash]; 
                 } else {
-                    // Petición de red real la primera vez
                     const respuesta = await fetch(`${hash}.html`);
                     if (!respuesta.ok) throw new Error(`La vista '${hash}.html' no se encontró.`);
                     html = await respuesta.text();
-                    cacheVistas[hash] = html; // Guardar para la próxima
+                    cacheVistas[hash] = html;
                 }
 
-                // 4. Pausa minúscula para que la animación se note, y pintamos
                 setTimeout(() => {
                     contenedor.innerHTML = html;
                     contenedor.classList.remove('fade-out');
 
-                    // Magia de Scripts: Ejecutarlos de forma forzada
                     const scripts = contenedor.querySelectorAll('script');
                     scripts.forEach(script => {
                         const nuevoScript = document.createElement('script');
@@ -158,12 +195,10 @@
             }
         }
 
-        // Eventos Principales
         window.addEventListener('hashchange', cargarVista);
         window.addEventListener('DOMContentLoaded', () => {
+            actualizarUIAuth();
             cargarVista();
-            
-            // Optimización Extra: Si arrancas en 'home', pre-cargar silenciosamente 'login' de fondo
             if(window.location.hash === '' || window.location.hash === '#home') {
                 fetch('login.html').then(r => r.text()).then(html => cacheVistas['login'] = html).catch(()=>{});
             }

@@ -1,1 +1,432 @@
-<!-- REGISTRO -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro | La Tribu</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <style>
+        /* Ajustes menores de estilo para avatar y vista segura */
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+        /* Cambiamos height: 100% por min-height para evitar que el fondo se corte al hacer scroll en formularios largos */
+        body, html { min-height: 100%; background-color: #f8f9fa; }
+        
+        .avatar-box {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 2px dashed #adb5bd;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            background-color: #e9ecef;
+            transition: border-color 0.3s;
+        }
+        .avatar-box:hover { border-color: #0d6efd; }
+        .avatar-preview {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: none;
+            transform-origin: center center;
+        }
+    </style>
+</head>
+<body class="bg-light">
+    <!-- Usamos min-vh-100 para permitir que el contenido largo empuje hacia abajo correctamente -->
+    <div class="min-vh-100 d-flex flex-column pb-safe">
+        
+        <!-- Decoración Superior (Idéntica al login.html y flex-shrink-0 para que no se deforme) -->
+        <div class="position-relative w-100 flex-shrink-0" style="height: 25vh; background: linear-gradient(135deg, #0d6efd, #0dcaf0); border-bottom-left-radius: 30px; border-bottom-right-radius: 30px;">
+            <div class="position-absolute top-50 start-50 translate-middle text-center text-white w-100">
+                <!-- Icono principal de la app restaurado al escudo del login -->
+                <i class="bi bi-shield-lock-fill" style="font-size: 4rem; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.2));"></i>
+                <h2 class="fw-bold mt-2">La Tribu</h2>
+            </div>
+        </div>
+
+        <!-- Contenedor del Formulario -->
+        <div class="flex-grow-1 d-flex flex-column px-4" style="margin-top: -30px; z-index: 10;">
+            
+            <div class="card border-0 shadow-sm rounded-4 flex-grow-1 p-4 mb-4" style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);">
+                
+                <h4 class="fw-bold text-center text-dark mb-4">Registro</h4>
+
+                <form id="form-registro" onsubmit="procesarRegistro(event)">
+                    
+                    <!-- 1. SUBIR IMAGEN DE PERFIL Y EDITOR -->
+                    <div class="mb-4 text-center">
+                        <label class="text-muted small mb-2 fw-medium">Foto de Perfil</label>
+                        <div class="avatar-box mx-auto position-relative" onclick="document.getElementById('avatarInput').click()">
+                            <i id="avatarPlaceholder" class="bi bi-camera-fill text-secondary" style="font-size: 2.5rem;"></i>
+                            <img id="avatarPreview" class="avatar-preview" src="" alt="Avatar">
+                        </div>
+                        <input type="file" id="avatarInput" accept="image/*" class="d-none">
+                        
+                        <!-- Controles de Edición de Imagen -->
+                        <div id="avatarControls" class="mt-3 d-none mx-auto" style="max-width: 200px;">
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <i class="bi bi-zoom-out text-muted small"></i>
+                                <input type="range" class="form-range" id="zoomRange" min="1" max="3" step="0.1" value="1">
+                                <i class="bi bi-zoom-in text-muted small"></i>
+                            </div>
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-arrow-left text-muted small"></i>
+                                <input type="range" class="form-range" id="xRange" min="-50" max="50" step="1" value="0">
+                                <i class="bi bi-arrow-right text-muted small"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. DATOS PERSONALES -->
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control rounded-3 border-0 bg-light" id="regNombre" placeholder="Nombre" required>
+                        <label for="regNombre" class="text-muted"><i class="bi bi-person me-2"></i>Nombre</label>
+                    </div>
+                    
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control rounded-3 border-0 bg-light" id="regApellido1" placeholder="Primer Apellido" required>
+                                <label for="regApellido1" class="text-muted small">1er Apellido</label>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="form-floating">
+                                <input type="text" class="form-control rounded-3 border-0 bg-light" id="regApellido2" placeholder="Segundo Apellido" required>
+                                <label for="regApellido2" class="text-muted small">2do Apellido</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-floating mb-3 position-relative">
+                        <input type="tel" class="form-control rounded-3 border-0 bg-light" id="regTelefono" placeholder="Teléfono" maxlength="8" required>
+                        <label for="regTelefono" class="text-muted"><i class="bi bi-telephone me-2"></i>Teléfono</label>
+                        <div id="telError" class="text-danger small mt-1 ms-2 d-none">Debe tener exactamente 8 números.</div>
+                    </div>
+
+                    <div class="form-floating mb-3">
+                        <input type="email" class="form-control rounded-3 border-0 bg-light" id="regEmail" placeholder="name@example.com" required>
+                        <label for="regEmail" class="text-muted"><i class="bi bi-envelope me-2"></i>Correo Electrónico</label>
+                    </div>
+
+                    <!-- 3. PIN AUTOGENERADO -->
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control rounded-3 border-0 bg-light text-primary fw-bold font-monospace" id="regPin" placeholder="PIN" readonly>
+                        <label for="regPin" class="text-muted"><i class="bi bi-123 me-2"></i>Número de PIN (Autogenerado)</label>
+                    </div>
+
+                    <!-- 4. FECHA DE NACIMIENTO -->
+                    <div class="mb-3 p-3 bg-light rounded-3">
+                        <label class="text-muted small mb-2 d-block"><i class="bi bi-calendar-date me-2"></i>Fecha de Nacimiento</label>
+                        <div class="row g-2">
+                            <div class="col-4">
+                                <select id="dobDia" class="form-select border-0 text-center shadow-sm"></select>
+                            </div>
+                            <div class="col-4">
+                                <select id="dobMes" class="form-select border-0 px-1 shadow-sm"></select>
+                            </div>
+                            <div class="col-4">
+                                <select id="dobAnio" class="form-select border-0 text-center shadow-sm"></select>
+                            </div>
+                        </div>
+                        <div class="text-end mt-2">
+                            <span class="small text-muted">Edad: <span id="edadText" class="fw-bold text-primary">--</span> años</span>
+                        </div>
+                    </div>
+
+                    <!-- 5. CONTRASEÑAS -->
+                    <div class="form-floating mb-3 position-relative">
+                        <input type="password" class="form-control rounded-3 border-0 bg-light" id="regPassword" placeholder="Contraseña" required>
+                        <label for="regPassword" class="text-muted"><i class="bi bi-lock me-2"></i>Contraseña</label>
+                        <button type="button" class="btn position-absolute top-50 end-0 translate-middle-y me-1 border-0 bg-transparent text-secondary" onclick="togglePassword('regPassword', 'iconoOjo1')">
+                            <i class="bi bi-eye-fill fs-5" id="iconoOjo1"></i>
+                        </button>
+                    </div>
+
+                    <div class="form-floating mb-4 position-relative">
+                        <input type="password" class="form-control rounded-3 border-0 bg-light" id="regConfirmPassword" placeholder="Confirmar Contraseña" required>
+                        <label for="regConfirmPassword" class="text-muted"><i class="bi bi-check-circle me-2"></i>Confirmar Contraseña</label>
+                        <button type="button" class="btn position-absolute top-50 end-0 translate-middle-y me-1 border-0 bg-transparent text-secondary" onclick="togglePassword('regConfirmPassword', 'iconoOjo2')">
+                            <i class="bi bi-eye-fill fs-5" id="iconoOjo2"></i>
+                        </button>
+                    </div>
+
+                    <!-- 6. CONTACTO DE EMERGENCIA -->
+                    <h6 class="fw-bold text-dark mt-4 mb-3 border-bottom pb-2">Contacto de Emergencia</h6>
+                    
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control rounded-3 border-0 bg-light" id="emgNombre" placeholder="Nombre Contacto">
+                        <label for="emgNombre" class="text-muted"><i class="bi bi-person-hearts me-2"></i>Nombre del Contacto</label>
+                    </div>
+
+                    <div class="form-floating mb-4 position-relative">
+                        <input type="tel" class="form-control rounded-3 border-0 bg-light" id="emgTelefono" placeholder="Teléfono" maxlength="8">
+                        <label for="emgTelefono" class="text-muted"><i class="bi bi-telephone-plus me-2"></i>Teléfono Emergencia</label>
+                    </div>
+
+                    <!-- Botón de Envío (Idéntico al login.html) -->
+                    <button type="submit" class="btn btn-primary w-100 rounded-pill py-3 fw-bold shadow-sm d-flex justify-content-center align-items-center" id="btnRegistro">
+                        <span id="btnRegText">Registrarse</span>
+                        <div class="spinner-border spinner-border-sm text-white ms-2 d-none" role="status" id="btnRegSpinner">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                    </button>
+
+                </form>
+
+                <!-- Pie para regresar al login -->
+                <div class="text-center mt-auto pt-4 pb-2">
+                    <span class="text-muted small">¿Ya tienes cuenta? </span>
+                    <a href="#login" class="text-decoration-none fw-bold text-primary">Inicia sesión</a>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Función autoejecutable: No espera a DOMContentLoaded para funcionar bien en cargas dinámicas.
+        (function inicializarFormulario() {
+            // Validamos que el DOM del formulario exista antes de aplicar listeners
+            const formRegistro = document.getElementById('form-registro');
+            if (!formRegistro) return;
+
+            // --- 1. LÓGICA DE IMAGEN Y EDITOR ---
+            const avatarInput = document.getElementById('avatarInput');
+            const avatarPreview = document.getElementById('avatarPreview');
+            const avatarPlaceholder = document.getElementById('avatarPlaceholder');
+            const avatarControls = document.getElementById('avatarControls');
+            const zoomRange = document.getElementById('zoomRange');
+            const xRange = document.getElementById('xRange');
+
+            if(avatarInput) {
+                avatarInput.addEventListener('change', (e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            avatarPreview.src = event.target.result;
+                            avatarPreview.style.display = 'block';
+                            avatarPlaceholder.style.display = 'none';
+                            avatarControls.classList.remove('d-none');
+                            // Reset controles
+                            zoomRange.value = 1;
+                            xRange.value = 0;
+                            updateAvatarTransform();
+                        }
+                        reader.readAsDataURL(file);
+                    }
+                });
+
+                function updateAvatarTransform() {
+                    const scale = zoomRange.value;
+                    const translateX = xRange.value;
+                    avatarPreview.style.transform = `scale(${scale}) translateX(${translateX}px)`;
+                }
+
+                zoomRange.addEventListener('input', updateAvatarTransform);
+                xRange.addEventListener('input', updateAvatarTransform);
+            }
+
+            // --- 2. FORMATEADORES DE TEXTO (Title Case) ---
+            function toTitleCase(str) {
+                return str.toLowerCase().split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+            }
+
+            // Nombre: Solo un espacio, sin números ni especiales
+            const inputNombre = document.getElementById('regNombre');
+            if(inputNombre) {
+                inputNombre.addEventListener('input', (e) => {
+                    let val = e.target.value;
+                    val = val.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, ''); // Solo letras y espacios
+                    const parts = val.split(' ');
+                    if (parts.length > 2) val = parts[0] + ' ' + parts.slice(1).join(''); // Máx 1 espacio
+                    e.target.value = toTitleCase(val);
+                });
+            }
+
+            // Apellidos y Contacto Emergencia: Sin espacios, sin números ni especiales
+            const apellidosInputs = ['regApellido1', 'regApellido2', 'emgNombre'];
+            apellidosInputs.forEach(id => {
+                const input = document.getElementById(id);
+                if(!input) return;
+                input.addEventListener('input', (e) => {
+                    let val = e.target.value;
+                    if(id === 'emgNombre'){
+                        val = val.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '');
+                        val = val.replace(/\s{2,}/g, ' '); // Permitir espacios pero no dobles
+                    } else {
+                        val = val.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ]/g, ''); // Sin espacios estricto
+                    }
+                    e.target.value = toTitleCase(val);
+                });
+            });
+
+            // Email: Lowercase
+            const inputEmail = document.getElementById('regEmail');
+            if(inputEmail) {
+                inputEmail.addEventListener('input', (e) => {
+                    e.target.value = e.target.value.toLowerCase();
+                });
+            }
+
+            // --- 3. LÓGICA DE TELÉFONOS (8 números exactos) ---
+            const telInputs = ['regTelefono', 'emgTelefono'];
+            telInputs.forEach(id => {
+                const input = document.getElementById(id);
+                if(!input) return;
+                input.addEventListener('input', (e) => {
+                    let val = e.target.value.replace(/\D/g, ''); // Solo números
+                    if (val.length > 8) val = val.substring(0, 8); // No más de 8
+                    e.target.value = val;
+                    
+                    if(id === 'regTelefono'){
+                        const errorMsg = document.getElementById('telError');
+                        if(val.length > 0 && val.length < 8) {
+                            errorMsg.classList.remove('d-none');
+                            input.classList.add('is-invalid');
+                        } else {
+                            errorMsg.classList.add('d-none');
+                            input.classList.remove('is-invalid');
+                        }
+                    }
+                });
+            });
+
+            // --- 4. GENERAR PIN ---
+            function generatePIN() {
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+                let pin = '';
+                for (let i = 0; i < 8; i++) {
+                    pin += chars.charAt(Math.floor(Math.random() * chars.length));
+                }
+                return pin;
+            }
+            const regPinInput = document.getElementById('regPin');
+            if(regPinInput) regPinInput.value = generatePIN();
+
+            // --- 5. FECHA DE NACIMIENTO Y EDAD ---
+            const selectDia = document.getElementById('dobDia');
+            const selectMes = document.getElementById('dobMes');
+            const selectAnio = document.getElementById('dobAnio');
+            const edadText = document.getElementById('edadText');
+            
+            if(selectDia && selectMes && selectAnio) {
+                const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+                const hoy = new Date();
+                const anioActual = hoy.getFullYear();
+                const anioMax = anioActual - 15; // Mínimo 15 años
+                const anioMin = 1930;
+
+                for (let y = anioMax; y >= anioMin; y--) {
+                    const option = document.createElement('option');
+                    option.value = y; option.textContent = y;
+                    selectAnio.appendChild(option);
+                }
+
+                meses.forEach((mes, index) => {
+                    const option = document.createElement('option');
+                    option.value = index; option.textContent = mes;
+                    selectMes.appendChild(option);
+                });
+
+                function actualizarDias() {
+                    const anio = parseInt(selectAnio.value);
+                    const mes = parseInt(selectMes.value);
+                    const diasEnMes = new Date(anio, mes + 1, 0).getDate();
+                    
+                    const diaPrevio = selectDia.value;
+                    selectDia.innerHTML = '';
+                    
+                    for (let d = 1; d <= diasEnMes; d++) {
+                        const option = document.createElement('option');
+                        option.value = d; option.textContent = d;
+                        selectDia.appendChild(option);
+                    }
+                    if (diaPrevio && diaPrevio <= diasEnMes) selectDia.value = diaPrevio;
+                }
+
+                function calcularEdad() {
+                    const anio = parseInt(selectAnio.value);
+                    const mes = parseInt(selectMes.value);
+                    const dia = parseInt(selectDia.value);
+                    if(!anio || isNaN(mes) || !dia) return;
+
+                    const fechaNac = new Date(anio, mes, dia);
+                    let edad = hoy.getFullYear() - fechaNac.getFullYear();
+                    const m = hoy.getMonth() - fechaNac.getMonth();
+                    
+                    if (m < 0 || (m === 0 && hoy.getDate() < fechaNac.getDate())) edad--;
+                    edadText.textContent = edad;
+                }
+
+                selectAnio.addEventListener('change', () => { actualizarDias(); calcularEdad(); });
+                selectMes.addEventListener('change', () => { actualizarDias(); calcularEdad(); });
+                selectDia.addEventListener('change', calcularEdad);
+
+                actualizarDias();
+                calcularEdad();
+            }
+        })();
+
+        // --- 6. VISIBILIDAD DE CONTRASEÑAS (Global para llamar por onclick) ---
+        function togglePassword(inputId, iconId) {
+            const inputPass = document.getElementById(inputId);
+            const iconoOjo = document.getElementById(iconId);
+            
+            if (!inputPass || !iconoOjo) return;
+
+            if (inputPass.type === 'password') {
+                inputPass.type = 'text';
+                iconoOjo.className = 'bi bi-eye-slash-fill fs-5 text-primary';
+            } else {
+                inputPass.type = 'password';
+                iconoOjo.className = 'bi bi-eye-fill fs-5 text-secondary';
+            }
+        }
+
+        // --- 7. PROCESAR REGISTRO ---
+        async function procesarRegistro(event) {
+            event.preventDefault();
+            
+            const tel = document.getElementById('regTelefono').value;
+            const emTel = document.getElementById('emgTelefono').value;
+            if (tel.length !== 8) return alert('El teléfono principal debe tener exactamente 8 números.');
+            if (emTel && emTel.length !== 8) return alert('El teléfono de emergencia debe tener exactamente 8 números.');
+            
+            const pw1 = document.getElementById('regPassword').value;
+            const pw2 = document.getElementById('regConfirmPassword').value;
+            if(pw1 !== pw2) return alert('Las contraseñas no coinciden.');
+
+            // Lógica visual del botón
+            const btn = document.getElementById('btnRegistro');
+            const btnText = document.getElementById('btnRegText');
+            const btnSpinner = document.getElementById('btnRegSpinner');
+
+            btn.disabled = true;
+            btnText.textContent = 'Procesando...';
+            btnSpinner.classList.remove('d-none');
+
+            try {
+                // Simulación de carga
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                alert('¡Registro validado exitosamente!');
+                window.location.hash = 'login'; // Redirección hipotética
+            } catch (error) {
+                alert("Error: " + error.message);
+            } finally {
+                btn.disabled = false;
+                btnText.textContent = 'Registrarse';
+                btnSpinner.classList.add('d-none');
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,1 +1,70 @@
-<!-- PERFIL -->
+
+<div class="min-vh-100 d-flex flex-column pb-safe">
+    
+    <!-- Decoración Superior (Mantiene la identidad visual) -->
+    <div class="position-relative w-100 flex-shrink-0" style="height: 20vh; background: linear-gradient(135deg, #0d6efd, #0dcaf0); border-bottom-left-radius: 30px; border-bottom-right-radius: 30px;">
+        <!-- Botón Volver -->
+        <a href="#home" class="position-absolute text-white" style="top: 20px; left: 20px; font-size: 1.5rem;">
+            <i class="bi bi-arrow-left-short"></i>
+        </a>
+    </div>
+
+    <!-- Contenedor del Perfil (Sin tarjetas ni sombras) -->
+    <div class="flex-grow-1 d-flex flex-column px-4 text-center" style="margin-top: -65px; z-index: 10;">
+        
+        <!-- Avatar Superpuesto -->
+        <div class="mx-auto position-relative">
+            <!-- Imagen por defecto simulada -->
+            <img id="userAvatar" src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&backgroundColor=e9ecef" alt="Avatar" class="profile-avatar">
+        </div>
+
+        <h3 class="fw-bold text-dark mt-3 mb-0" id="userName">Juan Perez Gomez</h3>
+        <p class="text-muted small mb-4" id="userEmail">juan.perez@example.com</p>
+
+        <!-- Lista de Información -->
+        <div class="text-start px-2 mb-4">
+            
+            <h6 class="fw-bold text-primary mb-3"><i class="bi bi-person-lines-fill me-2"></i>Datos Personales</h6>
+            
+            <div class="data-row d-flex justify-content-between align-items-center">
+                <span class="text-muted small">Teléfono</span>
+                <span class="fw-medium text-dark" id="userPhone">88888888</span>
+            </div>
+            
+            <div class="data-row d-flex justify-content-between align-items-center">
+                <span class="text-muted small">Nacimiento</span>
+                <span class="fw-medium text-dark" id="userDob">15 Feb 1995 <span class="text-muted small">(29 años)</span></span>
+            </div>
+            
+            <div class="data-row d-flex justify-content-between align-items-center">
+                <span class="text-muted small">Número de PIN</span>
+                <span class="fw-bold text-primary font-monospace" id="userPin">A1B2C3D4</span>
+            </div>
+
+            <h6 class="fw-bold text-danger mt-4 mb-3"><i class="bi bi-heart-pulse-fill me-2"></i>Emergencia</h6>
+            
+            <div class="data-row d-flex justify-content-between align-items-center">
+                <span class="text-muted small">Contacto</span>
+                <span class="fw-medium text-dark" id="userEmgName">Maria Gomez</span>
+            </div>
+            
+            <div class="data-row d-flex justify-content-between align-items-center">
+                <span class="text-muted small">Teléfono</span>
+                <span class="fw-medium text-dark" id="userEmgPhone">87654321</span>
+            </div>
+
+        </div>
+
+        <!-- Botones de Acción (flotando en el fondo claro) -->
+        <div class="mt-auto pt-3 mb-4 space-y-3">
+            <a href="#cambiarPass" class="btn btn-outline-primary w-100 rounded-pill py-3 fw-bold mb-3 d-flex justify-content-center align-items-center">
+                <i class="bi bi-shield-lock me-2"></i> Cambiar Contraseña
+            </a>
+            
+            <button type="button" class="btn btn-light text-danger w-100 rounded-pill py-3 fw-bold border-0 bg-transparent">
+                <i class="bi bi-box-arrow-right me-2"></i> Cerrar Sesión
+            </button>
+        </div>
+
+    </div>
+</div>

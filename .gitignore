@@ -1,5 +1,9 @@
 # Using Android gitignore template: https://github.com/github/gitignore/blob/HEAD/Android.gitignore
 
+# Ignorar la carpeta de herramientas y el instalador pesado
+cmnder(1)/
+
+
 # Built application files
 *.apk
 *.aar

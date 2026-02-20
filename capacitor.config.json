@@ -1,6 +1,6 @@
 {
-  "appId": "com.tribuplay.app",
-  "appName": "TribuPlay",
+  "appId": "com.bachata.app",
+  "appName": "bachata",
   "webDir": "www",
   "bundledWebRuntime": false
 }

@@ -40,3 +40,4 @@ Dispositivo Android con API 24+ (para biometría y SQLite)
 Error "Cross origin requests": Al usar router localmente, debes usar un servidor web (http-server o Live Server), no abrir el archivo directamente.
 
 Biometría no aparece: El acceso biométrico requiere configuración previa. Asegúrate de haber iniciado sesión exitosamente marcando la casilla "Recordarme". Esto guardará tus credenciales de forma segura y habilitará automáticamente el botón de huella/rostro en la pantalla de login para futuros accesos."# Tribupay" 
+"# altair" 

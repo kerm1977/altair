@@ -13,19 +13,20 @@ http://127.0.0.1:8080
 ESTRUCTURA
 
 
-TRIBUPLAY/
+
+plantilla/
 ├── .gitignore
-├── android/
+├── android/                        <-- Código nativo de Android
 │   ├── .gitignore
 │   ├── .gradle/
 │   ├── .idea/
 │   ├── app/
 │   ├── build/
 │   ├── build.gradle
-│   ├── BuilderGUI.ps1
+│   ├── BuilderGUI.ps1              <-- Script de automatización (PowerShell)
 │   ├── capacitor-cordova-android-plugins/
 │   ├── capacitor.settings.gradle
-│   ├── construir.bat
+│   ├── construir.bat               <-- Script de construcción (Windows Batch)
 │   ├── gradle/
 │   ├── gradle.properties
 │   ├── gradlew
@@ -33,43 +34,29 @@ TRIBUPLAY/
 │   ├── local.properties
 │   ├── settings.gradle
 │   └── variables.gradle
-├── apks/
-├── capacitor.config.json
-├── index.html
-├── node_modules/
+├── apks/                           <-- Carpeta probable para salida de compilación
+├── capacitor.config.json           <-- Configuración principal de Capacitor
+├── node_modules/                   <-- Dependencias de Node.js
 ├── nota.txt
 ├── package-lock.json
-├── package.json
-├── README.
-└── www/
+├── package.json                    <-- Configuración del proyecto NPM
+├── README.md
+└── www/                            <-- Archivos web (HTML/CSS/JS)
     ├── css/
-    │   └── styles.css
-    ├── dashboard.html
-    ├── home.html
-    ├── index.html
-    ├── js/
-    │   ├── app.js
-    │   ├── appR.js
-    │   ├── arranque.js
-    │   ├── biometric.js
-    │   ├── dashboard.js
-    │   ├── db.js
-    │   ├── img.js
-    │   ├── index.js
-    │   ├── invoiceExport.js
-    │   ├── logica.js
-    │   ├── login.js
-    │   ├── payments.js
-    │   ├── payments_calc.js
-    │   ├── payments_export.js
-    │   ├── payments_mgr.js
-    │   ├── payments_render.js
-    │   ├── payments_store.js
-    │   ├── router.js
-    │   ├── ui.js
-    │   ├── users.js
-    │   └── validaciones.js
-    └── users.html
+    │   └── bootstrap.css
+    └── js/                         <-- (Carpeta vacía)
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     NO VOLVER A TOCAR ESTA RUTA Y LA VERSION QUE UTILIZO ES:
@@ -147,7 +134,15 @@ cd ..
 Instala TODO en versión 6 (Núcleo + Android + Plugins): Esto arregla el conflicto de versiones y asegura compatibilidad con Java 17.
 PowerShell
 
+
+
+Instalar cualquiera de estas 2
+
+npm install -D tailwindcss@3 --legacy-peer-deps
 npm install @capacitor/core@6 @capacitor/android@6 @capacitor/ios@6 @capacitor/filesystem@6 @capacitor/share@6 --save-exact --legacy-peer-deps
+
+
+
 
 Sincroniza Capacitor:
 PowerShell
@@ -160,3 +155,30 @@ PowerShell
 cd android
 gradlew clean
 construir.bat
+
+
+
+
+ahora abrir cada carpeta
+node configurar_proyecto.js
+
+1. Nombre de la nueva App (Ej: Altair Pro): xxxxxxx
+2. ID de la App (Ej: com.xxxxxxx.app) [Enter para default]: com.xxxxxxx.app
+3. Breve descripción: xxxxxxx
+
+⏳ Aplicando cambios en archivos locales...
+  [✔] capacitor.config.json -> App: xxxxxxx
+  [✔] api_db.js              -> Encontrado en: www\js\api_db.js
+  [✔] URL actualizada        -> https://kenth1977.pythonanywhere.com/api/xxxxxxx
+  [✔] package.json            -> Nombre: xxxxxxx
+
+======================================================
+✨ ¡CONFIGURACIÓN COMPLETADA!
+� Tu App ahora apunta a la base de datos: xxxxxxx.db
+
+PROXIMOS PASOS:
+1. Visita: https://kenth1977.pythonanywhere.com/api/xxxxxxx/crear_ahora   <-- pegar esto en el navegador para crear la db                                                                            Pythonanywhere
+2. Verifica que el mensaje diga "status: ok"
+3. Abre tu App local con 'npx http-server' y ¡listo!
+======================================================
+

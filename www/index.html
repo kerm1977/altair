@@ -2,431 +2,119 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <!-- FIX CRÍTICO IOS: viewport-fit=cover permite usar toda la pantalla -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>TribuPlay - Pagos</title>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#ffc107">
+    <title>La Tribu</title>
 
-    <!-- Scripts de Capacitor (Necesario para plugins nativos) -->
-    <script src="capacitor.js"></script>
-
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Tailwind (Mantenido para compatibilidad con componentes previos) -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Iconos Phosphor -->
-    <script src="https://unpkg.com/@phosphor-icons/web"></script>
-    <!-- html2canvas para exportar PNG -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
+    <link href="css/bootstrap.css" rel="stylesheet">
+    
     <style>
-        :root {
-            /* CAMBIO: Primary ahora es Naranja (Warning Brand) */
-            --primary: #fd7e14; /* Naranja Bootstrap / Brand */
-            --primary-dark: #e65100; /* Naranja Oscuro */
-            --bg-page: #f8fafc;
-            --text-main: #0f172a;
-            --text-muted: #64748b;
-
-            /* Variables de Safe Area (Muesca/Notch IOS) */
-            --sat: env(safe-area-inset-top);
-            --sab: env(safe-area-inset-bottom);
-            --sal: env(safe-area-inset-left);
-            --sar: env(safe-area-inset-right);
-        }
-
-        body {
-            background-color: var(--bg-page);
-            font-family: -apple-system, system-ui, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            color: var(--text-main);
-            margin: 0;
-            padding: 0;
-            
-            /* Safe Area Padding + Espacio inferior original */
-            padding-top: var(--sat);
-            padding-left: var(--sal);
-            padding-right: var(--sar);
-            padding-bottom: calc(220px + var(--sab)); 
-            
-            -webkit-tap-highlight-color: transparent;
-            overscroll-behavior-y: none;
-        }
-
-        /* Utilidades de Visibilidad */
-        .hidden { display: none !important; }
-        .flex-center { display: flex; align-items: center; justify-content: center; }
-
-        /* Contenedor Principal */
-        .app-container {
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 1.25rem;
-        }
-
-        /* Tarjetas Estilo Premium */
-        .app-card {
-            background: #ffffff;
-            border-radius: 1.5rem;
-            border: 1px solid #e2e8f0;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-        }
-
-        /* Inputs Optimizados para Táctil */
-        .form-label {
-            font-weight: 800;
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin-bottom: 0.4rem;
-        }
-
-        .form-control, .form-select {
-            border-radius: 1rem;
-            padding: 0.85rem 1rem;
-            font-size: 1rem;
-            border: 2px solid #cbd5e1;
-            transition: all 0.2s;
-        }
-
-        .form-control:focus, .form-select:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 4px rgba(253, 126, 20, 0.1); /* Naranja alpha */
-            outline: none;
-        }
-
-        /* Botón Principal */
-        .btn-main {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 1.2rem;
-            border-radius: 1.25rem;
-            font-weight: 800;
-            width: 100%;
-            font-size: 1.15rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.75rem;
-            box-shadow: 0 10px 20px -5px rgba(253, 126, 20, 0.4); /* Sombra Naranja */
-            transition: transform 0.1s active;
-        }
-
-        .btn-main:active { transform: scale(0.96); }
-
-        /* Estilos personalizados para botones outline naranjas */
-        .btn-outline-custom {
-            color: var(--primary);
-            border-color: var(--primary);
-            background: white;
-        }
-        .btn-outline-custom:hover, .btn-outline-custom:active {
-            background-color: #fff7ed; /* Naranja muy claro */
-            color: var(--primary-dark);
-            border-color: var(--primary-dark);
-        }
-
-        /* Barra de Totales Flotante Inferior */
-        .totals-bar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: #0f172a;
-            color: white;
-            padding: 1.5rem;
-            /* Ajuste para Notch inferior en iOS */
-            padding-bottom: calc(1.5rem + var(--sab));
-            border-radius: 2rem 2rem 0 0;
-            z-index: 1000;
-            box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.3);
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        /* Tarjeta de Evento en Lista */
-        .event-item-card {
-            background: #ffffff;
-            border-radius: 1.25rem;
-            border: 1px solid #e2e8f0;
-            padding: 1.25rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-            transition: background 0.2s;
-        }
-        .event-item-card:active { background: #f1f5f9; }
-
-        /* Estilo Caminante */
-        .walker-card {
-            border-left: 8px solid var(--primary) !important;
-            transition: transform 0.2s;
-        }
-        .walker-card:active { transform: scale(0.98); }
-
-        /* Fila de Pago Individual */
-        .payment-item {
-            background: #f1f5f9;
-            border-radius: 1rem;
-            padding: 1rem;
-            margin-bottom: 0.75rem;
-            border: 1px solid #e2e8f0;
-        }
-
-        /* Modales (Confirmación 3 Pasos y Creación) */
-        #modal-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.75);
-            backdrop-filter: blur(8px);
-            z-index: 2000;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 1.5rem;
-        }
-
-        /* MODIFICADO: Scroll interno para el modal */
-        .modal-box {
-            background: white;
-            width: 100%;
-            max-width: 420px;
-            border-radius: 2.25rem;
-            padding: 2.5rem 1.5rem; /* Ajusté padding lateral */
-            text-align: center;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-            
-            /* PROPIEDADES DE SCROLL */
-            max-height: 90vh; /* Altura máxima del 90% de la pantalla */
-            overflow-y: auto; /* Scroll vertical si se pasa */
-            position: relative; /* Para el botón flotante interno */
-        }
-
-        /* Toast (Notificaciones Emergentes) */
-        #toast {
-            position: fixed;
-            top: calc(1.5rem + var(--sat)); /* Ajuste seguro */
-            left: 50%;
-            transform: translateX(-50%) translateY(-20px);
-            background: #0f172a;
-            color: white;
-            padding: 0.85rem 2rem;
-            border-radius: 3rem;
-            font-weight: 700;
-            z-index: 3000;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
-            transition: all 0.3s ease;
-            pointer-events: none;
-            white-space: nowrap;
-            opacity: 0;
-        }
-
-        .fade-in {
-            animation: fadeIn 0.3s ease-out forwards;
-        }
-
+        .pt-safe { padding-top: env(safe-area-inset-top); }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+        .btn-nav:hover, .btn-nav:active { background-color: rgba(0,0,0,0.05); }
+        /* Transición suave opcional para cuando cambia la vista */
+        #app-content { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(15px); }
+            from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Utilidades de Color Indigo (AHORA NARANJA) */
-        .bg-indigo-50 { background-color: #fff7ed; } /* Naranja claro */
-        .text-indigo-600 { color: #fd7e14; }
-        .text-indigo-800 { color: #c2410c; }
-        .border-indigo-100 { border-color: #ffedd5; }
-
-        .cursor-pointer { cursor: pointer; }
-
-        /* Estilo para el menú desplegable de exportar */
-        .dropdown-menu {
-            min-width: 180px;
-            border-radius: 1.25rem;
-            border: none;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-        }
-        
-        /* Contenedor del Router - CORREGIDO: Evita espacio en blanco si está vacío */
-        #router-outlet:not(:empty) { min-height: 100vh; }
-        
-        /* Clases auxiliares para texto naranja */
-        .text-custom-orange { color: #fd7e14 !important; }
-        .border-custom-orange { border-color: #fd7e14 !important; }
-        .btn-custom-orange {
-            background-color: #fd7e14;
-            border-color: #fd7e14;
-            color: white;
-        }
-        .btn-custom-orange:hover, .btn-custom-orange:active {
-            background-color: #e65100;
-            border-color: #e65100;
-            color: white;
         }
     </style>
 </head>
-<body>
+<body class="vh-100 d-flex flex-column overflow-hidden bg-light">
 
-    <!-- PUNTO DE MONTAJE DEL ROUTER (Aquí se cargarán users.html y otras vistas) -->
-    <div id="router-outlet"></div>
-
-    <!-- PANTALLA INICIAL (Por defecto visible, se oculta al navegar) -->
-    <div class="app-container" id="main-app-container">
-        
-        <!-- PANTALLA 1: LISTADO DE EVENTOS GUARDADOS -->
-        <div id="start-view" class="text-center py-5 fade-in">
-            <div class="mb-4 mt-3">
-                <!-- LOGO DE LA TRIBU -->
-                <img src="logo.png" alt="Logo Tribu" class="img-fluid mx-auto" style="height: 95px; width: auto; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));">
-            </div>
-            
-            <h1 class="fw-black mb-3 h2">Pago de La Tribu</h1>
-            <p class="text-muted mb-5 fs-6 px-3">Gestión multievento con exportación profesional.</p>
-            
-            <!-- BOTÓN NUEVO: GESTIÓN DE USUARIOS (INTEGRADO AQUÍ) -->
-            <div class="px-2 mb-4">
-                <button onclick="window.router.navigate('users'); document.getElementById('main-app-container').classList.add('hidden');" class="btn btn-outline-custom w-100 py-3 rounded-4 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2 border-2">
-                    <i class="ph-bold ph-users-three fs-5"></i>
-                    GESTIONAR USUARIOS
-                </button>
-            </div>
-            
-            <div class="d-flex align-items-center justify-content-between mb-3 px-2">
-                <h5 class="fw-bold text-muted small text-uppercase mb-0">Mis Archivos</h5>
-            </div>
-
-            <!-- Contenedor donde se inyectan los eventos desde la DB -->
-            <div id="saved-events-list" class="text-start mb-5">
-                <!-- Dinámico -->
-                <div class="text-center py-4 opacity-50 small">Cargando eventos guardados...</div>
-            </div>
-
-            <div class="px-2">
-                <button onclick="paymentsApp.showNewEventModal()" class="btn-main shadow-lg">
-                    <i class="ph-bold ph-plus-circle"></i>
-                    NUEVA ACTIVIDAD
-                </button>
-
-
-                            
-                <!-- BOTONES DE RESPALDO Y RESTAURACIÓN JSON -->
-                <div class="d-flex gap-2 mt-3">
-                    <button onclick="paymentsApp.exportAllToJSON()" class="btn btn-light w-50 py-3 rounded-4 shadow-sm fw-bold text-muted small">
-                        <i class="ph-bold ph-download-simple me-2"></i>Respaldo JSON
-                    </button>
-                    <button onclick="paymentsApp.triggerImport()" class="btn btn-light w-50 py-3 rounded-4 shadow-sm fw-bold text-muted small">
-                        <i class="ph-bold ph-upload-simple me-2"></i>Restaurar
-                    </button>
-                </div>
-                <input type="file" id="import-file-input" class="hidden" accept=".json" onchange="paymentsApp.importFromJSON(this)">
-            </div>
-                       <!-- BOTÓN REPRODUCTOR DE MÚSICA -->
-            <div class="px-2 mb-3">
-                <button onclick="window.router.navigate('player')" class="btn btn-outline-custom w-100 py-3 rounded-4 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2 border-2">
-                    <i class="ph-bold ph-music-notes-simple fs-5"></i>
-                    MÚSICA DE LA TRIBU
-                </button>
-            </div>
+    <!-- Header Fijo (Agregamos el ID app-header) -->
+    <header id="app-header" class="bg-warning text-dark shadow-sm pt-safe">
+        <div class="d-flex align-items-center justify-content-between px-3 py-3">
+            <h1 class="h5 mb-0 fw-bold">La Tribu de Los Libres</h1>
         </div>
+    </header>
 
-        <!-- PANTALLA 2: EDICIÓN DE EVENTO SELECCIONADO -->
-        <div id="event-form" class="hidden">
-            
-            <!-- TARJETA DE CONFIGURACIÓN (COLAPSABLE) -->
-            <div class="app-card fade-in">
-                <!-- Cabecera con Toggle -->
-                <div class="d-flex justify-content-between align-items-center mb-0 cursor-pointer" onclick="paymentsApp.toggleConfig()">
-                    <div class="d-flex align-items-center">
-                        <button onclick="event.stopPropagation(); paymentsApp.backToMain()" class="btn btn-light rounded-circle me-3 flex-center" style="width: 42px; height: 42px;">
-                            <i class="ph ph-arrow-left fs-5"></i>
-                        </button>
-                        <h2 class="h5 fw-bold mb-0 text-custom-orange">Configuración</h2>
-                    </div>
-                    <div class="d-flex align-items-center gap-2">
-                        <!-- Icono de caret que rotará o cambiará -->
-                        <i id="config-caret" class="ph ph-caret-up fs-4 text-muted"></i>
-                    </div>
-                </div>
+    <!-- ESTE ES EL HUECO DONDE SE CARGARÁN LAS DEMÁS VISTAS -->
+    <main id="app-content" class="flex-grow-1 overflow-auto p-3">
+        <!-- Aquí aparecerá mágicamente home.html, perfil.html, etc. -->
+    </main>
 
-                <!-- Contenido Colapsable -->
-                <div id="config-content" class="mt-4">
-                   <div id="dynamic-fields" class="row g-3 mt-1"></div>
-                </div>
-            </div>
-
-            <!-- CABECERA LISTA DE CAMINANTES (COLAPSABLE) -->
-            <div class="d-flex align-items-center justify-content-between mb-3 px-2 cursor-pointer" onclick="paymentsApp.toggleWalkers()">
-                <div class="d-flex align-items-center gap-2">
-                    <h5 class="fw-bold text-muted small text-uppercase mb-0">Lista de Caminantes</h5>
-                    <i id="walkers-caret" class="ph ph-caret-up text-muted"></i>
-                </div>
-                <span id="walker-count" class="badge bg-white text-custom-orange border border-custom-orange rounded-pill">0 Personas</span>
-            </div>
-
-            <!-- CONTENEDOR COLAPSABLE DE CAMINANTES -->
-            <div id="walkers-content">
-                <div id="walkers-container">
-                    <!-- Tarjetas inyectadas dinámicamente -->
-                </div>
-
-                <!-- Botones de Acción para Caminantes -->
-                <div class="mb-5 px-1 d-flex gap-2">
-                    <button onclick="paymentsApp.showRegisteredUsersModal()" class="btn btn-custom-orange w-50 py-3 rounded-pill fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2" style="font-size: 0.9rem;">
-                        <i class="ph-bold ph-users"></i>
-                        Desde Directorio
-                    </button>
-                    
-                    <button onclick="paymentsApp.addWalker()" class="btn btn-outline-custom w-50 py-3 rounded-pill border-2 fw-bold bg-white shadow-sm d-flex align-items-center justify-content-center gap-2" style="font-size: 0.9rem;">
-                        <i class="ph-bold ph-user-plus"></i>
-                        Nuevo
-                    </button>
-                </div>
-            </div>
-
-         
-
-
+    <!-- Menú Inferior Fijo -->
+    <nav id="app-nav" class="bg-white border-top pb-safe shadow-sm w-100 mt-auto">
+        <div class="d-flex w-100" style="height: 64px;">
+            <a href="#home" class="btn btn-nav text-warning border-0 d-flex flex-column align-items-center justify-content-center flex-fill h-100 rounded-0 text-decoration-none">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="mb-1"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
+                <span class="fw-medium" style="font-size: 10px;">Inicio</span>
+            </a>
+            <a href="#usuarios" class="btn btn-nav text-secondary border-0 d-flex flex-column align-items-center justify-content-center flex-fill h-100 rounded-0 text-decoration-none">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="mb-1"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
+                <span class="fw-medium" style="font-size: 10px;">Usuarios</span>
+            </a>
+            <a href="#perfil" class="btn btn-nav text-secondary border-0 d-flex flex-column align-items-center justify-content-center flex-fill h-100 rounded-0 text-decoration-none">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" class="mb-1"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                <span class="fw-medium" style="font-size: 10px;">Perfil</span>
+            </a>
         </div>
+    </nav>
 
-        <!-- PANTALLA 3: FICHA DE DETALLE INDIVIDUAL -->
-        <div id="walker-detail-view" class="hidden">
-            <!-- Se renderiza el contenido de pagos y conversiones -->
-        </div>
-
-    </div>
-
-    <!-- BARRA DE TOTALES FIJA (PARA VISTA DE EDICIÓN) -->
-    <div id="totals-area" class="totals-bar hidden"></div>
-
-    <!-- OVERLAY PARA MODALES -->
-    <div id="modal-overlay">
-        <div id="modal-content" class="modal-box shadow-lg"></div>
-    </div>
-
-    <!-- NOTIFICACIONES TOAST -->
-    <div id="toast">Notificación</div>
-
-    <!-- SCRIPTS INTEGRALES -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/bootstrap.js"></script>
     
-    <!-- Scripts de la Aplicación -->
-    <script src="js/db.js"></script>
-    <script src="js/validaciones.js"></script>
-    <script src="js/ui.js"></script>
-    <script src="js/biometric.js"></script>
-    <script src="js/router.js"></script>
-    
-    <!-- 
-      FIX: Eliminamos app.js, logica.js y login.js porque contienen 
-      la redirección forzosa al login. Solo dejamos index.js que inicia
-      el módulo de pagos directamente.
-    -->
-    <script src="js/index.js"></script>
-    <script src="js/img.js"></script>
-    
-    <!-- View Controllers -->
-    <script>window.ViewControllers = window.ViewControllers || {};</script>
+    <!-- LÍNEA CORREGIDA: api_db.js debe cargar justo antes de nuestro script mágico -->
+    <script src="js/api_db.js"></script>
 
+    <!-- EL SCRIPT MÁGICO QUE HACE LA HERENCIA -->
+    <script>
+        function togglePassword(inputId) {
+            const input = document.getElementById(inputId);
+            if (input.type === 'password') {
+                input.type = 'text';
+            } else {
+                input.type = 'password';
+            }
+        }
+
+        async function cargarVista() {
+            let vista = window.location.hash.substring(1) || 'home';
+            const contenedor = document.getElementById('app-content');
+            const header = document.getElementById('app-header');
+            const nav = document.getElementById('app-nav');
+
+            if (vista === 'login' || vista === 'registro') {
+                header.classList.add('d-none');
+                nav.classList.remove('d-flex');
+                nav.classList.add('d-none');
+            } else {
+                header.classList.remove('d-none');
+                nav.classList.remove('d-none');
+                nav.classList.add('d-flex');
+            }
+
+            try {
+                contenedor.style.animation = 'none';
+                contenedor.offsetHeight; 
+                contenedor.style.animation = null;
+
+                const respuesta = await fetch(vista + '.html');
+                if (!respuesta.ok) throw new Error('No se encontró el archivo');
+                
+                const html = await respuesta.text();
+                contenedor.innerHTML = html;
+
+                // ==============================================================
+                // ¡LA MAGIA REAL PARA EJECUTAR LOS SCRIPTS!
+                // Al inyectar HTML, el navegador no lee las etiquetas <script>.
+                // Aquí las extraemos y las forzamos a ejecutarse.
+                // ==============================================================
+                const scripts = contenedor.querySelectorAll('script');
+                scripts.forEach(script => {
+                    const nuevoScript = document.createElement('script');
+                    nuevoScript.text = script.innerHTML;
+                    document.body.appendChild(nuevoScript).parentNode.removeChild(nuevoScript);
+                });
+
+            } catch (error) {
+                contenedor.innerHTML = `<h3 class="text-danger mt-4 text-center">Error: ${error.message}</h3>`;
+            }
+        }
+
+        window.addEventListener('hashchange', cargarVista);
+        window.addEventListener('DOMContentLoaded', cargarVista);
+    </script>
 </body>
 </html>

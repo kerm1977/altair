@@ -28,91 +28,63 @@ session_factories = {}
 
 def get_db_session(app_slug):
     """Recupera o crea la conexión a la base de datos de la App específica"""
-    # Limpiamos el slug (solo letras y números)
+    # Limpiamos el slug (solo letras y números) para evitar inyecciones en la ruta
     safe_slug = "".join([c for c in app_slug if c.isalnum()])
     db_path = os.path.join(BASE_DB_PATH, f"{safe_slug}.db")
     
     # Comprobamos si el archivo físico existe antes de intentar conectar
-    db_existe_fisicamente = os.path.exists(db_path)
+    db_exists = os.path.exists(db_path)
     
     if safe_slug not in engines:
-        # Creamos el motor de base de datos SQLite
-        engine = create_engine(f'sqlite:///{db_path}', connect_args={'check_same_thread': False})
+        # Crear engine de SQLAlchemy para esta DB en particular
+        engine = create_engine(f"sqlite:///{db_path}")
         engines[safe_slug] = engine
-        session_factories[safe_slug] = scoped_session(sessionmaker(bind=engine))
+        session_factory = sessionmaker(bind=engine)
+        session_factories[safe_slug] = scoped_session(session_factory)
         
-        # SI EL ARCHIVO NO EXISTÍA, ejecutamos la creación de tablas y datos iniciales
-        if not db_existe_fisicamente:
-            init_db_structure(engine, safe_slug)
+        # Definir metadatos y tablas localmente para esta conexión
+        metadata = MetaData()
         
+        user = Table('user', metadata,
+            Column('id', Integer, primary_key=True),
+            Column('username', String(80), unique=True, nullable=False),
+            Column('email', String(120), unique=True, nullable=False),
+            Column('password', String(128), nullable=False)
+        )
+        
+        member = Table('member', metadata,
+            Column('id', Integer, primary_key=True),
+            Column('nombre', String(100)),
+            Column('apellido1', String(100)),
+            Column('pin', String(20)),
+            Column('puntos_totales', Integer, default=0)
+        )
+        
+        event = Table('event', metadata,
+            Column('id', Integer, primary_key=True),
+            Column('nombre', String(100)),
+            Column('fecha', String(50))
+        )
+        
+        # Crear las tablas si no existen
+        metadata.create_all(engine)
+        
+        # SEED de datos iniciales solo si la DB es nueva
+        if not db_exists:
+            with engine.begin() as conn:
+                try:
+                    # Insertar usuario administrador por defecto (Seed)
+                    hashed_pw = bcrypt.generate_password_hash('admin123').decode('utf-8')
+                    conn.execute(user.insert().values(
+                        username='admin',
+                        email='kenth1977@gmail.com',
+                        password=hashed_pw
+                    ))
+                    print(f"Base de datos {safe_slug}.db creada e inicializada.")
+                except Exception as e:
+                    print(f"Error insertando seed inicial: {e}")
+                    
     return session_factories[safe_slug]()
-
-def init_db_structure(engine, app_slug):
-    """Define las tablas y crea datos iniciales (Administradores y un Miembro de Prueba)"""
-    metadata = MetaData()
-    
-    # Tabla de Usuarios (Administradores)
-    user_table = Table('user', metadata,
-        Column('id', Integer, primary_key=True),
-        Column('email', String(150), unique=True, nullable=False),
-        Column('password', String(200), nullable=False),
-        Column('is_superuser', Boolean, default=False)
-    )
-    
-    # Tabla de Miembros (Ranking)
-    member_table = Table('member', metadata,
-        Column('id', Integer, primary_key=True),
-        Column('nombre', String(100), nullable=False),
-        Column('apellido1', String(100)),
-        Column('pin', String(50), unique=True),
-        Column('puntos_totales', Integer, default=0)
-    )
-    
-    # Tabla de Eventos (Caminatas)
-    event_table = Table('event', metadata,
-        Column('id', Integer, primary_key=True),
-        Column('nombre', String(150), nullable=False),
-        Column('fecha', String(50), nullable=False)
-    )
-    
-    # Crea las tablas físicamente en el archivo .db
-    metadata.create_all(engine)
-    
-    # Datos de los administradores maestros
-    masters = [
-        {"email": "kenth1977@gmail.com", "pass": "CR129x7848n"},
-        {"email": "lthikingcr@gmail.com", "pass": "CR129x7848n"}
-    ]
-    
-    with engine.connect() as conn:
-        # Insertar los administradores
-        for m in masters:
-            hashed_pass = bcrypt.generate_password_hash(m['pass']).decode('utf-8')
-            conn.execute(insert(user_table).values(
-                email=m['email'], 
-                password=hashed_pass, 
-                is_superuser=True
-            ))
-        
-        # Insertar un miembro inicial de prueba con el nombre de la App
-        conn.execute(insert(member_table).values(
-            nombre="Guerrero Inicial", 
-            apellido1=app_slug, 
-            pin="1234", 
-            puntos_totales=100
-        ))
-        
-        # Insertar un evento de prueba
-        conn.execute(insert(event_table).values(
-            nombre=f"Primera Caminata {app_slug}", 
-            fecha="2024-12-01"
-        ))
-        
-        conn.commit()
-
-# ==============================================================================
-# RUTAS DE LA API (UNIVERSALES)
-# ==============================================================================
 
 @app.route('/')
 def index():
@@ -128,45 +100,19 @@ def index():
         "ayuda": "Visita /api/NombreDeTuApp/crear_ahora para generar una nueva base de datos."
     })
 
-@app.route('/api/<app_slug>/ranking', methods=['GET'])
-def api_ranking_movil(app_slug):
-    try:
-        session = get_db_session(app_slug)
-        query = text("SELECT id, nombre, apellido1, pin, puntos_totales FROM member ORDER BY puntos_totales DESC")
-        result = session.execute(query).fetchall()
-        
-        lista = [{
-            "id": r[0], "nombre": r[1], "apellido1": r[2], 
-            "pin": r[3], "puntos_totales": r[4] or 0
-        } for r in result]
-        
-        return jsonify(lista)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/api/<app_slug>/eventos', methods=['GET'])
-def api_eventos(app_slug):
-    try:
-        session = get_db_session(app_slug)
-        query = text("SELECT id, nombre, fecha FROM event")
-        result = session.execute(query).fetchall()
-        lista = [{"id": r[0], "nombre": r[1], "fecha": r[2]} for r in result]
-        return jsonify(lista)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
 @app.route('/api/<app_slug>/crear_ahora')
 def forzar_creacion(app_slug):
     """DISPARADOR: Esta ruta es la que físicamente crea el archivo .db"""
     try:
         get_db_session(app_slug)
         return jsonify({
-            "status": "ok", 
-            "message": f"¡Éxito! La base de datos '{app_slug}.db' ha sido creada y configurada en el servidor.",
-            "proximo_paso": "Ya puedes ver el ranking en /api/" + app_slug + "/ranking"
+            "status": "ok",
+            "mensaje": f"Base de datos para '{app_slug}' lista para usar."
         })
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)})
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    # En PythonAnywhere esto normalmente es ignorado ya que se usa WSGI,
+    # pero es útil si lo corres localmente para pruebas.
+    app.run(debug=True, port=5000)

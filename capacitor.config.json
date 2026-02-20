@@ -1,6 +1,6 @@
 {
-  "appId": "com.bachata.app",
-  "appName": "bachata",
+  "appId": "com.altairV1.app",
+  "appName": "altairV1",
   "webDir": "www",
   "bundledWebRuntime": false
 }

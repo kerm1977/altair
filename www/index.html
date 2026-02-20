@@ -7,10 +7,8 @@
     <meta name="theme-color" content="#ffffff">
     <title>La Tribu</title>
     
-    <!-- 1. Carga de Bootstrap CSS Local -->
-    <link href="css/bootstrap.css" rel="stylesheet">
-    <!-- 2. AGREGAR ESTA LÍNEA: Carga de Bootstrap Icons Global (Fundamental) -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Archivo Central de Estilos (Aquí se cargan Bootstrap y los Iconos) -->
+    <link href="css/main.css" rel="stylesheet">
     
     <style>
         .pt-safe { padding-top: env(safe-area-inset-top); }
@@ -38,6 +36,11 @@
     </style>
 </head>
 <body class="vh-100 d-flex flex-column overflow-hidden bg-light">
+
+    <!-- BOTÓN FLOTANTE GLOBAL DE VOLVER ATRÁS (Z-index extremo para que nada lo tape) -->
+    <button id="btn-back-global" class="btn btn-primary rounded-circle shadow-lg position-fixed d-none align-items-center justify-content-center border-0" style="bottom: calc(90px + env(safe-area-inset-bottom)); left: 20px; z-index: 99999; width: 55px; height: 55px;" onclick="window.history.back()">
+        <i class="bi bi-arrow-left fs-3 text-white" style="margin-top: 2px;"></i>
+    </button>
 
     <!-- Header Superior Dinámico -->
     <header id="app-header" class="bg-white shadow-sm pt-safe d-none transition-all">
@@ -72,15 +75,13 @@
     </nav>
 
     <script src="js/bootstrap.js"></script>
-        <!-- Referencia al archivo JS externo que me pediste separar -->
-   
-
 
     <script>
         const contenedor = document.getElementById('app-content');
         const appNav = document.getElementById('app-nav');
         const appHeader = document.getElementById('app-header');
         const headerTitle = document.getElementById('header-title');
+        const btnBackGlobal = document.getElementById('btn-back-global');
         
         // ==========================================
         // 🔐 SISTEMA DE ESTADO GLOBAL Y AUTENTICACIÓN
@@ -131,9 +132,10 @@
         const rutas = {
             'home':     { titulo: 'Inicio',    mostrarNav: true },
             'usuarios': { titulo: 'La Tribu',  mostrarNav: true },
-            'perfil':   { titulo: 'Mi Perfil', mostrarNav: true, requiereLogin: true }, // Ruta Protegida
+            'perfil':   { titulo: 'Mi Perfil', mostrarNav: true, requiereLogin: true },
             'login':    { titulo: 'Acceso',    mostrarNav: false },
-            'registro': { titulo: 'Registro',  mostrarNav: false }
+            'registro': { titulo: 'Registro',  mostrarNav: false },
+            'cambiarPass': { titulo: 'Seguridad', mostrarNav: false, requiereLogin: true }
         };
 
         async function cargarVista() {
@@ -148,9 +150,22 @@
                 return;
             }
 
-            actualizarUIAuth(); // Asegurar que el botón muestre su estado correcto
+            actualizarUIAuth();
             contenedor.classList.add('fade-out');
 
+            // --- LÓGICA DEL BOTÓN FLOTANTE DE REGRESO ---
+            // Si el hash está vacío o es una de las 3 vistas base, se oculta.
+            const vistasPrincipales = ['home', 'usuarios', 'perfil', ''];
+            if (vistasPrincipales.includes(hash)) {
+                btnBackGlobal.classList.add('d-none');
+                btnBackGlobal.classList.remove('d-flex');
+            } else {
+                // Para login, registro, cambiarPass, etc., SE MUESTRA.
+                btnBackGlobal.classList.remove('d-none');
+                btnBackGlobal.classList.add('d-flex');
+            }
+
+            // --- LÓGICA DE BARRA DE NAVEGACIÓN Y HEADER ---
             if (vistaConfig.mostrarNav) {
                 appNav.classList.remove('d-none');
                 appHeader.classList.remove('d-none');
@@ -165,6 +180,7 @@
                 el.classList.toggle('active', el.dataset.view === hash);
             });
 
+            // Carga dinámica de la vista
             try {
                 let html = '';
                 if (cacheVistas[hash]) {
@@ -180,6 +196,7 @@
                     contenedor.innerHTML = html;
                     contenedor.classList.remove('fade-out');
 
+                    // Re-ejecutar scripts de la sub-vista
                     const scripts = contenedor.querySelectorAll('script');
                     scripts.forEach(script => {
                         const nuevoScript = document.createElement('script');

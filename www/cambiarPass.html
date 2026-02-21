@@ -1,10 +1,9 @@
-
 <div class="min-vh-100 d-flex flex-column pb-safe">
     
     <!-- Decoración Superior (Idéntica al login y registro) -->
     <div class="position-relative w-100 flex-shrink-0" style="height: 25vh; background: linear-gradient(135deg, #0d6efd, #0dcaf0); border-bottom-left-radius: 30px; border-bottom-right-radius: 30px;">
         <a href="#perfil" class="position-absolute text-white" style="top: 20px; left: 20px; font-size: 1.5rem; z-index: 20;">
-            <i class="bi bi-arrow-left-short"></i>
+            <!-- Ya no usamos la flecha aquí porque tenemos el botón flotante global -->
         </a>
         <div class="position-absolute top-50 start-50 translate-middle text-center text-white w-100">
             <!-- Icono de seguridad -->
@@ -18,34 +17,34 @@
         
         <div class="card border-0 shadow-sm rounded-4 flex-grow-1 p-4 mb-4" style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px);">
             
-            <h4 class="fw-bold text-center text-dark mb-4">Actualizar Clave</h4>
-            <p class="text-center text-muted small mb-4">Ingresa tu contraseña actual y la nueva contraseña que deseas establecer.</p>
+            <p class="text-muted text-center mb-4">Ingresa tu contraseña actual y la nueva contraseña para actualizar tu seguridad.</p>
 
-            <form id="form-cambiar-pass">
-                
-                <!-- Input Contraseña Actual -->
-                <div class="form-floating mb-3 position-relative">
-                    <input type="password" class="form-control rounded-3 border-0 bg-light" id="passActual" placeholder="Contraseña Actual" required>
-                    <label for="passActual" class="text-muted"><i class="bi bi-unlock me-2"></i>Contraseña Actual</label>
-                    <button type="button" class="btn position-absolute top-50 end-0 translate-middle-y me-1 border-0 bg-transparent text-secondary" onclick="togglePass('passActual', 'ojoActual')">
+            <form id="form-cambiar-pass" class="d-flex flex-column gap-3">
+
+                <!-- Contraseña Actual -->
+                <div class="form-floating position-relative">
+                    <input type="password" class="form-control rounded-4 bg-light border-0 px-4" id="passActual" placeholder="Contraseña Actual" required>
+                    <label for="passActual" class="text-muted"><i class="bi bi-lock-fill me-2"></i>Contraseña Actual</label>
+                    <!-- Eliminamos el onclick y usamos una clase para el listener -->
+                    <button type="button" class="btn position-absolute top-50 end-0 translate-middle-y me-1 border-0 bg-transparent text-secondary btn-toggle-pass" data-target="passActual" data-icon="ojoActual">
                         <i class="bi bi-eye-fill fs-5" id="ojoActual"></i>
                     </button>
                 </div>
 
-                <!-- Input Nueva Contraseña -->
-                <div class="form-floating mb-3 position-relative mt-4">
-                    <input type="password" class="form-control rounded-3 border-0 bg-light" id="passNueva" placeholder="Nueva Contraseña" required>
-                    <label for="passNueva" class="text-muted"><i class="bi bi-lock me-2"></i>Nueva Contraseña</label>
-                    <button type="button" class="btn position-absolute top-50 end-0 translate-middle-y me-1 border-0 bg-transparent text-secondary" onclick="togglePass('passNueva', 'ojoNueva')">
+                <!-- Nueva Contraseña -->
+                <div class="form-floating position-relative">
+                    <input type="password" class="form-control rounded-4 bg-light border-0 px-4" id="passNueva" placeholder="Nueva Contraseña" required>
+                    <label for="passNueva" class="text-muted"><i class="bi bi-shield-plus me-2"></i>Nueva Contraseña</label>
+                    <button type="button" class="btn position-absolute top-50 end-0 translate-middle-y me-1 border-0 bg-transparent text-secondary btn-toggle-pass" data-target="passNueva" data-icon="ojoNueva">
                         <i class="bi bi-eye-fill fs-5" id="ojoNueva"></i>
                     </button>
                 </div>
 
-                <!-- Input Confirmar Nueva Contraseña -->
-                <div class="form-floating mb-4 position-relative">
-                    <input type="password" class="form-control rounded-3 border-0 bg-light" id="passConfirmar" placeholder="Confirmar Contraseña" required>
+                <!-- Confirmar Contraseña -->
+                <div class="form-floating position-relative mb-2">
+                    <input type="password" class="form-control rounded-4 bg-light border-0 px-4" id="passConfirmar" placeholder="Confirmar Contraseña" required>
                     <label for="passConfirmar" class="text-muted"><i class="bi bi-check-circle me-2"></i>Confirmar Contraseña</label>
-                    <button type="button" class="btn position-absolute top-50 end-0 translate-middle-y me-1 border-0 bg-transparent text-secondary" onclick="togglePass('passConfirmar', 'ojoConfirmar')">
+                    <button type="button" class="btn position-absolute top-50 end-0 translate-middle-y me-1 border-0 bg-transparent text-secondary btn-toggle-pass" data-target="passConfirmar" data-icon="ojoConfirmar">
                         <i class="bi bi-eye-fill fs-5" id="ojoConfirmar"></i>
                     </button>
                 </div>
@@ -68,6 +67,106 @@
     </div>
 </div>
 
-<!-- Scripts integrados en la vista para asegurar que se ejecuten en la SPA -->
+<script>
+    // Función auto-ejecutable para encapsular la lógica y evitar conflictos
+    (function inicializarCambiarPass() {
+        
+        // --- 1. LÓGICA DE MOSTRAR/OCULTAR CONTRASEÑA ---
+        // En lugar de onclick en el HTML, asignamos los eventos dinámicamente
+        const toggleButtons = document.querySelectorAll('.btn-toggle-pass');
+        
+        toggleButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const targetId = this.getAttribute('data-target');
+                const iconId = this.getAttribute('data-icon');
+                
+                const input = document.getElementById(targetId);
+                const icon = document.getElementById(iconId);
+                
+                if (input && icon) {
+                    if (input.type === 'password') {
+                        input.type = 'text';
+                        icon.classList.remove('bi-eye-fill');
+                        icon.classList.add('bi-eye-slash-fill');
+                        this.classList.replace('text-secondary', 'text-primary');
+                    } else {
+                        input.type = 'password';
+                        icon.classList.remove('bi-eye-slash-fill');
+                        icon.classList.add('bi-eye-fill');
+                        this.classList.replace('text-primary', 'text-secondary');
+                    }
+                }
+            });
+        });
 
+        // --- 2. LÓGICA DEL FORMULARIO ---
+        const formCambiarPass = document.getElementById('form-cambiar-pass');
+        
+        if (formCambiarPass) {
+            formCambiarPass.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const alertaError = document.getElementById('alertaPass');
+                const alertaExito = document.getElementById('exitoPass');
+                const btn = document.getElementById('btnActualizarPass');
+                const btnText = document.getElementById('btnPassText');
+                const btnSpinner = document.getElementById('btnPassSpinner');
 
+                // Limpiar alertas previas
+                alertaError.classList.add('d-none');
+                alertaExito.classList.add('d-none');
+
+                const actual = document.getElementById('passActual').value;
+                const nueva = document.getElementById('passNueva').value;
+                const confirmar = document.getElementById('passConfirmar').value;
+
+                // Validación básica
+                if (nueva !== confirmar) {
+                    alertaError.textContent = "Las contraseñas nuevas no coinciden.";
+                    alertaError.classList.remove('d-none');
+                    return;
+                }
+
+                if (nueva.length < 6) {
+                    alertaError.textContent = "La nueva contraseña debe tener al menos 6 caracteres.";
+                    alertaError.classList.remove('d-none');
+                    return;
+                }
+
+                // Estado de carga
+                btn.disabled = true;
+                btnText.textContent = 'Guardando...';
+                btnSpinner.classList.remove('d-none');
+
+                try {
+                    // Simulación de carga (reemplazar con fetch real)
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+                    
+                    const result = { status: 'ok', mensaje: 'Contraseña actualizada.' };
+
+                    if (result.status === 'ok') {
+                        alertaExito.textContent = '¡Contraseña actualizada correctamente!';
+                        alertaExito.classList.remove('d-none');
+                        formCambiarPass.reset();
+
+                        // Redirigir usando SPA
+                        setTimeout(() => {
+                            window.location.hash = 'perfil'; 
+                            if(typeof cargarVista === 'function') cargarVista();
+                        }, 2000);
+                    } else {
+                        throw new Error(result.mensaje || 'Error desconocido.');
+                    }
+
+                } catch (error) {
+                    alertaError.textContent = "Error: " + error.message;
+                    alertaError.classList.remove('d-none');
+                } finally {
+                    btn.disabled = false;
+                    btnText.textContent = 'Guardar Cambios';
+                    btnSpinner.classList.add('d-none');
+                }
+            });
+        }
+    })();
+</script>

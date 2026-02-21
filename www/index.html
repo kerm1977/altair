@@ -37,7 +37,7 @@
 </head>
 <body class="vh-100 d-flex flex-column overflow-hidden bg-light">
 
-    <!-- BOTÓN FLOTANTE GLOBAL DE VOLVER ATRÁS (Z-index extremo para que nada lo tape) -->
+    <!-- BOTÓN FLOTANTE GLOBAL DE VOLVER ATRÁS -->
     <button id="btn-back-global" class="btn btn-primary rounded-circle shadow-lg position-fixed d-none align-items-center justify-content-center border-0" style="bottom: calc(90px + env(safe-area-inset-bottom)); left: 20px; z-index: 99999; width: 55px; height: 55px;" onclick="window.history.back()">
         <i class="bi bi-arrow-left fs-3 text-white" style="margin-top: 2px;"></i>
     </button>
@@ -49,8 +49,8 @@
             <!-- Botones lado derecho -->
             <div class="d-flex align-items-center gap-3">
                 <i class="bi bi-bell text-secondary fs-5" id="btn-notificaciones"></i>
-                <!-- Botón de Salir (Oculto por defecto) -->
-                <i class="bi bi-box-arrow-right text-danger fs-5 d-none" id="btn-logout" onclick="hacerLogout()" style="cursor: pointer;" title="Cerrar Sesión"></i>
+                <!-- Botón de Salir -->
+                <i class="bi bi-box-arrow-right text-danger fs-5 d-none" id="btn-logout" onclick="window.hacerLogout()" style="cursor: pointer;" title="Cerrar Sesión"></i>
             </div>
         </div>
     </header>
@@ -74,6 +74,28 @@
         </a>
     </nav>
 
+    <!-- Modal GLOBAL de Cerrar Sesión (Bootstrap) -->
+    <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+          <div class="modal-header border-0 pb-0">
+            <h5 class="modal-title fw-bold text-danger" id="logoutModalLabel">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>Cerrar Sesión
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body text-center py-4">
+            <p class="fs-5 text-dark mb-0">¿Estás seguro de que deseas cerrar sesión?</p>
+            <p class="text-muted small mt-2">Tendrás que volver a ingresar tus credenciales para acceder a tu perfil.</p>
+          </div>
+          <div class="modal-footer border-0 d-flex flex-nowrap pt-0">
+            <button type="button" class="btn btn-light flex-grow-1 rounded-pill py-2 fw-bold" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" class="btn btn-danger flex-grow-1 rounded-pill py-2 fw-bold" onclick="window.ejecutarLogout()">Sí, salir</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <script src="js/bootstrap.js"></script>
 
     <script>
@@ -95,11 +117,23 @@
         };
 
         window.hacerLogout = function() {
-            if(confirm('¿Deseas cerrar sesión?')) {
+            // Mostramos el modal global en lugar del confirm() nativo
+            const modal = new bootstrap.Modal(document.getElementById('logoutModal'));
+            modal.show();
+        };
+
+        // Función global para ejecutar el cierre de sesión desde el modal
+        window.ejecutarLogout = function() {
+            const modalEl = document.getElementById('logoutModal');
+            const modalInstance = bootstrap.Modal.getInstance(modalEl);
+            if (modalInstance) {
+                modalInstance.hide();
+            }
+            setTimeout(() => {
                 window.setLoginState(false);
                 window.location.hash = 'home';
                 cargarVista(); // Forzar actualización visual
-            }
+            }, 300); 
         };
 
         function actualizarUIAuth() {
@@ -109,19 +143,17 @@
             const btnLogout = document.getElementById('btn-logout');
 
             if (window.isLoggedIn) {
-                // Modo Logueado -> Es Perfil
                 navBtnAuth.href = '#perfil';
                 navBtnAuth.dataset.view = 'perfil';
                 navIconAuth.className = 'bi bi-person-circle';
                 navTextAuth.textContent = 'Perfil';
-                btnLogout.classList.remove('d-none'); // Mostrar botón de salir
+                btnLogout.classList.remove('d-none');
             } else {
-                // Modo Invitado -> Es Ingresar
                 navBtnAuth.href = '#login';
                 navBtnAuth.dataset.view = 'login';
                 navIconAuth.className = 'bi bi-box-arrow-in-right';
                 navTextAuth.textContent = 'Ingresar';
-                btnLogout.classList.add('d-none'); // Ocultar botón de salir
+                btnLogout.classList.add('d-none');
             }
         }
 
@@ -133,7 +165,7 @@
             'home':     { titulo: 'Inicio',    mostrarNav: true },
             'usuarios': { titulo: 'La Tribu',  mostrarNav: true },
             'perfil':   { titulo: 'Mi Perfil', mostrarNav: true, requiereLogin: true },
-            'login':    { titulo: 'Acceso',    mostrarNav: false },
+            'login':    { titulo: 'Iniciar Sesión', mostrarNav: false },
             'registro': { titulo: 'Registro',  mostrarNav: false },
             'cambiarPass': { titulo: 'Seguridad', mostrarNav: false, requiereLogin: true }
         };
@@ -144,7 +176,6 @@
             
             let vistaConfig = rutas[hash] || rutas['login'];
 
-            // 🛡️ Protección de Ruta: Si quiere ir al perfil sin login, lo mandamos a login
             if (vistaConfig.requiereLogin && !window.isLoggedIn) {
                 window.location.hash = 'login';
                 return;
@@ -153,19 +184,15 @@
             actualizarUIAuth();
             contenedor.classList.add('fade-out');
 
-            // --- LÓGICA DEL BOTÓN FLOTANTE DE REGRESO ---
-            // Si el hash está vacío o es una de las 3 vistas base, se oculta.
-            const vistasPrincipales = ['home', 'usuarios', 'perfil', ''];
+            const vistasPrincipales = ['home', 'usuarios', '']; 
             if (vistasPrincipales.includes(hash)) {
                 btnBackGlobal.classList.add('d-none');
                 btnBackGlobal.classList.remove('d-flex');
             } else {
-                // Para login, registro, cambiarPass, etc., SE MUESTRA.
                 btnBackGlobal.classList.remove('d-none');
                 btnBackGlobal.classList.add('d-flex');
             }
 
-            // --- LÓGICA DE BARRA DE NAVEGACIÓN Y HEADER ---
             if (vistaConfig.mostrarNav) {
                 appNav.classList.remove('d-none');
                 appHeader.classList.remove('d-none');
@@ -175,19 +202,17 @@
             }
             headerTitle.textContent = vistaConfig.titulo;
 
-            // Iluminar tab activo
             document.querySelectorAll('.nav-item').forEach(el => {
                 el.classList.toggle('active', el.dataset.view === hash);
             });
 
-            // Carga dinámica de la vista
             try {
                 let html = '';
                 if (cacheVistas[hash]) {
                     html = cacheVistas[hash]; 
                 } else {
                     const respuesta = await fetch(`${hash}.html`);
-                    if (!respuesta.ok) throw new Error(`La vista '${hash}.html' no se encontró.`);
+                    if (!respuesta.ok) throw new Error(`El archivo '${hash}.html' no se encontró.`);
                     html = await respuesta.text();
                     cacheVistas[hash] = html;
                 }
@@ -196,7 +221,6 @@
                     contenedor.innerHTML = html;
                     contenedor.classList.remove('fade-out');
 
-                    // Re-ejecutar scripts de la sub-vista
                     const scripts = contenedor.querySelectorAll('script');
                     scripts.forEach(script => {
                         const nuevoScript = document.createElement('script');

@@ -1,8 +1,6 @@
 <!-- Vista: login.html -->
 <div class="h-100 d-flex flex-column bg-light pb-safe">
 
-    
-    
     <!-- Decoración Superior (Opcional, le da un toque moderno) -->
     <div class="position-relative w-100" style="height: 25vh; background: linear-gradient(135deg, #0d6efd, #0dcaf0); border-bottom-left-radius: 30px; border-bottom-right-radius: 30px;">
         <div class="position-absolute top-50 start-50 translate-middle text-center text-white w-100">
@@ -110,12 +108,28 @@
         btnSpinner.classList.remove('d-none');
 
         try {
-            // Simulando latencia de conexión
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            // NUEVO: Petición REAL al backend usando la variable API_URL
+            const url_api = `${API_URL}/login`;
+            const respuesta = await fetch(url_api, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email, password: password })
+            });
+            
+            const resultado = await respuesta.json();
+            
+            if (!respuesta.ok || resultado.error) {
+                throw new Error(resultado.error || "Error al conectar con el servidor.");
+            }
+
+            // MAGIA: Guardar el usuario REAL que viene de la base de datos en localStorage
+            // Esto asegurará que tu perfil.html cargue correctamente los datos de quien inicie sesión
+            localStorage.setItem('usuarioActual', JSON.stringify(resultado.usuario));
+            
             console.log("Login exitoso. Recordar:", recordarme);
             
             // ==========================================================
-            // MAGIA: Cambiamos el estado global de la app
+            // Cambiamos el estado global de la app
             // ==========================================================
             if (typeof window.setLoginState === 'function') {
                 window.setLoginState(true);
@@ -127,6 +141,7 @@
         } catch (error) {
             alert("Error al iniciar sesión: " + error.message);
         } finally {
+            // Restauramos el botón a su estado original
             btn.disabled = false;
             btnText.textContent = 'Ingresar';
             btnSpinner.classList.add('d-none');

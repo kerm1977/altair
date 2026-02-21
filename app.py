@@ -84,18 +84,50 @@ def get_db_session(app_slug):
         if not db_exists:
             with engine.begin() as conn:
                 try:
-                    # Insertar usuario administrador por defecto (Seed)
-                    hashed_pw = bcrypt.generate_password_hash('admin123').decode('utf-8')
+                    # ========================================================
+                    # SUPERUSUARIO 1: kenth1977
+                    # ========================================================
+                    hashed_pw_1 = bcrypt.generate_password_hash('admin123').decode('utf-8')
+                    # Insertar en tabla user (Auth)
                     conn.execute(user.insert().values(
-                        username='admin',
+                        username='admin_kenth',
                         email='kenth1977@gmail.com',
-                        password=hashed_pw
+                        password=hashed_pw_1
                     ))
-                    print(f"Base de datos {safe_slug}.db creada e inicializada.")
+                    # Insertar perfil en tabla member (Frontend)
+                    conn.execute(member.insert().values(
+                        nombre='Administrador',
+                        apellido1='Kenth',
+                        pin='00000000',
+                        puntos_totales=0
+                    ))
+
+                    # ========================================================
+                    # SUPERUSUARIO 2: lthikingcr
+                    # ========================================================
+                    hashed_pw_2 = bcrypt.generate_password_hash('CR129x7848n').decode('utf-8')
+                    # Insertar en tabla user (Auth)
+                    conn.execute(user.insert().values(
+                        username='admin_lthiking',
+                        email='lthikingcr@gmail.com',
+                        password=hashed_pw_2
+                    ))
+                    # Insertar perfil en tabla member (Frontend)
+                    conn.execute(member.insert().values(
+                        nombre='Administrador',
+                        apellido1='LTHiking',
+                        pin='88888888',
+                        puntos_totales=0
+                    ))
+
+                    print(f"Base de datos {safe_slug}.db creada e inicializada con 2 superusuarios.")
                 except Exception as e:
                     print(f"Error insertando seed inicial: {e}")
                     
     return session_factories[safe_slug]()
+
+
+# --- RUTAS DE LA API ---
 
 @app.route('/')
 def index():
@@ -127,56 +159,143 @@ def forzar_creacion(app_slug):
 def registrar_usuario(app_slug):
     """Endpoint para registrar un nuevo usuario manejando CORS preflight"""
     
-    # 1. Manejar la solicitud CORS preflight (OPTIONS) enviada por el navegador
     if request.method == 'OPTIONS':
         return jsonify({"status": "ok"}), 200
 
-    # 2. Manejar el POST real con los datos de registro
     session = None
     try:
         data = request.json
         print(f"[*] Intento de registro en DB '{app_slug}' | Email: {data.get('email')}")
         
         session = get_db_session(app_slug)
-        
-        # Encriptar la contraseña recibida
         hashed_pw = bcrypt.generate_password_hash(data['password']).decode('utf-8')
-        
-        # PREVENCIÓN DE BUG: La columna 'username' es UNIQUE. 
-        # Si dos usuarios se llaman "Juan", la BD dará error. 
-        # Usamos el email como username interno para autenticación garantizando que no se repita.
         username_interno = data['email']
         
-        # Insertar en la tabla user (datos de autenticación)
         session.execute(
             text("INSERT INTO user (username, email, password) VALUES (:u, :e, :p)"),
             {"u": username_interno, "e": data['email'], "p": hashed_pw}
         )
         
-        # Insertar en la tabla member (datos del perfil/tribu)
         session.execute(
             text("INSERT INTO member (nombre, apellido1, pin, puntos_totales) VALUES (:n, :a, :pin, 0)"),
             {"n": data['nombre'], "a": data['apellido1'], "pin": data['pin']}
         )
         
-        # Guardar los cambios en la base de datos
         session.commit()
         print(f"[+] Registro exitoso en '{app_slug}' para {data.get('email')}")
         return jsonify({"status": "ok", "mensaje": "Usuario registrado exitosamente en la nube."})
         
     except Exception as e:
-        # Revertir cambios en caso de error (ej. email o usuario duplicado)
         if session:
             session.rollback()
         print(f"[-] Error en registro '{app_slug}': {e}")
         return jsonify({"error": str(e)}), 400
         
     finally:
-        # Cerrar la sesión de conexión
         if session:
             session.close()
 
+@app.route('/api/<app_slug>/login', methods=['POST', 'OPTIONS'])
+def login_usuario(app_slug):
+    """Endpoint real para iniciar sesión y recuperar datos"""
+    if request.method == 'OPTIONS':
+        return jsonify({"status": "ok"}), 200
+        
+    session = None
+    try:
+        data = request.json
+        session = get_db_session(app_slug)
+        
+        # 1. Buscar el usuario por email en tabla 'user'
+        user_record = session.execute(
+            text("SELECT * FROM user WHERE email = :e"), 
+            {"e": data['email']}
+        ).mappings().fetchone()
+        
+        if not user_record:
+            return jsonify({"error": "Credenciales incorrectas (Usuario no encontrado)"}), 401
+            
+        # 2. Verificar contraseña cifrada
+        if not bcrypt.check_password_hash(user_record['password'], data['password']):
+            return jsonify({"error": "Credenciales incorrectas (Contraseña inválida)"}), 401
+            
+        # 3. Obtener los datos del perfil en la tabla 'member'
+        member_record = session.execute(
+            text("SELECT * FROM member WHERE id = :id"),
+            {"id": user_record['id']}
+        ).mappings().fetchone()
+        
+        if not member_record:
+            return jsonify({"error": "Perfil de usuario incompleto"}), 404
+            
+        # 4. Empaquetar los datos para el frontend
+        usuario_data = {
+            "nombre": f"{member_record['nombre']} {member_record['apellido1']}",
+            "email": user_record['email'],
+            "pin": member_record['pin'],
+            "puntos": member_record['puntos_totales']
+        }
+        
+        return jsonify({"status": "ok", "usuario": usuario_data})
+        
+    except Exception as e:
+        print(f"[-] Error en login '{app_slug}': {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if session:
+            session.close()
+
+@app.route('/api/<app_slug>/editar_perfil', methods=['POST', 'OPTIONS'])
+def editar_perfil(app_slug):
+    """Endpoint real para actualizar datos del perfil"""
+    if request.method == 'OPTIONS':
+        return jsonify({"status": "ok"}), 200
+
+    session = None
+    try:
+        data = request.json
+        session = get_db_session(app_slug)
+        
+        # 1. Buscamos la ID del usuario usando su correo (que es único)
+        user_record = session.execute(
+            text("SELECT id FROM user WHERE email = :e"), 
+            {"e": data['email']}
+        ).mappings().fetchone()
+        
+        if not user_record:
+            return jsonify({"error": "Usuario no encontrado"}), 404
+            
+        user_id = user_record['id']
+        
+        # 2. Actualizamos la tabla 'member' en la nube
+        # Concatenamos los dos apellidos para que calcen en la columna apellido1 de tu BD actual
+        apellidos_completos = data.get('apellido1', '') + " " + data.get('apellido2', '')
+        
+        session.execute(
+            text("""
+                UPDATE member 
+                SET nombre = :n, apellido1 = :a, pin = :pin 
+                WHERE id = :id
+            """),
+            {
+                "n": data['nombre'], 
+                "a": apellidos_completos.strip(), 
+                "pin": data['pin'], 
+                "id": user_id
+            }
+        )
+        
+        session.commit()
+        return jsonify({"status": "ok", "mensaje": "Perfil actualizado en la nube"})
+        
+    except Exception as e:
+        if session:
+            session.rollback()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if session:
+            session.close()
+
+
 if __name__ == '__main__':
-    # En PythonAnywhere esto normalmente es ignorado ya que se usa WSGI,
-    # pero es útil si lo corres localmente para pruebas.
     app.run(debug=True, port=5000)

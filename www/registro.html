@@ -147,7 +147,7 @@
                     <label for="emgTelefono" class="text-muted"><i class="bi bi-telephone-plus me-2"></i>Teléfono Emergencia</label>
                 </div>
 
-                <!-- Botón de Envío (Idéntico al login.html) -->
+                <!-- Botón de Envío -->
                 <button type="submit" class="btn btn-primary w-100 rounded-pill py-3 fw-bold shadow-sm d-flex justify-content-center align-items-center" id="btnRegistro">
                     <span id="btnRegText">Registrarse</span>
                     <div class="spinner-border spinner-border-sm text-white ms-2 d-none" role="status" id="btnRegSpinner">
@@ -189,15 +189,15 @@
                 if (file) {
                     const reader = new FileReader();
                     reader.onload = (event) => {
-                        // 1. Mostrar la imagen y ocultar el icono de placeholder
+                        // Mostrar la imagen y ocultar el icono de placeholder
                         avatarPreview.src = event.target.result;
                         avatarPreview.classList.remove('d-none');
                         avatarPlaceholder.classList.add('d-none');
                         
-                        // 2. Mostrar controles de edición
+                        // Mostrar controles de edición
                         avatarControls.classList.remove('d-none');
                         
-                        // 3. Quitar el borde punteado para que parezca un avatar real
+                        // Quitar el borde punteado para que parezca un avatar real
                         avatarContainer.style.border = '4px solid #ffffff';
                         
                         // Reset controles a por defecto
@@ -360,7 +360,7 @@
         }
     })();
 
-    // --- 6. VISIBILIDAD DE CONTRASEÑAS (Global para llamar por onclick) ---
+    // --- 6. VISIBILIDAD DE CONTRASEÑAS ---
     function togglePassword(inputId, iconId) {
         const inputPass = document.getElementById(inputId);
         const iconoOjo = document.getElementById(iconId);
@@ -399,10 +399,60 @@
         btnSpinner.classList.remove('d-none');
 
         try {
-            // Simulación de carga
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            alert('¡Registro validado exitosamente!');
-            window.location.hash = 'login'; // Redirección hipotética
+            // Recolección de datos
+            const nombre = document.getElementById('regNombre').value;
+            const apellido1 = document.getElementById('regApellido1').value;
+            const apellido2 = document.getElementById('regApellido2').value;
+            const email = document.getElementById('regEmail').value;
+            const pin = document.getElementById('regPin').value;
+            const avatarBase64 = document.getElementById('avatarPreview').src;
+
+            const payload = {
+                nombre: nombre.trim(),
+                apellido1: apellido1.trim(),
+                email: email,
+                password: pw1,
+                pin: pin
+            };
+
+            // SE UTILIZA LA URL DINÁMICA DE LA BD DESDE EL CANVAS api_db.js
+            const url_api = `${API_URL}/registro`; 
+            
+            // Petición al servidor (con CORS explícito)
+            const respuesta = await fetch(url_api, {
+                method: 'POST',
+                mode: 'cors', // Asegura el manejo correcto de políticas cruzadas
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const resultado = await respuesta.json();
+
+            if (!respuesta.ok || resultado.error) {
+                throw new Error(resultado.error || "Error al registrar en el servidor. Verifica los datos o si el correo ya existe.");
+            }
+
+            // Guardado en almacenamiento local para funcionamiento offline / persistencia de perfil
+            const nombreCompleto = nombre.trim() + ' ' + apellido1.trim() + ' ' + apellido2.trim();
+            
+            const nuevoUsuarioLocal = {
+                nombre: nombreCompleto,
+                email: email,
+                telefono: tel,
+                pin: pin,
+                emgNombre: document.getElementById('emgNombre').value || 'No registrado',
+                emgTelefono: emTel || 'No registrado',
+                avatar: avatarBase64 && avatarBase64.startsWith('data:image') ? avatarBase64 : '' 
+            };
+
+            localStorage.setItem('usuarioRegistrado', JSON.stringify(nuevoUsuarioLocal));
+
+            alert('Registro completado exitosamente.');
+            window.location.hash = 'login'; 
+            
         } catch (error) {
             alert("Error: " + error.message);
         } finally {

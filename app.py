@@ -8,6 +8,7 @@ from sqlalchemy import create_engine, Column, Integer, String, Boolean, MetaData
 from sqlalchemy.orm import sessionmaker, scoped_session
 
 app = Flask(__name__)
+# Habilitar CORS para todas las rutas
 CORS(app)
 bcrypt = Bcrypt(app)
 
@@ -69,6 +70,16 @@ def get_db_session(app_slug):
         # Crear las tablas si no existen
         metadata.create_all(engine)
         
+        # -- MIGRACIÓN AUTOMÁTICA (Auto-Patch) --
+        # Previene el error: "table user has no column named username"
+        # Si la BD ya existe, intentamos inyectar la columna que falta.
+        if db_exists:
+            with engine.begin() as conn:
+                try:
+                    conn.execute(text("ALTER TABLE user ADD COLUMN username VARCHAR(80)"))
+                except Exception:
+                    pass # Si falla, significa que la columna ya existe, lo cual está bien.
+        
         # SEED de datos iniciales solo si la DB es nueva
         if not db_exists:
             with engine.begin() as conn:
@@ -111,6 +122,59 @@ def forzar_creacion(app_slug):
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route('/api/<app_slug>/registro', methods=['POST', 'OPTIONS'])
+def registrar_usuario(app_slug):
+    """Endpoint para registrar un nuevo usuario manejando CORS preflight"""
+    
+    # 1. Manejar la solicitud CORS preflight (OPTIONS) enviada por el navegador
+    if request.method == 'OPTIONS':
+        return jsonify({"status": "ok"}), 200
+
+    # 2. Manejar el POST real con los datos de registro
+    session = None
+    try:
+        data = request.json
+        print(f"[*] Intento de registro en DB '{app_slug}' | Email: {data.get('email')}")
+        
+        session = get_db_session(app_slug)
+        
+        # Encriptar la contraseña recibida
+        hashed_pw = bcrypt.generate_password_hash(data['password']).decode('utf-8')
+        
+        # PREVENCIÓN DE BUG: La columna 'username' es UNIQUE. 
+        # Si dos usuarios se llaman "Juan", la BD dará error. 
+        # Usamos el email como username interno para autenticación garantizando que no se repita.
+        username_interno = data['email']
+        
+        # Insertar en la tabla user (datos de autenticación)
+        session.execute(
+            text("INSERT INTO user (username, email, password) VALUES (:u, :e, :p)"),
+            {"u": username_interno, "e": data['email'], "p": hashed_pw}
+        )
+        
+        # Insertar en la tabla member (datos del perfil/tribu)
+        session.execute(
+            text("INSERT INTO member (nombre, apellido1, pin, puntos_totales) VALUES (:n, :a, :pin, 0)"),
+            {"n": data['nombre'], "a": data['apellido1'], "pin": data['pin']}
+        )
+        
+        # Guardar los cambios en la base de datos
+        session.commit()
+        print(f"[+] Registro exitoso en '{app_slug}' para {data.get('email')}")
+        return jsonify({"status": "ok", "mensaje": "Usuario registrado exitosamente en la nube."})
+        
+    except Exception as e:
+        # Revertir cambios en caso de error (ej. email o usuario duplicado)
+        if session:
+            session.rollback()
+        print(f"[-] Error en registro '{app_slug}': {e}")
+        return jsonify({"error": str(e)}), 400
+        
+    finally:
+        # Cerrar la sesión de conexión
+        if session:
+            session.close()
 
 if __name__ == '__main__':
     # En PythonAnywhere esto normalmente es ignorado ya que se usa WSGI,

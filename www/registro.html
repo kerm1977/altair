@@ -1,11 +1,5 @@
-
 <!-- Usamos min-vh-100 para permitir que el contenido largo empuje hacia abajo correctamente -->
 <div class="min-vh-100 d-flex flex-column pb-safe">
-
-    <!-- BOTÓN FLOTANTE GLOBAL DE VOLVER ATRÁS -->
-    <button id="btn-back-global" class="btn btn-light rounded-circle shadow-lg position-fixed d-none align-items-center justify-content-center border-0" style="bottom: calc(env(safe-area-inset-bottom) + 80px); left: 20px; z-index: 9999; width: 55px; height: 55px;" onclick="window.history.back()">
-        <i class="bi bi-arrow-left fs-3 text-primary"></i>
-    </button>
     
     <!-- Decoración Superior (Idéntica al login.html y flex-shrink-0 para que no se deforme) -->
     <div class="position-relative w-100 flex-shrink-0" style="height: 25vh; background: linear-gradient(135deg, #0d6efd, #0dcaf0); border-bottom-left-radius: 30px; border-bottom-right-radius: 30px;">
@@ -27,11 +21,28 @@
                 
                 <!-- 1. SUBIR IMAGEN DE PERFIL Y EDITOR -->
                 <div class="mb-4 text-center">
-                    <label class="text-muted small mb-2 fw-medium">Foto de Perfil</label>
-                    <div class="avatar-box mx-auto position-relative" onclick="document.getElementById('avatarInput').click()">
-                        <i id="avatarPlaceholder" class="bi bi-camera-fill text-secondary" style="font-size: 2.5rem;"></i>
-                        <img id="avatarPreview" class="avatar-preview" src="" alt="Avatar">
+                    <label class="text-muted small mb-3 fw-medium">Foto de Perfil</label>
+                    
+                    <!-- AVATAR EDITABLE -->
+                    <div class="position-relative mx-auto rounded-circle shadow-sm bg-light d-flex align-items-center justify-content-center" 
+                         style="width: 120px; height: 120px; border: 2px dashed #adb5bd; overflow: hidden; cursor: pointer;"
+                         onclick="document.getElementById('avatarInput').click()"
+                         id="avatarContainer">
+                        
+                        <!-- Placeholder inicial (Icono) -->
+                        <i id="avatarPlaceholder" class="bi bi-person-bounding-box text-secondary" style="font-size: 3rem;"></i>
+                        
+                        <!-- Imagen real (Oculta hasta que se seleccione archivo) -->
+                        <img id="avatarPreview" src="" alt="Avatar" class="d-none"
+                             style="width: 100%; height: 100%; object-fit: cover; transition: transform 0.1s ease-out; transform-origin: center;">
+                        
+                        <!-- Indicador visual de cámara superpuesto -->
+                        <div class="position-absolute w-100" style="bottom: 0; background: rgba(0,0,0,0.5); padding: 4px 0;">
+                            <i class="bi bi-camera-fill text-white small"></i>
+                        </div>
                     </div>
+                    
+                    <!-- Input oculto para subir archivo -->
                     <input type="file" id="avatarInput" accept="image/*" class="d-none">
                     
                     <!-- Controles de Edición de Imagen -->
@@ -170,6 +181,7 @@
         const avatarControls = document.getElementById('avatarControls');
         const zoomRange = document.getElementById('zoomRange');
         const xRange = document.getElementById('xRange');
+        const avatarContainer = document.getElementById('avatarContainer');
 
         if(avatarInput) {
             avatarInput.addEventListener('change', (e) => {
@@ -177,11 +189,18 @@
                 if (file) {
                     const reader = new FileReader();
                     reader.onload = (event) => {
+                        // 1. Mostrar la imagen y ocultar el icono de placeholder
                         avatarPreview.src = event.target.result;
-                        avatarPreview.style.display = 'block';
-                        avatarPlaceholder.style.display = 'none';
+                        avatarPreview.classList.remove('d-none');
+                        avatarPlaceholder.classList.add('d-none');
+                        
+                        // 2. Mostrar controles de edición
                         avatarControls.classList.remove('d-none');
-                        // Reset controles
+                        
+                        // 3. Quitar el borde punteado para que parezca un avatar real
+                        avatarContainer.style.border = '4px solid #ffffff';
+                        
+                        // Reset controles a por defecto
                         zoomRange.value = 1;
                         xRange.value = 0;
                         updateAvatarTransform();

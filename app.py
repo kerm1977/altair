@@ -1,6 +1,6 @@
 import os
 import logging
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, make_response
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
@@ -363,7 +363,11 @@ def obtener_contactos(app_slug, mi_pin):
 @app.route('/descargas_ota/<path:filename>')
 def descargar_ota(filename):
     """Sirve los archivos ZIP de actualización desde la carpeta protegida"""
-    return send_from_directory(BASE_UPDATE_PATH, filename)
+    response = make_response(send_from_directory(BASE_UPDATE_PATH, filename))
+    # CRÍTICO: Forzar cabeceras CORS para evitar bloqueos del plugin CapacitorUpdater en el móvil
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    response.headers['Access-Control-Allow-Methods'] = 'GET, OPTIONS'
+    return response
 
 # ==============================================================================
 # NUEVO: RUTA PARA ACTUALIZACIONES OTA (Over-The-Air)
@@ -375,11 +379,29 @@ def check_update(app_slug):
         return jsonify({"status": "ok"}), 200
 
     try:
-        # Apuntamos la URL al nuevo 'puente' que acabamos de crear arriba
-        # IMPORTANTE: Cambia este número de versión cada vez que subas un ZIP nuevo
+        zip_path = os.path.join(BASE_UPDATE_PATH, 'www.zip')
+        
+        # 1. Autogeneramos un "timestamp" leyendo la fecha real en la que subiste el archivo www.zip
+        # Si el archivo no existe en el servidor todavía, mandamos "0" como fallback.
+        file_timestamp = "0"
+        if os.path.exists(zip_path):
+            file_timestamp = str(int(os.path.getmtime(zip_path)))
+
+        # 2. Puedes llenar este arreglo manualmente o dejarlo genérico. 
+        # Esto se mostrará en el modal que acabamos de arreglar en update.js.
+        archivos_modificados = [
+            "Optimizaciones en la interfaz gráfica",
+            "Mejoras de rendimiento y seguridad",
+            "Nuevas funciones activadas"
+        ]
+
+        # 3. Empaquetamos todo con el status "ok" requerido por el frontend
         update_data = {
+            "status": "ok",
             "version": "2.0.0", 
-            "url": f"https://kenth1977.pythonanywhere.com/descargas_ota/{app_slug}_v2.zip"
+            "timestamp": file_timestamp,
+            "archivos": archivos_modificados,
+            "url": "https://kenth1977.pythonanywhere.com/descargas_ota/www.zip"
         }
         
         return jsonify(update_data), 200

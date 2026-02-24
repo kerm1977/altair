@@ -1,7 +1,6 @@
 const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
-const { execSync } = require('child_process'); // <-- NUEVO: Para ejecutar npm automáticamente
 
 // Configuración de la interfaz de terminal
 const rl = readline.createInterface({
@@ -106,18 +105,6 @@ function finalizarConfiguracion(appName, appSlug, appId, iconPath) {
             console.log(`  [✔] package.json            -> Nombre: ${pkg.name}`);
         }
     } catch (e) {}
-
-    // =============================================================
-    // MAGIA NUEVA: DOWNGRADE AUTOMÁTICO DE CAPACITOR UPDATER
-    // =============================================================
-    try {
-        console.log("\n⏳ Instalando la versión correcta del plugin OTA para evitar errores Java...");
-        // Esto obligará a tu PC a descargar los archivos correctos a "node_modules"
-        execSync('npm install @capgo/capacitor-updater@6.4.0', { stdio: 'inherit' });
-        console.log(`  [✔] Plugin instalado correctamente. El error de compilación ha sido neutralizado.`);
-    } catch (error) {
-        console.error("  [!] Hubo un detalle descargando el plugin, revisa tu conexión a internet.");
-    }
 
     // =============================================================
     // CREAR ARCHIVO DE ENLACE PARA CONSTRUIR.BAT

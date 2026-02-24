@@ -1,6 +1,6 @@
 {
-  "appId": "com.altair.app",
-  "appName": "Altair",
+  "appId": "com.dudu.app",
+  "appName": "dudu",
   "webDir": "www",
   "bundledWebRuntime": false
 }

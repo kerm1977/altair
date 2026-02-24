@@ -1,0 +1,99 @@
+<!-- Vista: chat.html -->
+<!-- Este archivo contiene únicamente la estructura visual del modal -->
+<div class="modal fade" id="modalChat" tabindex="-1" aria-hidden="true">
+    <style>
+        /* Alturas optimizadas para la navegación interna */
+        #chat-contacts { height: calc(65vh - 50px); overflow-y: auto; background-color: #fff; }
+        #chat-window { height: 55vh; overflow-y: auto; background-color: #f0f2f5; }
+        .btn-adjunto-active { background-color: #d1e7dd !important; color: #0f5132 !important; border-color: #badbcc !important; }
+        
+        /* Ajuste para el dropdown de opciones dentro del modal */
+        .dropdown-menu { z-index: 1060; }
+    </style>
+    
+    <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
+        <div class="modal-content rounded-t-4 border-0 shadow-lg">
+            
+            <!-- Cabecera del Modal -->
+            <div class="modal-header bg-primary text-white border-0 py-3">
+                <div class="d-flex align-items-center w-100">
+                    <!-- Botón Volver (Se muestra al entrar a un chat privado) -->
+                    <button class="btn btn-sm text-white border-0 me-2 d-none" id="btn-chat-volver" onclick="window.volverAContactos()">
+                        <i class="bi bi-arrow-left fs-4"></i>
+                    </button>
+
+                    <div class="bg-white bg-opacity-25 rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;">
+                        <i class="bi bi-chat-fill"></i>
+                    </div>
+                    
+                    <h5 class="modal-title fw-bold mb-0 text-truncate flex-grow-1" id="chat-title" style="max-width: 60vw;">Mensajes</h5>
+
+                    <!-- MENÚ DE OPCIONES (Tres puntitos) -->
+                    <div class="dropdown d-none" id="chat-options-btn">
+                        <button class="btn text-white border-0 p-0 me-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-three-dots-vertical fs-5"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end border-0 shadow-sm rounded-3">
+                            <li><a class="dropdown-item py-2 text-primary" href="#" onclick="window.exportarTXT()"><i class="bi bi-download me-2"></i> Exportar a TXT</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item py-2 text-danger fw-bold" href="#" onclick="window.limpiarChat()"><i class="bi bi-trash3-fill me-2"></i> Vaciar Chat</a></li>
+                        </ul>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            
+            <div class="modal-body p-0 position-relative">
+
+                <!-- PANTALLA 1: LISTA DE CONTACTOS -->
+                <div id="vista-contactos" class="d-block">
+                    <!-- Buscador en Vivo -->
+                    <div class="p-2 bg-light border-bottom shadow-sm">
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0 rounded-start-pill text-muted"><i class="bi bi-search"></i></span>
+                            <input type="text" id="buscador-input" class="form-control border-start-0 rounded-end-pill shadow-none" placeholder="Buscar compañero..." onkeyup="window.filtrarBuscador()">
+                        </div>
+                    </div>
+
+                    <!-- Contenedor de la lista de compañeros -->
+                    <div id="chat-contacts" class="list-group list-group-flush">
+                        <div class="text-center py-5 text-muted small">
+                            Cargando compañeros... <br>
+                            <div class="spinner-border spinner-border-sm mt-2 text-primary"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PANTALLA 2: CHAT PRIVADO -->
+                <div id="vista-chat" class="d-none flex-column h-100">
+                    <!-- Ventana de mensajes -->
+                    <div id="chat-window" class="p-3 d-flex flex-column flex-grow-1">
+                        <!-- Aquí inyecta chat.js los mensajes -->
+                    </div>
+                    
+                    <!-- Barra de entrada de texto y adjuntos -->
+                    <div class="p-3 border-top bg-white">
+                        <div class="input-group gap-2">
+                            <!-- Input de archivo oculto -->
+                            <input type="file" id="chat-file" class="d-none" onchange="window.actualizarEstadoAdjunto(this)">
+                            
+                            <!-- Etiqueta que actúa como botón de clip -->
+                            <label for="chat-file" id="label-adjunto" class="btn btn-light border-0 rounded-circle d-flex align-items-center justify-content-center m-0" style="width: 45px; height: 45px; cursor: pointer; transition: all 0.3s;">
+                                <i class="bi bi-paperclip fs-5"></i>
+                            </label>
+                            
+                            <!-- Campo de texto -->
+                            <input type="text" id="chat-msg-input" class="form-control rounded-pill border-0 bg-light px-3" placeholder="Escribe un mensaje...">
+                            
+                            <!-- Botón de envío -->
+                            <button class="btn btn-primary rounded-circle shadow-sm d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;" onclick="window.enviarAccionChat()">
+                                <i class="bi bi-send-fill"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>

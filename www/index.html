@@ -97,11 +97,6 @@
         #btn-chat-flotante:active {
             transform: scale(0.9);
         }
-
-        /* ESTILOS DEL MODAL DE CHAT INCRUSTADO */
-        #chat-contacts { height: 65vh; overflow-y: auto; background-color: #fff; }
-        #chat-window { height: 55vh; overflow-y: auto; background-color: #f0f2f5; }
-        .btn-adjunto-active { background-color: #d1e7dd !important; color: #0f5132 !important; border-color: #badbcc !important; }
     </style>
 </head>
 <body class="bg-light m-0 p-0 overflow-hidden vh-100 d-flex flex-column">
@@ -124,8 +119,12 @@
     </button>
 
     <!-- Botón Flotante para el Chat -->
-    <button id="btn-chat-flotante" class="btn btn-warning rounded-circle hidden-forced" onclick="abrirModalChat()">
+    <button id="btn-chat-flotante" class="btn btn-warning rounded-circle hidden-forced" onclick="window.abrirModalChat()">
         <i class="bi bi-chat-dots-fill text-dark" style="font-size: 1.8rem;"></i>
+        <!-- Globo de notificación (Punto rojo) -->
+        <span id="chat-badge" class="position-absolute top-0 start-100 translate-middle p-2 bg-danger border border-light rounded-circle d-none">
+            <span class="visually-hidden">Nuevos mensajes</span>
+        </span>
     </button>
 
     <!-- Contenedor Principal Dinámico (SPA) -->
@@ -192,78 +191,6 @@
             </div>
         </div>
     </div>
-
-    <!-- ================================================================= -->
-    <!-- MODAL DE CHAT INCRUSTADO (1 A 1 CON CONTACTOS) -->
-    <!-- ================================================================= -->
-    <div class="modal fade" id="modalChat" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
-            <div class="modal-content rounded-t-4 border-0 shadow-lg">
-                
-                <!-- Cabecera del Modal -->
-                <div class="modal-header bg-primary text-white border-0 py-3">
-                    <div class="d-flex align-items-center w-100">
-                        <!-- Botón Volver (Solo visible dentro de un Chat Privado) -->
-                        <button class="btn btn-sm text-white border-0 me-2 d-none" id="btn-chat-volver" onclick="window.volverAContactos()">
-                            <i class="bi bi-arrow-left fs-4"></i>
-                        </button>
-
-                        <div class="bg-white bg-opacity-25 rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;">
-                            <i class="bi bi-chat-fill"></i>
-                        </div>
-                        <h5 class="modal-title fw-bold mb-0 text-truncate" id="chat-title" style="max-width: 60vw;">Mensajes</h5>
-                    </div>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                
-                <div class="modal-body p-0 position-relative">
-
-                    <!-- PANTALLA 1: LISTA DE CONTACTOS -->
-                    <div id="vista-contactos" class="d-block">
-                        <div id="chat-contacts" class="list-group list-group-flush">
-                            <div class="text-center py-5 text-muted small">
-                                Cargando compañeros... <br>
-                                <div class="spinner-border spinner-border-sm mt-2 text-primary"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- PANTALLA 2: CHAT PRIVADO (Oculto por defecto) -->
-                    <div id="vista-chat" class="d-none flex-column h-100">
-                        
-                        <!-- Ventana donde se imprimen los mensajes -->
-                        <div id="chat-window" class="p-3 d-flex flex-column flex-grow-1">
-                            <!-- Aquí inyecta chat.js los mensajes -->
-                        </div>
-                        
-                        <!-- Barra inferior para escribir y enviar -->
-                        <div class="p-3 border-top bg-white">
-                            <div class="input-group gap-2">
-                                
-                                <!-- Botón de Adjunto Corregido -->
-                                <input type="file" id="chat-file" class="d-none" onchange="window.actualizarEstadoAdjunto(this)">
-                                
-                                <label for="chat-file" id="label-adjunto" class="btn btn-light border-0 rounded-circle d-flex align-items-center justify-content-center m-0" style="width: 45px; height: 45px; cursor: pointer; transition: all 0.3s;">
-                                    <i class="bi bi-paperclip fs-5"></i>
-                                </label>
-                                
-                                <!-- Input de Texto -->
-                                <input type="text" id="chat-msg-input" class="form-control rounded-pill border-0 bg-light px-3" placeholder="Escribe un mensaje...">
-                                
-                                <!-- Botón Enviar -->
-                                <button class="btn btn-primary rounded-circle shadow-sm d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;" onclick="window.enviarAccionChat()">
-                                    <i class="bi bi-send-fill"></i>
-                                </button>
-                                
-                            </div>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-        </div>
-    </div>
-
 
     <script>
         const cacheVistas = {};
@@ -670,48 +597,74 @@
                 fetch('login.html').then(r => r.text()).then(html => cacheVistas['login'] = html).catch(()=>{});
             }
 
-            // =================================================================
-            // EVENTOS Y SETUP DEL MODAL DE CHAT INCRUSTADO
-            // =================================================================
-            const modalChatEl = document.getElementById('modalChat');
-            if (modalChatEl) {
-                modalChatEl.addEventListener('shown.bs.modal', () => {
-                    window.refrescarChat();
-                    chatInterval = setInterval(window.refrescarChat, 3500);
-                });
-
-                modalChatEl.addEventListener('hidden.bs.modal', () => {
-                    if (chatInterval) clearInterval(chatInterval);
-                });
-            }
-
-            // Permitir "Enter" para enviar
-            const inputMsg = document.getElementById('chat-msg-input');
-            if (inputMsg) {
-                inputMsg.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') window.enviarAccionChat();
-                });
-            }
+            // Iniciar polling de notificaciones (Punto rojo) apenas cargue el DOM
+            setInterval(window.revisarNotificacionesGlobales, 6000);
         });
 
         // =====================================================================
-        // === FUNCIONES CENTRALIZADAS DEL CHAT ===
+        // === FUNCIONES DEL CHAT AISLADO (FETCH DINÁMICO) ===
         // =====================================================================
         let chatInterval = null;
 
-        // Función Maestra que decide si refrescar la lista de contactos o un chat privado
+        window.abrirModalChat = async function() {
+            let modalEl = document.getElementById('modalChat');
+            
+            if (!modalEl) {
+                try {
+                    const res = await fetch('chat.html');
+                    if (!res.ok) throw new Error('Archivo chat.html no encontrado');
+                    const html = await res.text();
+                    
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = html;
+                    
+                    modalEl = tempDiv.querySelector('#modalChat');
+                    if (!modalEl) modalEl = tempDiv.children[0]; 
+                    
+                    document.body.appendChild(modalEl);
+                    
+                    // Conectar los Eventos nativos de Bootstrap
+                    modalEl.addEventListener('shown.bs.modal', () => {
+                        const buscador = document.getElementById('buscador-input');
+                        if (buscador) buscador.value = ''; // Limpiar buscador al abrir
+                        window.refrescarChat();
+                        chatInterval = setInterval(window.refrescarChat, 3500);
+                    });
+
+                    modalEl.addEventListener('hidden.bs.modal', () => {
+                        if (chatInterval) clearInterval(chatInterval);
+                        if (window.volverAContactos) window.volverAContactos(); // Reset a la lista al cerrar
+                    });
+
+                    // Permitir el uso del "Enter" para enviar
+                    const inputMsg = document.getElementById('chat-msg-input');
+                    if (inputMsg) {
+                        inputMsg.addEventListener('keypress', (e) => {
+                            if (e.key === 'Enter') window.enviarAccionChat();
+                        });
+                    }
+                } catch (e) {
+                    console.error("Error cargando el chat:", e);
+                    alert("Error al cargar el chat. Verifica que chat.html exista.");
+                    return;
+                }
+            }
+            
+            const modal = new bootstrap.Modal(modalEl);
+            modal.show();
+        };
+
         window.refrescarChat = async function() {
             if (!window.ChatManager) return;
             
             if (window.ChatManager.chatActivoPin) {
-                // Estamos en un chat privado
                 const msgs = await window.ChatManager.obtenerMensajesPrivados();
                 window.ChatManager.renderizarMensajes(msgs, 'chat-window');
             } else {
-                // Estamos en la lista general de contactos
                 const contactos = await window.ChatManager.obtenerContactos();
                 window.ChatManager.renderizarContactos(contactos);
             }
+            window.revisarNotificacionesGlobales();
         };
 
         window.actualizarEstadoAdjunto = function(input) {
@@ -719,7 +672,7 @@
             if (input.files && input.files[0]) {
                 window.tempFile = input.files[0];
                 label.classList.add('btn-adjunto-active');
-                label.innerHTML = '<i class="bi bi-check2"></i>';
+                label.innerHTML = '<i class="bi bi-check2 fs-5"></i>';
             } else {
                 window.tempFile = null;
                 label.classList.remove('btn-adjunto-active');
@@ -734,7 +687,6 @@
             
             if (!txt && !file) return;
 
-            // Bloquear el botón para evitar clics dobles
             const btn = document.querySelector('#modalChat .btn-primary');
             if (btn) btn.disabled = true;
 
@@ -754,13 +706,69 @@
             if (btn) btn.disabled = false;
         };
 
-        // Función que abre el modal (ya no necesita hacer fetch)
-        window.abrirModalChat = function() {
-            const modalEl = document.getElementById('modalChat');
-            if (modalEl) {
-                const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
-                modal.show();
+        // =====================================================================
+        // NUEVAS FUNCIONES GLOBALES: Buscador, Notificaciones, Eliminar, Exportar
+        // =====================================================================
+        
+        window.revisarNotificacionesGlobales = async function() {
+            const btnFlotante = document.getElementById('btn-chat-flotante');
+            if (window.ChatManager && btnFlotante && !btnFlotante.classList.contains('hidden-forced')) {
+                const hayNuevos = await window.ChatManager.verificarPuntoRojo();
+                const badge = document.getElementById('chat-badge');
+                if (badge) {
+                    if (hayNuevos) badge.classList.remove('d-none');
+                    else badge.classList.add('d-none');
+                }
             }
+        };
+
+        window.filtrarBuscador = function() {
+            const filtro = document.getElementById('buscador-input');
+            if (!filtro) return;
+            const texto = filtro.value.toLowerCase();
+            
+            const items = document.querySelectorAll('.contacto-item');
+            items.forEach(item => {
+                const nombre = item.getAttribute('data-name') || '';
+                item.style.setProperty('display', nombre.includes(texto) ? 'flex' : 'none', 'important');
+            });
+        };
+
+        window.eliminarMensaje = async function(id) {
+            if (confirm("¿Eliminar este mensaje para todos?")) {
+                await window.ChatManager.borrarMensaje(id);
+                if (window.refrescarChat) window.refrescarChat();
+            }
+        };
+
+        window.limpiarChat = async function() {
+            if (confirm("¿Estás seguro de que quieres eliminar TODA la conversación con este usuario? (Esta acción no se puede deshacer)")) {
+                await window.ChatManager.limpiarChatCompleto();
+                if (window.refrescarChat) window.refrescarChat();
+            }
+        };
+
+        window.exportarTXT = function() {
+            if (!window.ChatManager || !window.ChatManager.mensajesCacheados || !window.ChatManager.mensajesCacheados.length) {
+                alert("No hay mensajes para exportar."); 
+                return;
+            }
+            
+            let textData = `=== CHAT CON ${window.ChatManager.chatActivoNombre} ===\n\n`;
+            window.ChatManager.mensajesCacheados.forEach(m => {
+                textData += `[${m.fecha_larga || m.fecha}] ${m.nombre}:\n`;
+                if(m.texto) textData += `${m.texto}\n`;
+                if(m.file_path) textData += `<Archivo Adjunto: ${m.file_type}>\n`;
+                textData += `----------------------------\n`;
+            });
+            
+            const blob = new Blob([textData], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Chat_${window.ChatManager.chatActivoNombre}_${new Date().getTime()}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
         };
 
     </script>

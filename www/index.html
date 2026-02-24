@@ -9,16 +9,28 @@
     
     <!-- Archivo Central de Estilos (Aquí se cargan Bootstrap y los Iconos) -->
     <link href="css/main.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
 
     <!-- IMPORTAMOS EL MOTOR DE LA BD PARA TENER LA URL DINÁMICA -->
     <script src="js/api_db.js"></script>
+    <script src="js/chat.js"></script> <!-- Integración del script de Chat -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <style>
         .pt-safe { padding-top: env(safe-area-inset-top); }
         .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
         
-        #app-content { transition: opacity 0.15s ease-out; }
+        #app-content { 
+            transition: opacity 0.15s ease-out; 
+            padding-bottom: 0px; 
+        }
         .fade-out { opacity: 0; }
+        
+        /* Espaciado dinámico para que la Navbar inferior no tape el contenido */
+        .nav-padding {
+            padding-bottom: 85px !important; 
+        }
         
         .bottom-nav {
             padding-bottom: env(safe-area-inset-bottom);
@@ -26,232 +38,731 @@
             box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
             z-index: 1000;
         }
-        .nav-item {
-            color: #adb5bd;
-            text-decoration: none;
-            transition: color 0.2s, transform 0.1s;
-            cursor: pointer;
+
+        /* Botones globales de Atrás y Cerrar Sesión (Capa extrema superior) */
+        .global-floating-btn {
+            position: fixed;
+            top: max(env(safe-area-inset-top, 20px), 20px);
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+            z-index: 999999 !important; 
+            border: 1px solid rgba(0,0,0,0.1);
+            backdrop-filter: blur(5px);
+            transition: transform 0.2s ease, opacity 0.2s ease;
         }
-        .nav-item:active { transform: scale(0.95); }
-        .nav-item.active { color: #0d6efd; }
-        .nav-item i { font-size: 1.5rem; display: block; line-height: 1.2; }
-        .nav-item span { font-size: 0.75rem; font-weight: 500; }
+        
+        .global-floating-btn:active {
+            transform: scale(0.9);
+        }
+
+        #global-back-btn { left: 15px; }
+        #global-logout-btn { right: 15px; }
+
+        /* Ocultar elementos globalmente de manera forzada cuando sea necesario */
+        .hidden-forced { display: none !important; }
+
+        /* Estilos para el botón de Pin (Fijar en barra) */
+        .btn-pin {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            color: #6c757d;
+        }
+        .btn-pin.active {
+            background-color: #ffc107;
+            border-color: #ffc107;
+            color: #000;
+        }
+
+        /* ESTILOS DEL BOTÓN FLOTANTE DE CHAT */
+        #btn-chat-flotante {
+            position: fixed;
+            bottom: 90px;
+            left: 20px; /* Alineado a la izquierda para NO tapar el botón + de accesos */
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            transition: transform 0.2s ease, opacity 0.2s ease;
+        }
+        #btn-chat-flotante:active {
+            transform: scale(0.9);
+        }
+
+        /* ESTILOS DEL MODAL DE CHAT INCRUSTADO */
+        #chat-contacts { height: 65vh; overflow-y: auto; background-color: #fff; }
+        #chat-window { height: 55vh; overflow-y: auto; background-color: #f0f2f5; }
+        .btn-adjunto-active { background-color: #d1e7dd !important; color: #0f5132 !important; border-color: #badbcc !important; }
     </style>
 </head>
-<body class="vh-100 d-flex flex-column overflow-hidden bg-light">
+<body class="bg-light m-0 p-0 overflow-hidden vh-100 d-flex flex-column">
 
-    <!-- BOTÓN FLOTANTE GLOBAL DE VOLVER ATRÁS -->
-    <button id="btn-back-global" class="btn btn-primary rounded-circle shadow-lg position-fixed d-none align-items-center justify-content-center border-0" style="bottom: calc(90px + env(safe-area-inset-bottom)); left: 20px; z-index: 99999; width: 55px; height: 55px;" onclick="window.history.back()">
-        <i class="bi bi-arrow-left fs-3 text-white" style="margin-top: 2px;"></i>
+    <!-- BOTÓN GLOBAL DE VOLVER ATRÁS -->
+    <button id="global-back-btn" class="global-floating-btn hidden-forced" onclick="history.back()">
+        <i class="bi bi-arrow-left fs-4 text-dark"></i>
     </button>
 
-    <!-- Header Superior Dinámico -->
-    <header id="app-header" class="bg-white shadow-sm pt-safe d-none transition-all">
-        <div class="px-3 py-3 d-flex justify-content-between align-items-center">
-            <h5 class="m-0 fw-bold text-dark" id="header-title">Inicio</h5>
-            <!-- Botones lado derecho -->
-            <div class="d-flex align-items-center gap-3">
-                <i class="bi bi-bell text-secondary fs-5" id="btn-notificaciones"></i>
-                <!-- Botón de Salir -->
-                <i class="bi bi-box-arrow-right text-danger fs-5 d-none" id="btn-logout" onclick="window.hacerLogout()" style="cursor: pointer;" title="Cerrar Sesión"></i>
-            </div>
-        </div>
-    </header>
+    <!-- BOTÓN GLOBAL DE CERRAR SESIÓN -->
+    <button id="global-logout-btn" class="global-floating-btn hidden-forced" onclick="cerrarSesion()">
+        <i class="bi bi-box-arrow-right fs-4 text-danger"></i>
+    </button>
 
-    <main id="app-content" class="flex-grow-1 overflow-auto w-100"></main>
+    <!-- Botón Flotante para Agregar Nuevo Acceso (Solo visible en Home) -->
+    <button id="fab-add-acceso" class="btn btn-primary rounded-circle position-fixed shadow hidden-forced" 
+            style="bottom: 90px; right: 20px; z-index: 1000; width: 60px; height: 60px;"
+            data-bs-toggle="modal" data-bs-target="#modalNuevoAcceso">
+        <i class="bi bi-plus text-white" style="font-size: 2rem; line-height: 1;"></i>
+    </button>
 
-    <!-- Barra de Navegación Inferior -->
-    <nav id="app-nav" class="bottom-nav w-100 d-flex justify-content-around py-2 d-none transition-all">
-        <a href="#home" class="nav-item text-center flex-grow-1" data-view="home">
-            <i class="bi bi-house-door-fill"></i>
-            <span>Inicio</span>
-        </a>
-        <a href="#usuarios" class="nav-item text-center flex-grow-1" data-view="usuarios">
-            <i class="bi bi-people-fill"></i>
-            <span>La Tribu</span>
-        </a>
-        <!-- BOTÓN DINÁMICO: Login / Perfil -->
-        <a href="#login" class="nav-item text-center flex-grow-1" data-view="login" id="nav-btn-auth">
-            <i class="bi bi-box-arrow-in-right" id="nav-icon-auth"></i>
-            <span id="nav-text-auth">Ingresar</span>
-        </a>
+    <!-- Botón Flotante para el Chat -->
+    <button id="btn-chat-flotante" class="btn btn-warning rounded-circle hidden-forced" onclick="abrirModalChat()">
+        <i class="bi bi-chat-dots-fill text-dark" style="font-size: 1.8rem;"></i>
+    </button>
+
+    <!-- Contenedor Principal Dinámico (SPA) -->
+    <main id="app-content" class="flex-grow-1 overflow-auto h-100 w-100 position-relative">
+        <!-- El contenido de las vistas HTML se inyectará aquí -->
+    </main>
+
+    <!-- Barra de Navegación Inferior (Ahora es dinámica) -->
+    <nav id="bottom-navigation" class="bottom-nav hidden-forced position-fixed bottom-0 w-100 d-flex justify-content-around align-items-center py-2">
+        <!-- Se genera desde JavaScript mediante renderNavBar() -->
     </nav>
 
-    <!-- Modal GLOBAL de Cerrar Sesión (Bootstrap) -->
-    <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 rounded-4 shadow">
-          <div class="modal-header border-0 pb-0">
-            <h5 class="modal-title fw-bold text-danger" id="logoutModalLabel">
-                <i class="bi bi-exclamation-triangle-fill me-2"></i>Cerrar Sesión
-            </h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body text-center py-4">
-            <p class="fs-5 text-dark mb-0">¿Estás seguro de que deseas cerrar sesión?</p>
-            <p class="text-muted small mt-2">Tendrás que volver a ingresar tus credenciales para acceder a tu perfil.</p>
-          </div>
-          <div class="modal-footer border-0 d-flex flex-nowrap pt-0">
-            <button type="button" class="btn btn-light flex-grow-1 rounded-pill py-2 fw-bold" data-bs-dismiss="modal">Cancelar</button>
-            <button type="button" class="btn btn-danger flex-grow-1 rounded-pill py-2 fw-bold" onclick="window.ejecutarLogout()">Sí, salir</button>
-          </div>
+    <!-- ================================================================= -->
+    <!-- MODAL DE ACCESOS DIRECTOS -->
+    <!-- ================================================================= -->
+    <div class="modal fade" id="modalNuevoAcceso" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow rounded-4">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold">Nuevo Acceso Directo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="form-nuevo-acceso">
+                        <div class="mb-3">
+                            <label class="form-label text-secondary small">Nombre de la Vista</label>
+                            <input type="text" class="form-control rounded-3" id="acc-nombre" placeholder="Ej. Finanzas Personales" required>
+                        </div>
+                        
+                        <!-- Carga de archivo HTML local -->
+                        <div class="mb-3 p-3 bg-light rounded-3 border">
+                            <label class="form-label text-primary fw-bold small mb-1"><i class="bi bi-cloud-upload"></i> Subir Archivo HTML (Opcional)</label>
+                            <input type="file" class="form-control form-control-sm rounded-2" id="acc-file" accept=".html">
+                            <div class="form-text" style="font-size: 0.75rem;">Si subes un archivo desde tu dispositivo, se guardará en la memoria interna de la app automáticamente.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label text-secondary small">Ruta Manual (Si el archivo ya existe en www/)</label>
+                            <input type="text" class="form-control rounded-3" id="acc-ruta" placeholder="Ej. inventario">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label text-secondary small">Icono</label>
+                            <select class="form-select rounded-3" id="acc-icono">
+                                <option value="bi-star-fill">Estrella</option>
+                                <option value="bi-box-seam">Caja / Inventario</option>
+                                <option value="bi-file-earmark-text">Documento</option>
+                                <option value="bi-camera-fill">Cámara / Fotos</option>
+                                <option value="bi-heart-fill">Corazón</option>
+                                <option value="bi-lightning-fill">Rayo</option>
+                                <option value="bi-gear-fill">Engranaje / Ajustes</option>
+                                <option value="bi-graph-up-arrow">Gráfica / Finanzas</option>
+                            </select>
+                        </div>
+
+                        <div class="form-check form-switch mb-4">
+                            <input class="form-check-input" type="checkbox" id="acc-enbarra">
+                            <label class="form-check-label text-secondary small" for="acc-enbarra">Fijar en barra de navegación inferior (Máx 3)</label>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100 rounded-3 py-2 fw-bold">Guardar Acceso</button>
+                    </form>
+                </div>
+            </div>
         </div>
-      </div>
     </div>
 
-    <script src="js/bootstrap.js"></script>
+    <!-- ================================================================= -->
+    <!-- MODAL DE CHAT INCRUSTADO (1 A 1 CON CONTACTOS) -->
+    <!-- ================================================================= -->
+    <div class="modal fade" id="modalChat" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
+            <div class="modal-content rounded-t-4 border-0 shadow-lg">
+                
+                <!-- Cabecera del Modal -->
+                <div class="modal-header bg-primary text-white border-0 py-3">
+                    <div class="d-flex align-items-center w-100">
+                        <!-- Botón Volver (Solo visible dentro de un Chat Privado) -->
+                        <button class="btn btn-sm text-white border-0 me-2 d-none" id="btn-chat-volver" onclick="window.volverAContactos()">
+                            <i class="bi bi-arrow-left fs-4"></i>
+                        </button>
+
+                        <div class="bg-white bg-opacity-25 rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;">
+                            <i class="bi bi-chat-fill"></i>
+                        </div>
+                        <h5 class="modal-title fw-bold mb-0 text-truncate" id="chat-title" style="max-width: 60vw;">Mensajes</h5>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                
+                <div class="modal-body p-0 position-relative">
+
+                    <!-- PANTALLA 1: LISTA DE CONTACTOS -->
+                    <div id="vista-contactos" class="d-block">
+                        <div id="chat-contacts" class="list-group list-group-flush">
+                            <div class="text-center py-5 text-muted small">
+                                Cargando compañeros... <br>
+                                <div class="spinner-border spinner-border-sm mt-2 text-primary"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PANTALLA 2: CHAT PRIVADO (Oculto por defecto) -->
+                    <div id="vista-chat" class="d-none flex-column h-100">
+                        
+                        <!-- Ventana donde se imprimen los mensajes -->
+                        <div id="chat-window" class="p-3 d-flex flex-column flex-grow-1">
+                            <!-- Aquí inyecta chat.js los mensajes -->
+                        </div>
+                        
+                        <!-- Barra inferior para escribir y enviar -->
+                        <div class="p-3 border-top bg-white">
+                            <div class="input-group gap-2">
+                                
+                                <!-- Botón de Adjunto Corregido -->
+                                <input type="file" id="chat-file" class="d-none" onchange="window.actualizarEstadoAdjunto(this)">
+                                
+                                <label for="chat-file" id="label-adjunto" class="btn btn-light border-0 rounded-circle d-flex align-items-center justify-content-center m-0" style="width: 45px; height: 45px; cursor: pointer; transition: all 0.3s;">
+                                    <i class="bi bi-paperclip fs-5"></i>
+                                </label>
+                                
+                                <!-- Input de Texto -->
+                                <input type="text" id="chat-msg-input" class="form-control rounded-pill border-0 bg-light px-3" placeholder="Escribe un mensaje...">
+                                
+                                <!-- Botón Enviar -->
+                                <button class="btn btn-primary rounded-circle shadow-sm d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;" onclick="window.enviarAccionChat()">
+                                    <i class="bi bi-send-fill"></i>
+                                </button>
+                                
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
 
     <script>
-        const contenedor = document.getElementById('app-content');
-        const appNav = document.getElementById('app-nav');
-        const appHeader = document.getElementById('app-header');
-        const headerTitle = document.getElementById('header-title');
-        const btnBackGlobal = document.getElementById('btn-back-global');
-        
-        // ==========================================
-        // 🔐 SISTEMA DE ESTADO GLOBAL Y AUTENTICACIÓN
-        // ==========================================
-        window.isLoggedIn = localStorage.getItem('app_logged_in') === 'true';
+        const cacheVistas = {};
 
-        window.setLoginState = function(state) {
-            window.isLoggedIn = state;
-            localStorage.setItem('app_logged_in', state);
-            actualizarUIAuth();
-        };
+        // === GESTIÓN UNIFICADA DE ACCESOS DIRECTOS ===
+        const ACCESOS_POR_DEFECTO = [
+            { nombre: 'Calendario', ruta: 'calendarioTribu', icono: 'bi-calendar-event', color: '#ff6b6b', enBarra: false },
+            { nombre: 'Rutas / Gráficas', ruta: 'rutas', icono: 'bi-map-fill', color: '#20c997', enBarra: false },
+            { nombre: 'Pagos JyK', ruta: 'tablapagosV1 (2)', icono: 'bi-cash-coin', color: '#ffc107', enBarra: false },
+            { nombre: 'Apartados', ruta: 'apartados', icono: 'bi-shop', color: '#fd7e14', enBarra: false },
+            { nombre: 'Usuarios', ruta: 'usuarios', icono: 'bi-people-fill', color: '#6f42c1', enBarra: false }
+        ];
 
-        window.hacerLogout = function() {
-            // Mostramos el modal global en lugar del confirm() nativo
-            const modal = new bootstrap.Modal(document.getElementById('logoutModal'));
-            modal.show();
-        };
-
-        // Función global para ejecutar el cierre de sesión desde el modal
-        window.ejecutarLogout = function() {
-            const modalEl = document.getElementById('logoutModal');
-            const modalInstance = bootstrap.Modal.getInstance(modalEl);
-            if (modalInstance) {
-                modalInstance.hide();
-            }
-            setTimeout(() => {
-                window.setLoginState(false);
-                window.location.hash = 'home';
-                cargarVista(); // Forzar actualización visual
-            }, 300); 
-        };
-
-        function actualizarUIAuth() {
-            const navBtnAuth = document.getElementById('nav-btn-auth');
-            const navIconAuth = document.getElementById('nav-icon-auth');
-            const navTextAuth = document.getElementById('nav-text-auth');
-            const btnLogout = document.getElementById('btn-logout');
-
-            if (window.isLoggedIn) {
-                navBtnAuth.href = '#perfil';
-                navBtnAuth.dataset.view = 'perfil';
-                navIconAuth.className = 'bi bi-person-circle';
-                navTextAuth.textContent = 'Perfil';
-                btnLogout.classList.remove('d-none');
+        function obtenerAccesos() {
+            let guardados = localStorage.getItem('accesosTribu');
+            if (guardados) {
+                let accesos = JSON.parse(guardados);
+                
+                // Migración única
+                if (!localStorage.getItem('limpiezaPinesV2')) {
+                    accesos.forEach(acc => acc.enBarra = false);
+                    localStorage.setItem('limpiezaPinesV2', 'completada');
+                    localStorage.setItem('accesosTribu', JSON.stringify(accesos));
+                }
+                return accesos;
             } else {
-                navBtnAuth.href = '#login';
-                navBtnAuth.dataset.view = 'login';
-                navIconAuth.className = 'bi bi-box-arrow-in-right';
-                navTextAuth.textContent = 'Ingresar';
-                btnLogout.classList.add('d-none');
+                localStorage.setItem('limpiezaPinesV2', 'completada');
+                localStorage.setItem('accesosTribu', JSON.stringify(ACCESOS_POR_DEFECTO));
+                return ACCESOS_POR_DEFECTO;
             }
         }
 
-        // ==========================================
-        // 🗺️ SISTEMA DE NAVEGACIÓN SPA
-        // ==========================================
-        const cacheVistas = {};
-        const rutas = {
-            'home':     { titulo: 'Inicio',    mostrarNav: true },
-            'usuarios': { titulo: 'La Tribu',  mostrarNav: true },
-            'perfil':   { titulo: 'Mi Perfil', mostrarNav: true, requiereLogin: true },
-            'login':    { titulo: 'Iniciar Sesión', mostrarNav: false },
-            'registro': { titulo: 'Registro',  mostrarNav: false },
-            'cambiarPass': { titulo: 'Seguridad', mostrarNav: false, requiereLogin: true }
-        };
+        // --- FUNCIONES GLOBALES ---
 
-        async function cargarVista() {
-            let hash = window.location.hash.substring(1);
-            if (!hash) hash = 'home'; 
+        window.toggleBarra = function(event, index) {
+            event.preventDefault();
+            event.stopPropagation();
             
-            let vistaConfig = rutas[hash] || rutas['login'];
+            let accesos = obtenerAccesos();
+            let fijadosActuales = accesos.filter(a => a.enBarra).length;
 
-            if (vistaConfig.requiereLogin && !window.isLoggedIn) {
-                window.location.hash = 'login';
+            if (!accesos[index].enBarra && fijadosActuales >= 3) {
+                alert('Solo puedes fijar un máximo de 3 accesos en la barra inferior.');
                 return;
             }
 
-            actualizarUIAuth();
-            contenedor.classList.add('fade-out');
+            accesos[index].enBarra = !accesos[index].enBarra;
+            localStorage.setItem('accesosTribu', JSON.stringify(accesos));
+            
+            renderHomeDashboard();
+            renderNavBar();
+        };
 
-            const vistasPrincipales = ['home', 'usuarios', '']; 
-            if (vistasPrincipales.includes(hash)) {
-                btnBackGlobal.classList.add('d-none');
-                btnBackGlobal.classList.remove('d-flex');
-            } else {
-                btnBackGlobal.classList.remove('d-none');
-                btnBackGlobal.classList.add('d-flex');
+        window.eliminarAcceso = function(event, index) {
+            event.preventDefault(); 
+            event.stopPropagation();
+            if (confirm('¿Deseas eliminar este acceso directo?')) {
+                let accesos = obtenerAccesos();
+                const ruta = accesos[index].ruta.replace('.html', '');
+                
+                accesos.splice(index, 1);
+                localStorage.setItem('accesosTribu', JSON.stringify(accesos));
+                localStorage.removeItem('vista_custom_' + ruta);
+                
+                renderHomeDashboard();
+                renderNavBar();
             }
+        };
 
-            if (vistaConfig.mostrarNav) {
-                appNav.classList.remove('d-none');
-                appHeader.classList.remove('d-none');
-            } else {
-                appNav.classList.add('d-none');
-                appHeader.classList.add('d-none');
+        window.cerrarSesion = function() {
+            if (confirm('¿Estás seguro de que deseas cerrar sesión?')) {
+                window.setLoginState(false);
+                window.location.hash = 'login';
             }
-            headerTitle.textContent = vistaConfig.titulo;
+        };
 
-            document.querySelectorAll('.nav-item').forEach(el => {
-                el.classList.toggle('active', el.dataset.view === hash);
+        window.setLoginState = function(isLoggedIn) {
+            const nav = document.getElementById('bottom-navigation');
+            if (isLoggedIn) {
+                nav.classList.remove('hidden-forced');
+            } else {
+                nav.classList.add('hidden-forced');
+                localStorage.removeItem('usuarioActual');
+            }
+        };
+
+        function actualizarUIAuth() {
+            const usuario = localStorage.getItem('usuarioActual');
+            window.setLoginState(!!usuario);
+        }
+
+        // --- RENDERIZADO DE LA BARRA INFERIOR ---
+        function renderNavBar() {
+            const nav = document.getElementById('bottom-navigation');
+            const accesosFijados = obtenerAccesos().filter(a => a.enBarra).slice(0, 3);
+            
+            let html = `
+                <a href="#home" class="text-center text-decoration-none text-secondary flex-fill">
+                    <i class="bi bi-house-door fs-4 d-block"></i>
+                    <span style="font-size: 0.7rem;">Inicio</span>
+                </a>
+            `;
+            
+            accesosFijados.forEach(acc => {
+                const hashLimpio = acc.ruta.replace('.html', '');
+                html += `
+                    <a href="#${hashLimpio}" class="text-center text-decoration-none text-secondary flex-fill">
+                        <i class="bi ${acc.icono} fs-4 d-block" style="color: ${acc.color};"></i>
+                        <span style="font-size: 0.7rem;">${acc.nombre}</span>
+                    </a>
+                `;
+            });
+            
+            html += `
+                <a href="#perfil" class="text-center text-decoration-none text-secondary flex-fill">
+                    <i class="bi bi-person fs-4 d-block"></i>
+                    <span style="font-size: 0.7rem;">Perfil</span>
+                </a>
+            `;
+            
+            nav.innerHTML = html;
+        }
+
+        // --- RENDERIZADO DEL DASHBOARD ---
+        function renderHomeDashboard() {
+            const contenedor = document.getElementById('app-content');
+            let nombre = 'Tribu';
+            try {
+                const user = JSON.parse(localStorage.getItem('usuarioActual'));
+                if (user && user.nombre) {
+                    nombre = user.nombre.split(' ')[0];
+                }
+            } catch(e) {}
+
+            const todosLosAccesos = obtenerAccesos();
+
+            let gridHtml = '';
+            todosLosAccesos.forEach((acc, index) => {
+                const hashLimpio = acc.ruta.replace('.html', '');
+                const bgColor = acc.color || '#0d6efd';
+                
+                let btnEliminar = `
+                    <button onclick="eliminarAcceso(event, ${index})" class="btn btn-danger position-absolute shadow-sm" 
+                            style="top: -8px; right: -8px; width: 28px; height: 28px; border-radius: 50%; padding: 0; display: flex; align-items: center; justify-content: center; z-index: 10;" title="Eliminar">
+                        <i class="bi bi-x fs-5"></i>
+                    </button>
+                `;
+
+                let btnPin = `
+                    <button onclick="toggleBarra(event, ${index})" class="btn-pin ${acc.enBarra ? 'active' : ''} position-absolute shadow-sm" 
+                            style="top: -8px; left: -8px; width: 28px; height: 28px; border-radius: 50%; padding: 0; display: flex; align-items: center; justify-content: center; z-index: 10;" title="Fijar en barra">
+                        <i class="bi bi-pin-angle-fill fs-6"></i>
+                    </button>
+                `;
+
+                gridHtml += `
+                    <div class="col-6 col-md-4 position-relative">
+                        ${btnPin}
+                        ${btnEliminar}
+                        <a href="#${hashLimpio}" class="text-decoration-none d-block h-100">
+                            <div class="card border-0 shadow-sm h-100 rounded-4 text-center p-3" style="transition: transform 0.2s;">
+                                <div class="d-flex justify-content-center align-items-center mx-auto rounded-circle mb-2" 
+                                     style="width: 60px; height: 60px; background-color: ${bgColor}20; color: ${bgColor};">
+                                    <i class="bi ${acc.icono}" style="font-size: 1.8rem;"></i>
+                                </div>
+                                <h6 class="text-dark fw-bold mb-0" style="font-size: 0.9rem;">${acc.nombre}</h6>
+                            </div>
+                        </a>
+                    </div>
+                `;
             });
 
+            const html = `
+                <div class="h-100 d-flex flex-column bg-light pb-safe">
+                    <div class="position-relative w-100 flex-shrink-0 p-4 pt-5" style="background: linear-gradient(135deg, #0d6efd, #0dcaf0); border-bottom-left-radius: 30px; border-bottom-right-radius: 30px;">
+                        <div class="mt-3">
+                            <h2 class="fw-bold text-white mb-0 mt-2">Hola, ${nombre}</h2>
+                            <p class="text-white-50 mb-0">Tus accesos directos</p>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 p-4 overflow-auto">
+                        <div class="row g-3">
+                            ${gridHtml}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            contenedor.innerHTML = html;
+            contenedor.classList.remove('fade-out');
+        }
+
+        async function cargarVista() {
+            const contenedor = document.getElementById('app-content');
+            const navBar = document.getElementById('bottom-navigation');
+            const backBtn = document.getElementById('global-back-btn');
+            const logoutBtn = document.getElementById('global-logout-btn');
+            const fabBtn = document.getElementById('fab-add-acceso');
+            const chatBtn = document.getElementById('btn-chat-flotante');
+            
+            let hash = window.location.hash.substring(1) || 'home';
+            
+            // Lógica de Autenticación
+            const estaLogueado = !!localStorage.getItem('usuarioActual');
+            if (!estaLogueado && hash !== 'login' && hash !== 'registro') {
+                window.location.hash = 'login';
+                return;
+            }
+            if (estaLogueado && (hash === 'login' || hash === 'registro')) {
+                window.location.hash = 'home';
+                return;
+            }
+
+            const vistasPrincipales = ['home', 'login', 'registro', 'perfil'];
+            
+            if (vistasPrincipales.includes(hash)) {
+                backBtn.classList.add('hidden-forced'); 
+                if (estaLogueado) {
+                    navBar.classList.remove('hidden-forced'); 
+                    contenedor.classList.add('nav-padding'); 
+                }
+            } else {
+                backBtn.classList.remove('hidden-forced'); 
+                navBar.classList.add('hidden-forced'); 
+                contenedor.classList.remove('nav-padding'); 
+            }
+
+            if (estaLogueado && hash !== 'login' && hash !== 'registro') {
+                logoutBtn.classList.remove('hidden-forced'); 
+                chatBtn.classList.remove('hidden-forced');
+            } else {
+                logoutBtn.classList.add('hidden-forced');
+                chatBtn.classList.add('hidden-forced'); 
+            }
+
+            if (hash === 'home') {
+                fabBtn.classList.remove('hidden-forced');
+            } else {
+                fabBtn.classList.add('hidden-forced');
+            }
+
+            contenedor.classList.add('fade-out');
+            
+            if (hash === 'home') {
+                setTimeout(() => {
+                    renderHomeDashboard();
+                }, 150);
+                return;
+            }
+
+            // --- Carga inteligente de la vista HTML ---
             try {
                 let html = '';
+                
                 if (cacheVistas[hash]) {
-                    html = cacheVistas[hash]; 
+                    html = cacheVistas[hash];
                 } else {
-                    const respuesta = await fetch(`${hash}.html`);
-                    if (!respuesta.ok) throw new Error(`El archivo '${hash}.html' no se encontró.`);
-                    html = await respuesta.text();
-                    cacheVistas[hash] = html;
+                    const customHtmlGuardado = localStorage.getItem('vista_custom_' + hash);
+                    
+                    if (customHtmlGuardado) {
+                        html = customHtmlGuardado;
+                        cacheVistas[hash] = html;
+                    } else {
+                        const response = await fetch(`${hash}.html`);
+                        if (!response.ok) throw new Error(`Vista no encontrada (${hash}.html)`);
+                        html = await response.text();
+                        cacheVistas[hash] = html; 
+                    }
                 }
 
                 setTimeout(() => {
                     contenedor.innerHTML = html;
                     contenedor.classList.remove('fade-out');
 
-                    const scripts = contenedor.querySelectorAll('script');
-                    scripts.forEach(script => {
-                        const nuevoScript = document.createElement('script');
-                        nuevoScript.text = script.innerHTML;
-                        if(script.src) nuevoScript.src = script.src;
-                        document.body.appendChild(nuevoScript).parentNode.removeChild(nuevoScript);
-                    });
+                    // MOTOR POTENCIADO DE EJECUCIÓN DE SCRIPTS
+                    const scripts = Array.from(contenedor.querySelectorAll('script'));
+                    
+                    const ejecutarScriptsSecuencialmente = async () => {
+                        for (const script of scripts) {
+                            await new Promise((resolve) => {
+                                const nuevoScript = document.createElement('script');
+                                
+                                Array.from(script.attributes).forEach(attr => {
+                                    nuevoScript.setAttribute(attr.name, attr.value);
+                                });
+
+                                if (script.src) {
+                                    nuevoScript.onload = resolve;
+                                    nuevoScript.onerror = resolve; 
+                                } else {
+                                    nuevoScript.text = script.innerHTML;
+                                    resolve();
+                                }
+                                
+                                document.body.appendChild(nuevoScript);
+                                
+                                setTimeout(() => { 
+                                    if(nuevoScript.parentNode) nuevoScript.parentNode.removeChild(nuevoScript); 
+                                }, 100);
+                            });
+                        }
+                        
+                        setTimeout(() => {
+                            document.dispatchEvent(new Event('DOMContentLoaded'));
+                            window.dispatchEvent(new Event('load'));
+                        }, 50);
+                    };
+
+                    ejecutarScriptsSecuencialmente();
+
                 }, 150); 
 
             } catch (error) {
                 contenedor.innerHTML = `
                     <div class="h-100 d-flex flex-column align-items-center justify-content-center text-center p-4">
                         <i class="bi bi-exclamation-triangle-fill text-danger" style="font-size: 3rem;"></i>
-                        <h4 class="mt-3 text-secondary">Error 404</h4>
-                        <p class="text-muted">${error.message}</p>
+                        <h4 class="mt-3 text-secondary">Vista No Disponible</h4>
+                        <p class="text-muted">No se pudo cargar: ${hash}.html<br>Puede que necesites volver a cargar el archivo local.</p>
+                        <button class="btn btn-primary mt-3" onclick="history.back()">Volver</button>
                     </div>`;
                 contenedor.classList.remove('fade-out');
             }
         }
 
         window.addEventListener('hashchange', cargarVista);
+        
         window.addEventListener('DOMContentLoaded', () => {
             actualizarUIAuth();
+            renderNavBar();
             cargarVista();
+            
+            const inputArchivo = document.getElementById('acc-file');
+            const inputRuta = document.getElementById('acc-ruta');
+            
+            if (inputArchivo && inputRuta) {
+                inputArchivo.addEventListener('change', function(e) {
+                    if (this.files && this.files[0]) {
+                        const nombreLimpio = this.files[0].name.replace('.html', '').replace(/\s+/g, '_');
+                        inputRuta.value = nombreLimpio;
+                    }
+                });
+            }
+
+            const formNuevo = document.getElementById('form-nuevo-acceso');
+            if(formNuevo) {
+                formNuevo.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    let ruta = inputRuta.value.trim().replace('.html', '');
+                    const archivoSeleccionado = inputArchivo.files[0];
+                    const fijarEnBarra = document.getElementById('acc-enbarra').checked;
+                    
+                    if (!ruta) {
+                        alert('Debes escribir una ruta o seleccionar un archivo HTML de tu dispositivo.');
+                        return;
+                    }
+
+                    const nuevoAcceso = {
+                        nombre: document.getElementById('acc-nombre').value,
+                        ruta: ruta,
+                        icono: document.getElementById('acc-icono').value,
+                        color: '#0d6efd',
+                        enBarra: fijarEnBarra
+                    };
+
+                    let accesos = obtenerAccesos();
+                    let fijadosActuales = accesos.filter(a => a.enBarra).length;
+
+                    if (fijarEnBarra && fijadosActuales >= 3) {
+                        alert('Atención: Solo puedes fijar 3 accesos en la parte inferior. Se guardará, pero no se anclará.');
+                        nuevoAcceso.enBarra = false;
+                    }
+
+                    const procesarGuardado = () => {
+                        accesos.push(nuevoAcceso);
+                        localStorage.setItem('accesosTribu', JSON.stringify(accesos));
+
+                        const modalEl = document.getElementById('modalNuevoAcceso');
+                        const modalIns = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                        modalIns.hide();
+                        formNuevo.reset();
+
+                        if (window.location.hash === '' || window.location.hash === '#home') {
+                            renderHomeDashboard();
+                        }
+                        renderNavBar();
+                    };
+
+                    if (archivoSeleccionado) {
+                        const reader = new FileReader();
+                        reader.onload = function(evt) {
+                            const htmlContent = evt.target.result;
+                            localStorage.setItem('vista_custom_' + ruta, htmlContent);
+                            procesarGuardado();
+                        };
+                        reader.readAsText(archivoSeleccionado);
+                    } else {
+                        procesarGuardado();
+                    }
+                });
+            }
+
             if(window.location.hash === '' || window.location.hash === '#home') {
                 fetch('login.html').then(r => r.text()).then(html => cacheVistas['login'] = html).catch(()=>{});
             }
+
+            // =================================================================
+            // EVENTOS Y SETUP DEL MODAL DE CHAT INCRUSTADO
+            // =================================================================
+            const modalChatEl = document.getElementById('modalChat');
+            if (modalChatEl) {
+                modalChatEl.addEventListener('shown.bs.modal', () => {
+                    window.refrescarChat();
+                    chatInterval = setInterval(window.refrescarChat, 3500);
+                });
+
+                modalChatEl.addEventListener('hidden.bs.modal', () => {
+                    if (chatInterval) clearInterval(chatInterval);
+                });
+            }
+
+            // Permitir "Enter" para enviar
+            const inputMsg = document.getElementById('chat-msg-input');
+            if (inputMsg) {
+                inputMsg.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') window.enviarAccionChat();
+                });
+            }
         });
+
+        // =====================================================================
+        // === FUNCIONES CENTRALIZADAS DEL CHAT ===
+        // =====================================================================
+        let chatInterval = null;
+
+        // Función Maestra que decide si refrescar la lista de contactos o un chat privado
+        window.refrescarChat = async function() {
+            if (!window.ChatManager) return;
+            
+            if (window.ChatManager.chatActivoPin) {
+                // Estamos en un chat privado
+                const msgs = await window.ChatManager.obtenerMensajesPrivados();
+                window.ChatManager.renderizarMensajes(msgs, 'chat-window');
+            } else {
+                // Estamos en la lista general de contactos
+                const contactos = await window.ChatManager.obtenerContactos();
+                window.ChatManager.renderizarContactos(contactos);
+            }
+        };
+
+        window.actualizarEstadoAdjunto = function(input) {
+            const label = document.getElementById('label-adjunto');
+            if (input.files && input.files[0]) {
+                window.tempFile = input.files[0];
+                label.classList.add('btn-adjunto-active');
+                label.innerHTML = '<i class="bi bi-check2"></i>';
+            } else {
+                window.tempFile = null;
+                label.classList.remove('btn-adjunto-active');
+                label.innerHTML = '<i class="bi bi-paperclip fs-5"></i>';
+            }
+        };
+
+        window.enviarAccionChat = async function() {
+            const input = document.getElementById('chat-msg-input');
+            const txt = input ? input.value.trim() : '';
+            const file = window.tempFile;
+            
+            if (!txt && !file) return;
+
+            // Bloquear el botón para evitar clics dobles
+            const btn = document.querySelector('#modalChat .btn-primary');
+            if (btn) btn.disabled = true;
+
+            const res = await window.ChatManager.enviarMensaje(txt, file);
+            
+            if (res && res.status === 'ok') {
+                if (input) input.value = '';
+                window.tempFile = null;
+                const label = document.getElementById('label-adjunto');
+                if (label) {
+                    label.classList.remove('btn-adjunto-active');
+                    label.innerHTML = '<i class="bi bi-paperclip fs-5"></i>';
+                }
+                await window.refrescarChat();
+            }
+            
+            if (btn) btn.disabled = false;
+        };
+
+        // Función que abre el modal (ya no necesita hacer fetch)
+        window.abrirModalChat = function() {
+            const modalEl = document.getElementById('modalChat');
+            if (modalEl) {
+                const modal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                modal.show();
+            }
+        };
+
     </script>
 </body>
 </html>

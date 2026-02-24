@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>La Tribu de Los Libres - Rutas</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root { --primary-color: #00d1b2; }
+        body { background-color: #ffffff; min-height: 100vh; padding-bottom: 100px; color: #333; }
+        
+        .header-section { margin-bottom: 2rem; }
+        .subtitle-tribu { color: #666; font-style: italic; margin-top: -1.2rem; display: block; }
+
+        details { margin-bottom: 1rem; border-bottom: 1px solid #eee; }
+        summary { 
+            padding: 10px 0;
+            font-weight: 800;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            list-style: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        summary::-webkit-details-marker { display: none; }
+        summary::after { content: '\f078'; font-family: 'Font Awesome 6 Free'; font-weight: 900; transition: 0.3s; }
+        details[open] summary::after { transform: rotate(180deg); }
+
+        .ruta-item {
+            padding: 15px 10px;
+            border-bottom: 1px solid #f9f9f9;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+
+        .ruta-info { flex-grow: 1; line-height: 1.5; }
+        .ruta-nombre { font-size: 1.15rem; font-weight: 700; display: block; margin-bottom: 2px; color: #000; }
+        .ruta-detalle { font-size: 0.95rem; color: #555; display: block; }
+        .ruta-grupos { font-size: 0.85rem; color: #888; display: block; font-weight: 500; }
+
+        .float-btn {
+            position: fixed; width: 65px; height: 65px; bottom: 30px; right: 30px;
+            background-color: var(--primary-color); color: white; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 28px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            border: none; cursor: pointer; transition: 0.3s; z-index: 100;
+        }
+        .float-btn:hover { transform: scale(1.1); background-color: #00b89c; }
+
+        .tag-minimal { font-size: 0.75rem; padding: 2px 0; text-transform: uppercase; font-weight: bold; margin-left: 5px; }
+        #importJsonInput { display: none; }
+
+        .export-layout {
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+            padding: 20px;
+            background: white;
+        }
+        .export-lista { flex: 1; }
+        .export-chart-column { 
+            width: 380px; 
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .export-chart-container { 
+            padding: 20px;
+            background: #fcfcfc;
+            border-radius: 12px;
+            border: 1px solid #eee;
+        }
+
+        .total-box {
+            background: #363636;
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin-top: 10px;
+        }
+        .total-number {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--primary-color);
+            line-height: 1;
+        }
+        .total-label {
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            letter-spacing: 1px;
+            color: #ccc;
+            margin-bottom: 10px;
+        }
+
+        /* Estilo específico para el encabezado dentro del área de exportación */
+        .export-header {
+            padding: 20px;
+            border-bottom: 2px solid #f5f5f5;
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .export-layout { flex-direction: column; }
+            .export-chart-column { width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <section class="section">
+        <div class="container">
+            <!-- Sección de botones -->
+            <div class="header-section">
+                <div class="columns is-mobile is-vcentered">
+                    <div class="column">
+                        <div class="buttons is-right">
+                            <!-- Botón de Filtro Otras -->
+                            <button id="btnFiltroOtras" class="button is-white is-light" onclick="toggleFiltroOtras()">
+                                <i class="fas fa-person-hiking mr-1"></i> Otras
+                            </button>
+                            <button id="btnFiltroProgramada" class="button is-danger is-light" onclick="toggleFiltroProgramada()">
+                                <i class="fas fa-calendar-check mr-1"></i> Programada
+                            </button>
+                            <button id="btnFiltroReconocer" class="button is-link is-light" onclick="toggleFiltroReconocer()">
+                                <i class="fas fa-binoculars mr-1"></i> xReconocer
+                            </button>
+                            <button id="btnFiltroParques" class="button is-success is-light" onclick="toggleFiltroParques()">
+                                <i class="fas fa-tree mr-1"></i> P.N.
+                            </button>
+                            <button id="btnFiltroCamino" class="button is-warning is-light" onclick="toggleFiltroCamino()">
+                                <i class="fas fa-map-signs mr-1"></i> ECDCR
+                            </button>
+                            <button class="button is-info is-light" onclick="exportToPng()">
+                                <i class="fas fa-image mr-1"></i> PNG
+                            </button>
+                            <button class="button is-dark is-outlined is-small" onclick="exportToJson()">
+                                <i class="fas fa-download mr-1"></i> JSON
+                            </button>
+                            <button class="button is-dark is-outlined is-small" onclick="document.getElementById('importJsonInput').click()">
+                                <i class="fas fa-upload mr-1"></i> JSON
+                            </button>
+                            <input type="file" id="importJsonInput" accept=".json" onchange="importFromJson(event)">
+                            <button class="button is-white" onclick="exportToTxt()"><i class="fas fa-file-alt is-size-4"></i></button>
+                            <button class="button is-white" onclick="exportToWhatsApp()"><i class="fab fa-whatsapp has-text-success is-size-3"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ÁREA DE EXPORTACIÓN -->
+            <div id="exportArea">
+                <div class="export-header has-text-centered">
+                    <h1 class="title is-2 mb-3">Caminatas</h1>
+                    <span class="subtitle-tribu">Nuestra Historia en La Tribu de Los Libres</span>
+                </div>
+
+                <div class="export-layout">
+                    <div class="export-lista" id="listadoRutas"></div>
+
+                    <div class="export-chart-column">
+                        <div class="export-chart-container" id="containerGeneral">
+                            <h3 class="subtitle is-5 has-text-centered mb-5">Distribución General</h3>
+                            <canvas id="chartProvincias"></canvas>
+                        </div>
+
+                        <!-- Gráfico de Parques Nacionales -->
+                        <div class="export-chart-container" id="containerParques">
+                            <h3 class="subtitle is-5 has-text-centered mb-5">Parques Nacionales Visitados</h3>
+                            <canvas id="chartParques"></canvas>
+                        </div>
+
+                        <!-- Gráfico ECDCR -->
+                        <div class="export-chart-container" id="containerCamino">
+                            <h3 class="subtitle is-5 has-text-centered mb-5">El Camino de Costa Rica</h3>
+                            <canvas id="chartCamino"></canvas>
+                        </div>
+
+                        <div class="total-box">
+                            <div class="mb-4">
+                                <p class="total-number" id="totalActividades">0</p>
+                                <p class="total-label" id="labelActividades">Rutas Realizadas</p>
+                            </div>
+                            <div class="mb-4">
+                                <p class="total-number" id="totalRepetidas">0</p>
+                                <p class="total-label">Caminatas Repetidas (>1 grupo)</p>
+                            </div>
+                            <div>
+                                <p class="total-number" id="totalGrupos">0</p>
+                                <p class="total-label">Total General de Participación de Grupos</p>
+                            </div>
+                        </div>
+
+                        <div class="has-text-centered mt-4">
+                            <p class="is-size-7 has-text-grey-light">La Tribu de Los Libres</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <button class="float-btn" onclick="openModal()">
+        <i class="fas fa-plus"></i>
+    </button>
+
+    <div class="modal" id="modalRuta">
+        <div class="modal-background" onclick="closeModal()"></div>
+        <div class="modal-card">
+            <header class="modal-card-head">
+                <p class="modal-card-title" id="modalTitle">Nueva Actividad</p>
+                <button class="delete" onclick="closeModal()"></button>
+            </header>
+            <section class="modal-card-body">
+                <form id="rutaForm">
+                    <input type="hidden" id="editIndex">
+                    <div class="field">
+                        <label class="label">Nombre Caminata/Lugar</label>
+                        <input class="input" type="text" id="nombre" required>
+                    </div>
+                    <div class="field">
+                        <label class="label">Provincia</label>
+                        <div class="select is-fullwidth">
+                            <select id="provincia">
+                                <option>San José</option><option>Alajuela</option><option>Cartago</option>
+                                <option>Heredia</option><option>Guanacaste</option><option>Puntarenas</option>
+                                <option>Limón</option><option>Internacional</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label">Actividad</label>
+                        <div class="select is-fullwidth">
+                            <select id="actividad" onchange="togglePais()">
+                                <option>Parques Nacionales</option>
+                                <option>El Camino de Costa Rica</option>
+                                <option>Internacional</option>
+                                <option>Caminata Dificil</option>
+                                <option>Caminata Intermedia</option>
+                                <option>Caminata Básica</option>
+                                <option>Paseo</option>
+                                <option>Convivio</option>
+                                <option>Fiesta de Fin de Año</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="paisContainer" class="field is-hidden">
+                        <label class="label">País</label>
+                        <div class="select is-fullwidth">
+                            <select id="pais">
+                                <option>Panamá</option><option>Guatemala</option><option>Nicaragua</option>
+                                <option>Honduras</option><option>El Salvador</option><option>Perú</option>
+                                <option>España</option><option>Colombia</option><option>Ecuador</option><option>México</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label">Cantidad de Grupos</label>
+                        <div class="select is-fullwidth">
+                            <select id="grupos">
+                                <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+                                <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+                                <option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="field">
+                        <label class="label">Estado</label>
+                        <div class="control">
+                            <label class="radio"><input type="radio" name="estado" value="Pendiente" checked> Pendiente</label>
+                            <label class="radio"><input type="radio" name="estado" value="Finalizada"> Finalizada</label>
+                            <label class="radio"><input type="radio" name="estado" value="Por Reconocer"> Por Reconocer</label>
+                            <label class="radio"><input type="radio" name="estado" value="Programada"> Programada</label>
+                        </div>
+                    </div>
+                </form>
+            </section>
+            <footer class="modal-card-foot">
+                <button class="button is-success is-fullwidth" onclick="saveRuta()">Guardar en la Historia</button>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        let rutas = JSON.parse(localStorage.getItem('rutas_caminata')) || [];
+        let miGrafica = null;
+        let miGraficaCamino = null;
+        let miGraficaParques = null;
+        let filtroCaminoActivo = false;
+        let filtroParquesActivo = false;
+        let filtroReconocerActivo = false;
+        let filtroProgramadaActivo = false;
+        let filtroOtrasActivo = false;
+
+        function getTextoGrupos(cantidad) {
+            const n = parseInt(cantidad);
+            return n === 1 ? `x 1 Grupo Participó` : `x ${n} Grupos Participaron`;
+        }
+
+        function getClaseEstado(estado) {
+            if (estado === 'Finalizada') return 'has-text-info';
+            if (estado === 'Pendiente') return 'has-text-warning';
+            if (estado === 'Por Reconocer') return 'has-text-grey';
+            if (estado === 'Programada') return 'has-text-danger';
+            return 'has-text-dark';
+        }
+
+        function resetFiltrosUI() {
+            const btnCamino = document.getElementById('btnFiltroCamino');
+            const btnParques = document.getElementById('btnFiltroParques');
+            const btnReconocer = document.getElementById('btnFiltroReconocer');
+            const btnProgramada = document.getElementById('btnFiltroProgramada');
+            const btnOtras = document.getElementById('btnFiltroOtras');
+            
+            btnCamino.innerHTML = '<i class="fas fa-map-signs mr-1"></i> ECDCR';
+            btnCamino.classList.replace('is-dark', 'is-warning');
+            
+            btnParques.innerHTML = '<i class="fas fa-tree mr-1"></i> P.N.';
+            btnParques.classList.replace('is-dark', 'is-success');
+
+            btnReconocer.innerHTML = '<i class="fas fa-binoculars mr-1"></i> xReconocer';
+            btnReconocer.classList.replace('is-dark', 'is-link');
+
+            btnProgramada.innerHTML = '<i class="fas fa-calendar-check mr-1"></i> Programada';
+            btnProgramada.classList.replace('is-dark', 'is-danger');
+
+            btnOtras.innerHTML = '<i class="fas fa-person-hiking mr-1"></i> Otras';
+            btnOtras.classList.replace('is-dark', 'is-white');
+        }
+
+        function toggleFiltroCamino() {
+            const activoAnterior = filtroCaminoActivo;
+            filtroCaminoActivo = !activoAnterior;
+            filtroParquesActivo = false; 
+            filtroReconocerActivo = false;
+            filtroProgramadaActivo = false;
+            filtroOtrasActivo = false;
+            resetFiltrosUI();
+            const btn = document.getElementById('btnFiltroCamino');
+            if (filtroCaminoActivo) {
+                btn.innerHTML = '<i class="fas fa-eye mr-1"></i> Ver Todo';
+                btn.classList.replace('is-warning', 'is-dark');
+            }
+            renderList();
+        }
+
+        function toggleFiltroParques() {
+            const activoAnterior = filtroParquesActivo;
+            filtroParquesActivo = !activoAnterior;
+            filtroCaminoActivo = false;
+            filtroReconocerActivo = false;
+            filtroProgramadaActivo = false;
+            filtroOtrasActivo = false;
+            resetFiltrosUI();
+            const btn = document.getElementById('btnFiltroParques');
+            if (filtroParquesActivo) {
+                btn.innerHTML = '<i class="fas fa-eye mr-1"></i> Ver Todo';
+                btn.classList.replace('is-success', 'is-dark');
+            }
+            renderList();
+        }
+
+        function toggleFiltroReconocer() {
+            const activoAnterior = filtroReconocerActivo;
+            filtroReconocerActivo = !activoAnterior;
+            filtroCaminoActivo = false;
+            filtroParquesActivo = false;
+            filtroProgramadaActivo = false;
+            filtroOtrasActivo = false;
+            resetFiltrosUI();
+            const btn = document.getElementById('btnFiltroReconocer');
+            if (filtroReconocerActivo) {
+                btn.innerHTML = '<i class="fas fa-eye mr-1"></i> Ver Todo';
+                btn.classList.replace('is-link', 'is-dark');
+            }
+            renderList();
+        }
+
+        function toggleFiltroProgramada() {
+            const activoAnterior = filtroProgramadaActivo;
+            filtroProgramadaActivo = !activoAnterior;
+            filtroCaminoActivo = false;
+            filtroParquesActivo = false;
+            filtroReconocerActivo = false;
+            filtroOtrasActivo = false;
+            resetFiltrosUI();
+            const btn = document.getElementById('btnFiltroProgramada');
+            if (filtroProgramadaActivo) {
+                btn.innerHTML = '<i class="fas fa-eye mr-1"></i> Ver Todo';
+                btn.classList.replace('is-danger', 'is-dark');
+            }
+            renderList();
+        }
+
+        function toggleFiltroOtras() {
+            const activoAnterior = filtroOtrasActivo;
+            filtroOtrasActivo = !activoAnterior;
+            filtroCaminoActivo = false;
+            filtroParquesActivo = false;
+            filtroReconocerActivo = false;
+            filtroProgramadaActivo = false;
+            resetFiltrosUI();
+            const btn = document.getElementById('btnFiltroOtras');
+            if (filtroOtrasActivo) {
+                btn.innerHTML = '<i class="fas fa-eye mr-1"></i> Ver Todo';
+                btn.classList.replace('is-white', 'is-dark');
+            }
+            renderList();
+        }
+
+        function renderList() {
+            const listado = document.getElementById('listadoRutas');
+            const labelActividades = document.getElementById('labelActividades');
+            listado.innerHTML = '';
+            
+            let datosAMostrar = rutas;
+            labelActividades.innerText = "Rutas Realizadas";
+
+            if (filtroCaminoActivo) {
+                datosAMostrar = rutas.filter(r => r.actividad === 'El Camino de Costa Rica');
+            } else if (filtroParquesActivo) {
+                datosAMostrar = rutas.filter(r => r.actividad === 'Parques Nacionales');
+                labelActividades.innerText = "Parques Visitados";
+            } else if (filtroReconocerActivo) {
+                datosAMostrar = rutas.filter(r => r.estado === 'Por Reconocer');
+                labelActividades.innerText = "Rutas por Reconocer";
+            } else if (filtroProgramadaActivo) {
+                datosAMostrar = rutas.filter(r => r.estado === 'Programada');
+                labelActividades.innerText = "Rutas Programadas";
+            } else if (filtroOtrasActivo) {
+                datosAMostrar = rutas.filter(r => r.actividad !== 'El Camino de Costa Rica' && r.actividad !== 'Parques Nacionales');
+                labelActividades.innerText = "Otras Rutas";
+            }
+
+            const agrupadas = datosAMostrar.reduce((acc, ruta) => {
+                acc[ruta.provincia] = acc[ruta.provincia] || [];
+                acc[ruta.provincia].push(ruta);
+                return acc;
+            }, {});
+
+            for (const prov in agrupadas) {
+                const details = document.createElement('details');
+                details.open = true; 
+                const summary = document.createElement('summary');
+                summary.innerText = prov;
+                const contentDiv = document.createElement('div');
+
+                agrupadas[prov].forEach((ruta) => {
+                    const realIndex = rutas.indexOf(ruta);
+                    const item = document.createElement('div');
+                    item.className = 'ruta-item';
+                    item.innerHTML = `
+                        <div class="ruta-info">
+                            <span class="ruta-nombre">${ruta.nombre}</span>
+                            <span class="ruta-detalle">
+                                ${ruta.actividad}${ruta.actividad === 'Internacional' ? ': ' + ruta.pais : ''} 
+                                <span class="tag-minimal ${getClaseEstado(ruta.estado)}">• ${ruta.estado}</span>
+                            </span>
+                            <span class="ruta-grupos">${getTextoGrupos(ruta.grupos)}</span>
+                        </div>
+                        <div class="buttons no-photo">
+                            <button class="button is-small is-white has-text-link" onclick="editRuta(${realIndex})"><i class="fas fa-pencil"></i></button>
+                            <button class="button is-small is-white has-text-danger" onclick="deleteRuta(${realIndex})"><i class="fas fa-trash-can"></i></button>
+                        </div>
+                    `;
+                    contentDiv.appendChild(item);
+                });
+
+                details.appendChild(summary);
+                details.appendChild(contentDiv);
+                listado.appendChild(details);
+            }
+            updateChart(datosAMostrar);
+            updateTotals(datosAMostrar);
+        }
+
+        function updateTotals(datos = rutas) {
+            const totalActividades = datos.length;
+            const totalGrupos = datos.reduce((sum, r) => sum + parseInt(r.grupos || 0), 0);
+            const repetidas = datos.filter(r => parseInt(r.grupos) > 1).length;
+            
+            document.getElementById('totalActividades').innerText = totalActividades;
+            document.getElementById('totalRepetidas').innerText = repetidas;
+            document.getElementById('totalGrupos').innerText = totalGrupos;
+        }
+
+        function updateChart(datos = rutas) {
+            const contGeneral = document.getElementById('containerGeneral');
+            const contParques = document.getElementById('containerParques');
+            const contCamino = document.getElementById('containerCamino');
+
+            if (filtroCaminoActivo) {
+                contGeneral.style.display = 'none';
+                contParques.style.display = 'none';
+                contCamino.style.display = 'block';
+            } else if (filtroParquesActivo) {
+                contGeneral.style.display = 'none';
+                contParques.style.display = 'block';
+                contCamino.style.display = 'none';
+            } else if (filtroReconocerActivo || filtroProgramadaActivo || filtroOtrasActivo) {
+                contGeneral.style.display = 'block'; 
+                contParques.style.display = 'none';
+                contCamino.style.display = 'none';
+            } else {
+                contGeneral.style.display = 'block';
+                contParques.style.display = (rutas.some(r => r.actividad === 'Parques Nacionales')) ? 'block' : 'none';
+                contCamino.style.display = (rutas.some(r => r.actividad === 'El Camino de Costa Rica')) ? 'block' : 'none';
+            }
+
+            if (contGeneral.style.display === 'block') {
+                const ctxGeneral = document.getElementById('chartProvincias').getContext('2d');
+                const conteoGeneral = datos.reduce((acc, r) => {
+                    acc[r.provincia] = (acc[r.provincia] || 0) + 1;
+                    return acc;
+                }, {});
+                if (miGrafica) { miGrafica.destroy(); }
+                miGrafica = crearPieChart(ctxGeneral, conteoGeneral);
+            }
+
+            if (contParques.style.display === 'block') {
+                const rutasParques = datos.filter(r => r.actividad === 'Parques Nacionales');
+                if (rutasParques.length > 0) {
+                    const ctxParques = document.getElementById('chartParques').getContext('2d');
+                    const conteoParques = rutasParques.reduce((acc, r) => {
+                        acc[r.provincia] = (acc[r.provincia] || 0) + 1;
+                        return acc;
+                    }, {});
+                    if (miGraficaParques) { miGraficaParques.destroy(); }
+                    miGraficaParques = crearPieChart(ctxParques, conteoParques);
+                }
+            }
+
+            if (contCamino.style.display === 'block') {
+                const rutasCamino = datos.filter(r => r.actividad === 'El Camino de Costa Rica');
+                if (rutasCamino.length > 0) {
+                    const ctxCamino = document.getElementById('chartCamino').getContext('2d');
+                    const sumaGruposCamino = rutasCamino.reduce((acc, r) => {
+                        acc[r.provincia] = (acc[r.provincia] || 0) + parseInt(r.grupos || 0);
+                        return acc;
+                    }, {});
+                    if (miGraficaCamino) { miGraficaCamino.destroy(); }
+                    miGraficaCamino = crearPieChart(ctxCamino, sumaGruposCamino);
+                }
+            }
+        }
+
+        function crearPieChart(ctx, dataObj) {
+            return new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(dataObj),
+                    datasets: [{
+                        data: Object.values(dataObj),
+                        backgroundColor: ['#00d1b2', '#3273dc', '#ffdd57', '#ff3860', '#7957d5', '#48c774', '#ffb86c', '#8b4513']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                generateLabels: function(chart) {
+                                    const data = chart.data;
+                                    return data.labels.map((label, i) => ({
+                                        text: `${label}: ${data.datasets[0].data[i]}`,
+                                        fillStyle: data.datasets[0].backgroundColor[i],
+                                        index: i
+                                    }));
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        async function exportToPng() {
+            const area = document.getElementById('exportArea');
+            const btn = document.querySelector('.button.is-info');
+            btn.classList.add('is-loading');
+            
+            // Ocultamos los botones de edición/borrado para la foto
+            document.querySelectorAll('.no-photo').forEach(el => el.style.display = 'none');
+            
+            try {
+                const canvas = await html2canvas(area, { backgroundColor: "#ffffff", scale: 2 });
+                const link = document.createElement('a');
+                link.download = 'Historia_Tribu_Libres.png';
+                link.href = canvas.toDataURL("image/png");
+                link.click();
+            } catch (err) {
+                alert("Error al generar la imagen");
+            } finally {
+                document.querySelectorAll('.no-photo').forEach(el => el.style.display = 'flex');
+                btn.classList.remove('is-loading');
+            }
+        }
+
+        function togglePais() {
+            const act = document.getElementById('actividad').value;
+            document.getElementById('paisContainer').classList.toggle('is-hidden', act !== 'Internacional');
+        }
+
+        function openModal() {
+            document.getElementById('rutaForm').reset();
+            document.getElementById('editIndex').value = '';
+            document.getElementById('modalTitle').innerText = 'Nueva Actividad';
+            document.getElementById('modalRuta').classList.add('is-active');
+            togglePais();
+        }
+
+        function closeModal() { document.getElementById('modalRuta').classList.remove('is-active'); }
+
+        function saveRuta() {
+            const index = document.getElementById('editIndex').value;
+            const nuevaRuta = {
+                nombre: document.getElementById('nombre').value,
+                provincia: document.getElementById('provincia').value,
+                actividad: document.getElementById('actividad').value,
+                pais: document.getElementById('pais').value,
+                grupos: document.getElementById('grupos').value,
+                estado: document.querySelector('input[name="estado"]:checked').value
+            };
+            if (!nuevaRuta.nombre) return;
+            if (index === "") { rutas.push(nuevaRuta); } else { rutas[index] = nuevaRuta; }
+            localStorage.setItem('rutas_caminata', JSON.stringify(rutas));
+            renderList();
+            closeModal();
+        }
+
+        function editRuta(index) {
+            const r = rutas[index];
+            document.getElementById('nombre').value = r.nombre;
+            document.getElementById('provincia').value = r.provincia;
+            document.getElementById('actividad').value = r.actividad;
+            document.getElementById('pais').value = r.pais;
+            document.getElementById('grupos').value = r.grupos;
+            const radio = document.querySelector(`input[name="estado"][value="${r.estado}"]`);
+            if (radio) radio.checked = true;
+            document.getElementById('editIndex').value = index;
+            document.getElementById('modalTitle').innerText = 'Editar Actividad';
+            document.getElementById('modalRuta').classList.add('is-active');
+            togglePais();
+        }
+
+        function deleteRuta(index) {
+            if(confirm('¿Eliminar esta actividad?')) {
+                rutas.splice(index, 1);
+                localStorage.setItem('rutas_caminata', JSON.stringify(rutas));
+                renderList();
+            }
+        }
+
+        function exportToJson() {
+            const blob = new Blob([JSON.stringify(rutas, null, 2)], { type: 'application/json' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'Historia_Tribu_Libres_Backup.json';
+            link.click();
+        }
+
+        function importFromJson(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    if (Array.isArray(importedData)) {
+                        rutas = importedData;
+                        localStorage.setItem('rutas_caminata', JSON.stringify(rutas));
+                        renderList();
+                    }
+                } catch (err) { alert('Error en el archivo JSON'); }
+            };
+            reader.readAsText(file);
+        }
+
+        function generateText() {
+            let text = "🏔️ LA TRIBU DE LOS LIBRES\nNuestra Historia en Caminatas\n\n";
+            let datosAMostrar = rutas;
+            if (filtroCaminoActivo) datosAMostrar = rutas.filter(r => r.actividad === 'El Camino de Costa Rica');
+            if (filtroParquesActivo) datosAMostrar = rutas.filter(r => r.actividad === 'Parques Nacionales');
+            if (filtroReconocerActivo) datosAMostrar = rutas.filter(r => r.estado === 'Por Reconocer');
+            if (filtroProgramadaActivo) datosAMostrar = rutas.filter(r => r.estado === 'Programada');
+            if (filtroOtrasActivo) datosAMostrar = rutas.filter(r => r.actividad !== 'El Camino de Costa Rica' && r.actividad !== 'Parques Nacionales');
+
+            const agrupadas = datosAMostrar.reduce((acc, ruta) => {
+                acc[ruta.provincia] = acc[ruta.provincia] || [];
+                acc[ruta.provincia].push(ruta);
+                return acc;
+            }, {});
+            for (const prov in agrupadas) {
+                text += `${prov.toUpperCase()}\n----------------------------------\n`;
+                agrupadas[prov].forEach(r => {
+                    text += `*${r.nombre}*\n  Actividad: ${r.actividad}${r.actividad === 'Internacional' ? ' ('+r.pais+')' : ''}\n  ${getTextoGrupos(r.grupos)}\n  Estado: ${r.estado}\n\n`;
+                });
+            }
+            const totalG = datosAMostrar.reduce((sum, r) => sum + parseInt(r.grupos || 0), 0);
+            text += `==================================\n`;
+            let label = "RUTAS MOSTRADAS";
+            if (filtroParquesActivo) label = "PARQUES VISITADOS";
+            if (filtroReconocerActivo) label = "RUTAS X RECONOCER";
+            if (filtroProgramadaActivo) label = "RUTAS PROGRAMADAS";
+            if (filtroOtrasActivo) label = "OTRAS RUTAS";
+            text += `${label}: ${datosAMostrar.length}\n`;
+            text += `TOTAL GENERAL DE PARTICIPACIÓN: ${totalG}\n`;
+            text += `==================================`;
+            return text;
+        }
+
+        function exportToTxt() {
+            const blob = new Blob([generateText()], { type: 'text/plain' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'Historia_Tribu_Libres.txt';
+            link.click();
+        }
+
+        function exportToWhatsApp() {
+            window.open(`https://wa.me/?text=${encodeURIComponent(generateText())}`, '_blank');
+        }
+
+        renderList();
+    </script>
+</body>
+</html> 

@@ -5,6 +5,7 @@
 /* 1. Importar librerías locales */
 @import url('bootstrap.css');
 @import url('bootstrap-icons.css');
+@import url('index.css');
 
 /* 2. Clases globales de tu App Shell */
 .pt-safe { padding-top: env(safe-area-inset-top); }

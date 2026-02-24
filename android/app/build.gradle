@@ -22,7 +22,23 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
+    // ========================================================
+    // SOLUCIÓN PARA FORZAR JAVA 17 Y EVITAR ERROR DE TOOLCHAIN 21
+    // ========================================================
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
 }
+
+// Declaración global del Toolchain para el proyecto
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+// ========================================================
 
 repositories {
     flatDir{

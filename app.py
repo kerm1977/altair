@@ -1,6 +1,6 @@
 import os
 import logging
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
@@ -19,15 +19,18 @@ from chat import chat_bp
 app.register_blueprint(chat_bp)
 
 # --- CONFIGURACIÓN DE RUTAS ---
-# Ruta absoluta en PythonAnywhere
+# Rutas absolutas en PythonAnywhere
 BASE_DB_PATH = '/home/kenth1977/myDBs/DBs'
+BASE_UPDATE_PATH = '/home/kenth1977/myDBs/updates'
 
-# Asegurar que la carpeta de bases de datos exista físicamente al arrancar
-if not os.path.exists(BASE_DB_PATH):
-    try:
-        os.makedirs(BASE_DB_PATH, exist_ok=True)
-    except Exception as e:
-        print(f"Error crítico creando directorio: {e}")
+# Asegurar que las carpetas necesarias existan físicamente al arrancar
+for path in [BASE_DB_PATH, BASE_UPDATE_PATH]:
+    if not os.path.exists(path):
+        try:
+            os.makedirs(path, exist_ok=True)
+            print(f"[OK] Directorio creado: {path}")
+        except Exception as e:
+            print(f"[ERROR] No se pudo crear el directorio {path}: {e}")
 
 # Diccionarios para gestionar las conexiones dinámicas
 engines = {}
@@ -355,6 +358,14 @@ def obtener_contactos(app_slug, mi_pin):
             session.close()
 
 # ==============================================================================
+# RUTA PUENTE PARA DESCARGAR ACTUALIZACIONES DESDE CARPETA PRIVADA
+# ==============================================================================
+@app.route('/descargas_ota/<path:filename>')
+def descargar_ota(filename):
+    """Sirve los archivos ZIP de actualización desde la carpeta protegida"""
+    return send_from_directory(BASE_UPDATE_PATH, filename)
+
+# ==============================================================================
 # NUEVO: RUTA PARA ACTUALIZACIONES OTA (Over-The-Air)
 # ==============================================================================
 @app.route('/api/<app_slug>/check_update', methods=['GET', 'OPTIONS'])
@@ -364,13 +375,11 @@ def check_update(app_slug):
         return jsonify({"status": "ok"}), 200
 
     try:
-        # Aquí definimos la URL y la versión del ZIP. 
-        # La URL apunta a la carpeta "static" de tu PythonAnywhere,
-        # así que deberás subir tus .zip en /home/kenth1977/mysite/static/updates/
-        
+        # Apuntamos la URL al nuevo 'puente' que acabamos de crear arriba
+        # IMPORTANTE: Cambia este número de versión cada vez que subas un ZIP nuevo
         update_data = {
-            "version": "2.0.0", # Cuando subas un nuevo diseño, sube este número
-            "url": f"https://kenth1977.pythonanywhere.com/static/updates/{app_slug}_v2.zip"
+            "version": "2.0.0", 
+            "url": f"https://kenth1977.pythonanywhere.com/descargas_ota/{app_slug}_v2.zip"
         }
         
         return jsonify(update_data), 200

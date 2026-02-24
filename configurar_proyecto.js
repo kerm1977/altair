@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
+const { execSync } = require('child_process'); // <-- NUEVO: Para ejecutar npm automáticamente
 
 // Configuración de la interfaz de terminal
 const rl = readline.createInterface({
@@ -48,7 +49,18 @@ rl.question('1. Nombre de la nueva App (Ej: Altair Pro): ', (appNameInput) => {
             const ans = askIcon.trim().toLowerCase();
             if (ans === 's' || ans === 'si') {
                 rl.question('   [INFO] Arrastra aqui tu imagen (Soporta PNG y JPG): ', (iconPathInput) => {
-                    const iconPath = iconPathInput.trim().replace(/^["']|["']$/g, '');
+                    let iconPath = iconPathInput.trim().replace(/^["']|["']$/g, '');
+                    
+                    // =========================================================
+                    // Traducción de rutas WSL (/mnt/c/...) a Windows (C:\...)
+                    // =========================================================
+                    if (iconPath.toLowerCase().startsWith('/mnt/')) {
+                        const parts = iconPath.split('/');
+                        const drive = parts[2].toUpperCase(); // 'c' -> 'C'
+                        const rest = parts.slice(3).join('\\');
+                        iconPath = `${drive}:\\${rest}`;
+                    }
+
                     // Llamamos a procesar, eliminando espacios del slug para la Base de Datos
                     finalizarConfiguracion(appName, appSlug.replace(/\s+/g, ''), appId, iconPath);
                 });
@@ -96,7 +108,19 @@ function finalizarConfiguracion(appName, appSlug, appId, iconPath) {
     } catch (e) {}
 
     // =============================================================
-    // LA MAGIA: CREAR ARCHIVO DE ENLACE PARA CONSTRUIR.BAT
+    // MAGIA NUEVA: DOWNGRADE AUTOMÁTICO DE CAPACITOR UPDATER
+    // =============================================================
+    try {
+        console.log("\n⏳ Instalando la versión correcta del plugin OTA para evitar errores Java...");
+        // Esto obligará a tu PC a descargar los archivos correctos a "node_modules"
+        execSync('npm install @capgo/capacitor-updater@6.4.0', { stdio: 'inherit' });
+        console.log(`  [✔] Plugin instalado correctamente. El error de compilación ha sido neutralizado.`);
+    } catch (error) {
+        console.error("  [!] Hubo un detalle descargando el plugin, revisa tu conexión a internet.");
+    }
+
+    // =============================================================
+    // CREAR ARCHIVO DE ENLACE PARA CONSTRUIR.BAT
     // =============================================================
     try {
         const androidDir = path.join(__dirname, 'android');
@@ -117,7 +141,7 @@ function finalizarConfiguracion(appName, appSlug, appId, iconPath) {
     console.log("\nPROXIMOS PASOS:");
     console.log(`1. Visita: https://kenth1977.pythonanywhere.com/api/${appSlug}/crear_ahora`);
     console.log(`2. Entra a la carpeta android: cd android`);
-    console.log(`3. Ejecuta: construir.bat (¡Ya no te pedirá datos manuales!)`);
+    console.log(`3. Ejecuta: construir.bat`);
     console.log("======================================================\n");
     
     rl.close();

@@ -1,6 +1,6 @@
 {
-	"appId": "com.atari.app",
-	"appName": "atari",
+	"appId": "com.altair.app",
+	"appName": "Altair",
 	"webDir": "www",
 	"bundledWebRuntime": false
 }

@@ -23,6 +23,18 @@ if not "!ICON_PATH!"=="" (
     set "ICON_PATH=!ICON_PATH:"=!"
 )
 
+:: =======================================================
+:: TRADUCTOR AUTOMATICO WSL -> WINDOWS (Silencioso)
+:: =======================================================
+if not "!ICON_PATH!"=="" (
+    echo "!ICON_PATH!" | findstr /i /c:"/mnt/" >nul
+    if !errorlevel! equ 0 (
+        set "ICON_PATH=!ICON_PATH:/mnt/c/=C:\!"
+        set "ICON_PATH=!ICON_PATH:/mnt/C/=C:\!"
+        set "ICON_PATH=!ICON_PATH:/=\!"
+    )
+)
+
 echo.
 echo ==========================================
 echo    APLICANDO CAMBIOS VISUALES
@@ -32,12 +44,12 @@ echo ==========================================
 set "STRINGS_FILE=app\src\main\res\values\strings.xml"
 
 if exist "%STRINGS_FILE%" (
-    echo [CFG] Configurando nombre visible a: %CUSTOM_NAME%
+    echo [CFG] Configurando nombre visible a: !CUSTOM_NAME!
     (
         echo ^<?xml version='1.0' encoding='utf-8'?^>
         echo ^<resources^>
-        echo     ^<string name="app_name"^>%CUSTOM_NAME%^</string^>
-        echo     ^<string name="title_activity_main"^>%CUSTOM_NAME%^</string^>
+        echo     ^<string name="app_name"^>!CUSTOM_NAME!^</string^>
+        echo     ^<string name="title_activity_main"^>!CUSTOM_NAME!^</string^>
         echo     ^<string name="package_name"^>com.miapp.local^</string^>
         echo     ^<string name="custom_url_scheme"^>com.miapp.local^</string^>
         echo ^</resources^>
@@ -62,7 +74,6 @@ if not "!ICON_PATH!"=="" (
         
         if "!IS_JPG!"=="1" (
             echo [AUTO] Detectado JPG. Convirtiendo a PNG para Android...
-            :: Usamos PowerShell para convertir la imagen real a PNG sin perder calidad
             powershell -Command "Add-Type -AssemblyName System.Drawing; try { [System.Drawing.Image]::FromFile('!ICON_PATH!').Save('icon_temp.png', [System.Drawing.Imaging.ImageFormat]::Png) } catch { exit 1 }"
             
             if exist "icon_temp.png" (
@@ -100,9 +111,22 @@ echo.
 echo ==========================================
 echo    SINCRONIZANDO CAMBIOS WEB (CRITICO)
 echo ==========================================
-echo Copiando archivos de 'www' hacia 'android'...
 cd ..
+
+:: Sincronizamos de manera natural sin forzar instalaciones de npm
+echo Copiando archivos de 'www' hacia 'android'...
 call npx cap sync android
+
+:: =======================================================
+:: PARCHE SEGURO DE JAVA 17 (SIN CORROMPER EL ARCHIVO)
+:: =======================================================
+set "BAD_JAVA=node_modules\@capgo\capacitor-updater\android\src\main\java\ee\forgr\capacitor_updater\DelayUpdateUtils.java"
+if exist "!BAD_JAVA!" (
+    echo [AUTO] Corrigiendo incompatibilidad del plugin con Java 17 de manera segura...
+    :: Se usa System.Text.UTF8Encoding($false) para ASEGURAR que no se inyecte el BOM (\ufeff)
+    powershell -Command "$path='!BAD_JAVA!'; $txt=[System.IO.File]::ReadAllText($path); $txt=$txt -replace 'case DelayUntilNext\.', 'case '; [System.IO.File]::WriteAllText($path, $txt, (New-Object System.Text.UTF8Encoding($false)))"
+)
+
 cd android
 
 echo.
@@ -176,7 +200,7 @@ if exist variables.gradle (
 )
 
 :: --- 4. GENERAR SCRIPT DE FORZADO ---
-echo [CFG] Creando script de anulacion de version Java y correccion Kotlin...
+echo [CFG] Creando script de anulacion de version Java y correccion Kotlin (Restaurado)...
 
 echo allprojects { > force_compat.gradle
 echo     afterEvaluate { project -^> >> force_compat.gradle
@@ -199,14 +223,17 @@ echo     } >> force_compat.gradle
 echo } >> force_compat.gradle
 
 echo ==========================================
-echo    LIMPIANDO DEMONIOS...
+echo    LIMPIANDO DEMONIOS Y CACHE...
 echo ==========================================
 call gradlew.bat --stop
+echo [INFO] Ejecutando Gradle Clean (Recomendado por el usuario)...
+call gradlew.bat clean
 
 echo ==========================================
 echo    COMPILANDO APK...
 echo ==========================================
 
+:: Compilación limpia respetando tus modificaciones en variables.gradle y build.gradle
 call gradlew.bat assembleDebug -Dorg.gradle.java.home="%JAVA_HOME%" --init-script force_compat.gradle --no-daemon
 
 if %ERRORLEVEL% EQU 0 (

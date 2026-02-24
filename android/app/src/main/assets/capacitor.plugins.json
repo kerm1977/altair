@@ -18,5 +18,9 @@
 	{
 		"pkg": "@capgo/capacitor-native-biometric",
 		"classpath": "ee.forgr.biometric.NativeBiometric"
+	},
+	{
+		"pkg": "@capgo/capacitor-updater",
+		"classpath": "ee.forgr.capacitor_updater.CapacitorUpdaterPlugin"
 	}
 ]

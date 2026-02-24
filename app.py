@@ -303,7 +303,7 @@ def editar_perfil(app_slug):
             session.close()
 
 # ==============================================================================
-# NUEVO: RUTA PARA OBTENER LA LISTA DE CONTACTOS (CORREGIDA PARA SQLALCHEMY)
+# RUTA PARA OBTENER LA LISTA DE CONTACTOS
 # ==============================================================================
 @app.route('/api/<app_slug>/contactos/<mi_pin>', methods=['GET'])
 def obtener_contactos(app_slug, mi_pin):
@@ -353,6 +353,31 @@ def obtener_contactos(app_slug, mi_pin):
     finally:
         if session:
             session.close()
+
+# ==============================================================================
+# NUEVO: RUTA PARA ACTUALIZACIONES OTA (Over-The-Air)
+# ==============================================================================
+@app.route('/api/<app_slug>/check_update', methods=['GET', 'OPTIONS'])
+def check_update(app_slug):
+    """Endpoint para que el Frontend sepa si hay una nueva versión de HTML/CSS/JS"""
+    if request.method == 'OPTIONS':
+        return jsonify({"status": "ok"}), 200
+
+    try:
+        # Aquí definimos la URL y la versión del ZIP. 
+        # La URL apunta a la carpeta "static" de tu PythonAnywhere,
+        # así que deberás subir tus .zip en /home/kenth1977/mysite/static/updates/
+        
+        update_data = {
+            "version": "2.0.0", # Cuando subas un nuevo diseño, sube este número
+            "url": f"https://kenth1977.pythonanywhere.com/static/updates/{app_slug}_v2.zip"
+        }
+        
+        return jsonify(update_data), 200
+        
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

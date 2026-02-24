@@ -182,3 +182,9 @@ PROXIMOS PASOS:
 3. Abre tu App local con 'npx http-server' y ¡listo!
 ======================================================
 
+
+
+
+para actualizar
+npm install @capgo/capacitor-updater --legacy-peer-deps
+npx cap sync

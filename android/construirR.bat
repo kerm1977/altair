@@ -5,23 +5,31 @@ setlocal enabledelayedexpansion
 cd /d "%~dp0"
 
 echo ==========================================
-echo    LEYENDO CONFIGURACION CENTRALIZADA
+echo    PERSONALIZACION DE TU APP
 echo ==========================================
 
-:: Cargar los datos guardados previamente por el asistente Node.js
-if exist "build_config.bat" (
-    call build_config.bat
-    echo [INFO] Datos cargados. App: !CUSTOM_NAME!
-) else (
-    echo [ADVERTENCIA] build_config.bat no encontrado. Usando defaults.
-    set "CUSTOM_NAME=miapp"
-    set "ICON_PATH="
-)
+:: 1. PREGUNTA EL NOMBRE
+set /p CUSTOM_NAME="--> Nombre de tu App (Ej: MiTienda): "
+if "%CUSTOM_NAME%"=="" set CUSTOM_NAME=miapp
 
-:: Limpiamos las comillas que Windows pone al arrastrar archivos (por si acaso)
-if not "!ICON_PATH!"=="" (
-    set "ICON_PATH=!ICON_PATH:"=!"
-)
+:: 2. PREGUNTA POR EL ICONO (CON SI/NO)
+echo.
+echo Desea cambiar el icono de la aplicacion?
+set /p ASK_ICON="--> Escribe S (Si) o N (No): "
+
+set "ICON_PATH="
+if /i "%ASK_ICON%"=="S" goto :REQUEST_ICON
+if /i "%ASK_ICON%"=="SI" goto :REQUEST_ICON
+goto :SKIP_ICON_INPUT
+
+:REQUEST_ICON
+echo.
+echo [INFO] Arrastra aqui tu imagen (Soporta PNG y JPG):
+set /p ICON_PATH="--> Archivo: "
+:: Limpiamos las comillas que Windows pone al arrastrar archivos
+set "ICON_PATH=!ICON_PATH:"=!"
+
+:SKIP_ICON_INPUT
 
 echo.
 echo ==========================================
@@ -47,15 +55,15 @@ if exist "%STRINGS_FILE%" (
 )
 
 :: --- B. CAMBIAR ICONOS (CON CONVERSION AUTOMATICA) ---
-if not "!ICON_PATH!"=="" (
-    if exist "!ICON_PATH!" (
+if not "%ICON_PATH%"=="" (
+    if exist "%ICON_PATH%" (
         echo [CFG] Procesando imagen...
         
         :: Detectamos si es JPG para convertirlo
-        set "FINAL_ICON=!ICON_PATH!"
+        set "FINAL_ICON=%ICON_PATH%"
         set "IS_JPG=0"
         
-        for %%f in ("!ICON_PATH!") do (
+        for %%f in ("%ICON_PATH%") do (
             if /i "%%~xf"==".jpg" set "IS_JPG=1"
             if /i "%%~xf"==".jpeg" set "IS_JPG=1"
         )
@@ -63,7 +71,7 @@ if not "!ICON_PATH!"=="" (
         if "!IS_JPG!"=="1" (
             echo [AUTO] Detectado JPG. Convirtiendo a PNG para Android...
             :: Usamos PowerShell para convertir la imagen real a PNG sin perder calidad
-            powershell -Command "Add-Type -AssemblyName System.Drawing; try { [System.Drawing.Image]::FromFile('!ICON_PATH!').Save('icon_temp.png', [System.Drawing.Imaging.ImageFormat]::Png) } catch { exit 1 }"
+            powershell -Command "Add-Type -AssemblyName System.Drawing; try { [System.Drawing.Image]::FromFile('%ICON_PATH%').Save('icon_temp.png', [System.Drawing.Imaging.ImageFormat]::Png) } catch { exit 1 }"
             
             if exist "icon_temp.png" (
                 set "FINAL_ICON=icon_temp.png"
@@ -92,7 +100,7 @@ if not "!ICON_PATH!"=="" (
         )
         
     ) else (
-        echo [ERROR] No encontre el archivo de imagen en: "!ICON_PATH!"
+        echo [ERROR] No encontre el archivo de imagen. Se usara el icono original.
     )
 )
 

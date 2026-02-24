@@ -1,10 +1,27 @@
 apply plugin: 'com.android.application'
 
+// ========================================================
+// MAGIA: LEER EL ID DE LA APP DIRECTAMENTE DE CAPACITOR
+// ========================================================
+import groovy.json.JsonSlurper
+
+def getDynamicAppId() {
+    def configFile = file('../../capacitor.config.json')
+    if (configFile.exists()) {
+        def json = new JsonSlurper().parseText(configFile.text)
+        if (json.appId) return json.appId
+    }
+    return "com.miapp.local" // Fallback de seguridad
+}
+
+def myDynamicAppId = getDynamicAppId()
+// ========================================================
+
 android {
     namespace = "com.miapp.local"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.miapp.local"
+        applicationId myDynamicAppId
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

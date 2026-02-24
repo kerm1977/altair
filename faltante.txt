@@ -11,3 +11,5 @@ Crear widgets area
 Olividó contraseña
 
 evitar sobreescritura de la app cuando se crea una nueva app
+
+Respaldar la base de datos en .db y en json

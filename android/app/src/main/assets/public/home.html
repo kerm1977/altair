@@ -1,186 +1,147 @@
-<div class="d-flex flex-column gap-3 pt-2">
-            
-    <!-- Tarjeta de Bienvenida -->
-    <div class="card border-0 shadow-sm rounded-4 p-4 bg-primary text-white position-relative overflow-hidden">
-        <div class="position-absolute end-0 top-0 opacity-25" style="transform: translate(20%, -20%); font-size: 8rem;">🏔️</div>
-        <div class="position-relative z-index-1">
-            <h2 class="h5 fw-bold mb-1">¡Hola, Aventurero!</h2>
-            <p class="small mb-0 text-white-50">Explora y únete a las próximas caminatas de La Tribu.</p>
+<!-- HOME -->
+<!-- Vista: home.html -->
+<div class="h-100 d-flex flex-column bg-light pb-safe">
+    
+    <!-- Encabezado Principal -->
+    <div class="position-relative w-100 flex-shrink-0 p-4" style="background: linear-gradient(135deg, #0d6efd, #0dcaf0); border-bottom-left-radius: 30px; border-bottom-right-radius: 30px;">
+        <h2 class="fw-bold text-white mb-0 mt-2" id="home-greeting">Hola, Tribu</h2>
+        <p class="text-white-50 mb-0">Tus accesos directos</p>
+    </div>
+
+    <!-- Cuadrícula de Accesos Directos -->
+    <div class="flex-grow-1 p-4 overflow-auto">
+        <div class="row g-3" id="grid-accesos">
+            <!-- Los accesos directos se generarán aquí mediante JS -->
         </div>
     </div>
 
-    <!-- Sección de Próximas Caminatas -->
-    <div class="mt-2">
-        <div class="d-flex justify-content-between align-items-center mb-3 px-1">
-            <h3 class="small fw-bold text-secondary text-uppercase mb-0" style="font-size: 0.75rem; letter-spacing: 0.05em;">Próximas Caminatas</h3>
-            <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2 shadow-sm">Abiertas</span>
-        </div>
-        
-        <div id="lista-eventos" class="d-flex flex-column gap-3 pb-4">
-            <div class="text-center p-5 text-muted small bg-white rounded-4 shadow-sm border border-light">
-                Buscando aventuras disponibles... ⏳
+    <!-- Botón Flotante para Agregar Nuevo Acceso -->
+    <button class="btn btn-primary rounded-circle position-fixed shadow" 
+            style="bottom: 80px; right: 20px; z-index: 1000; width: 60px; height: 60px;"
+            data-bs-toggle="modal" data-bs-target="#modalNuevoAcceso">
+        <i class="bi bi-plus text-white" style="font-size: 2rem; line-height: 1;"></i>
+    </button>
+
+    <!-- Modal para Agregar Acceso Directo -->
+    <div class="modal fade" id="modalNuevoAcceso" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow rounded-4">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold">Nuevo Acceso Directo</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="form-nuevo-acceso">
+                        <div class="mb-3">
+                            <label class="form-label text-secondary small">Nombre de la Vista</label>
+                            <input type="text" class="form-control rounded-3" id="acc-nombre" placeholder="Ej. Inventario" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-secondary small">Nombre del Archivo HTML (con o sin .html)</label>
+                            <input type="text" class="form-control rounded-3" id="acc-ruta" placeholder="Ej. inventario o inventario.html" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-secondary small">Icono (Bootstrap Icons)</label>
+                            <select class="form-select rounded-3" id="acc-icono">
+                                <option value="bi-star-fill">Estrella</option>
+                                <option value="bi-box-seam">Caja / Inventario</option>
+                                <option value="bi-people-fill">Usuarios</option>
+                                <option value="bi-file-earmark-text">Documento</option>
+                                <option value="bi-gear-fill">Configuración</option>
+                                <option value="bi-link">Enlace Web</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100 rounded-3 py-2 fw-bold">Agregar Acceso</button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- ========================================== -->
-<!-- MODAL: SOLICITAR PIN DE INSCRIPCIÓN        -->
-<!-- ========================================== -->
-<div class="modal fade" id="modalInscripcion" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered px-3">
-    <div class="modal-content rounded-4 border-0 shadow-lg">
-      <div class="modal-header border-0 pb-0 text-center position-relative">
-        <h5 class="modal-title fw-bold text-dark w-100 mt-2">Seguridad Tribu</h5>
-        <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body text-center pt-2 pb-4 px-4">
-        <div class="mb-3">
-            <span class="bg-warning bg-opacity-10 text-warning rounded-circle d-inline-flex align-items-center justify-content-center" style="width: 70px; height: 70px;">
-                <svg width="32" height="32" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-            </span>
-        </div>
-        <p class="text-secondary small mb-4">Ingresa tu PIN secreto para confirmar tu inscripción a <br><strong id="modalEventoNombre" class="text-dark fs-6"></strong>.</p>
-        
-        <input type="password" id="inputPin" class="form-control form-control-lg text-center fw-bold rounded-4 mb-4 bg-light border-0" placeholder="****" maxlength="4" style="letter-spacing: 0.8em; font-size: 1.5rem;">
-        <input type="hidden" id="inputIdEvento">
-        
-        <button onclick="procesarInscripcion()" class="btn btn-warning w-100 rounded-pill fw-bold p-3 shadow-sm text-dark" id="btnConfirmar">
-            Confirmar y Ganar Puntos ⭐
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ========================================== -->
-<!-- MODAL: MENSAJE DE ÉXITO O ERROR            -->
-<!-- ========================================== -->
-<div class="modal fade" id="modalMensaje" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered px-4">
-        <div class="modal-content rounded-4 border-0 shadow-lg text-center p-4">
-            <div id="modalIcono" class="mb-3"></div>
-            <h4 id="modalTituloMensaje" class="fw-bold mb-2 text-dark"></h4>
-            <p id="modalTextoMensaje" class="text-secondary small mb-4"></p>
-            <button type="button" class="btn btn-light border rounded-pill fw-bold w-100 p-3" data-bs-dismiss="modal" id="btnCerrarMensaje">Continuar</button>
-        </div>
-    </div>
-</div>
-
-<!-- ========================================== -->
-<!-- SCRIPT ESPECÍFICO DE HOME                  -->
-<!-- ========================================== -->
 <script>
-    // 1. Cargar y mostrar los eventos (Igual que antes)
-    async function cargarEventos() {
-        const contenedor = document.getElementById('lista-eventos');
-        const todosLosEventos = await window.CloudDB.obtenerEventos();
-        
-        const hoy = new Date().toISOString().split('T')[0]; 
-        const eventos = todosLosEventos.filter(ev => ev.event_date >= hoy && ev.event_date !== "N/A");
-        eventos.sort((a, b) => a.event_date.localeCompare(b.event_date));
+    (function initHome() {
+        // 1. Mostrar nombre del usuario si existe
+        try {
+            const user = JSON.parse(localStorage.getItem('usuarioActual'));
+            if (user && user.nombre) {
+                document.getElementById('home-greeting').textContent = 'Hola, ' + user.nombre.split(' ')[0];
+            }
+        } catch(e) {}
 
-        if (!eventos || eventos.length === 0) {
-            contenedor.innerHTML = `<div class="text-center p-4 text-muted small bg-white rounded-4 shadow-sm border border-light">No hay aventuras programadas a partir de hoy. 🏕️</div>`;
-            return;
-        }
+        // 2. Definir Accesos Directos por Defecto (Tus vistas actuales)
+        const accesosPorDefecto = [
+            { nombre: 'Calendario', ruta: 'calendarioTribu', icono: 'bi-calendar-event', color: '#ff6b6b' },
+            { nombre: 'Rutas / Gráficas', ruta: 'rutas', icono: 'bi-map-fill', color: '#20c997' },
+            { nombre: 'Pagos JyK', ruta: 'tablapagosV1 (2)', icono: 'bi-cash-coin', color: '#ffc107' },
+            { nombre: 'Apartados', ruta: 'apartados', icono: 'bi-shop', color: '#fd7e14' },
+            { nombre: 'Usuarios', ruta: 'usuarios', icono: 'bi-people-fill', color: '#6f42c1' }
+        ];
 
-        let html = '';
-        eventos.forEach(ev => {
-            const precio = ev.price > 0 ? `₡${ev.price.toLocaleString()}` : 'Gratis';
-            html += `
-            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-                <div class="card-body p-4">
-                    <h5 class="fw-bold text-dark mb-1">${ev.title}</h5>
-                    <div class="d-flex gap-2 mb-3">
-                        <span class="badge bg-light text-secondary border">📅 ${ev.event_date}</span>
-                        <span class="badge bg-light text-secondary border">⛰️ ${ev.difficulty}</span>
+        // 3. Cargar accesos personalizados del LocalStorage
+        let accesosPersonalizados = [];
+        try {
+            const guardados = localStorage.getItem('accesosPersonalizados');
+            if (guardados) accesosPersonalizados = JSON.parse(guardados);
+        } catch(e) {}
+
+        const todosLosAccesos = [...accesosPorDefecto, ...accesosPersonalizados];
+        const grid = document.getElementById('grid-accesos');
+
+        // 4. Renderizar Cuadrícula
+        function renderizarAccesos() {
+            grid.innerHTML = '';
+            todosLosAccesos.forEach((acc, index) => {
+                // Limpiamos el .html si el usuario lo puso por error
+                const hashLimpio = acc.ruta.replace('.html', '');
+                
+                // Color aleatorio si es personalizado
+                const bgColor = acc.color || '#0d6efd';
+
+                const cardHtml = `
+                    <div class="col-6 col-md-4">
+                        <a href="#${hashLimpio}" class="text-decoration-none">
+                            <div class="card border-0 shadow-sm h-100 rounded-4 text-center p-3" style="transition: transform 0.2s;">
+                                <div class="d-flex justify-content-center align-items-center mx-auto rounded-circle mb-2" 
+                                     style="width: 60px; height: 60px; background-color: ${bgColor}20; color: ${bgColor};">
+                                    <i class="bi ${acc.icono}" style="font-size: 1.8rem;"></i>
+                                </div>
+                                <h6 class="text-dark fw-bold mb-0" style="font-size: 0.9rem;">${acc.nombre}</h6>
+                            </div>
+                        </a>
                     </div>
-                    
-                    <div class="d-flex justify-content-between align-items-center bg-light p-3 rounded-3 mb-3 border-start border-4 border-warning">
-                        <div>
-                            <p class="small text-muted mb-0">Recompensa</p>
-                            <p class="fw-bold text-warning mb-0" style="font-size: 1.1rem;">⭐ ${ev.points_reward} pts</p>
-                        </div>
-                        <div class="text-end">
-                            <p class="small text-muted mb-0">Costo</p>
-                            <p class="fw-bold text-dark mb-0">${precio}</p>
-                        </div>
-                    </div>
-
-                    <button onclick="abrirModalInscripcion(${ev.id}, '${ev.title}')" class="btn btn-dark w-100 rounded-pill fw-bold p-3 shadow-sm">
-                        ¡Inscribirme a la Aventura!
-                    </button>
-                </div>
-            </div>`;
-        });
-        contenedor.innerHTML = html;
-    }
-
-    // 2. Abrir el Modal Hermoso en lugar del `prompt`
-    function abrirModalInscripcion(eventId, eventTitle) {
-        document.getElementById('modalEventoNombre').innerText = eventTitle;
-        document.getElementById('inputIdEvento').value = eventId;
-        document.getElementById('inputPin').value = ''; // Limpiar PIN viejo
-        
-        const modal = new bootstrap.Modal(document.getElementById('modalInscripcion'));
-        modal.show();
-    }
-
-    // 3. Procesar la inscripción al darle "Confirmar"
-    async function procesarInscripcion() {
-        const pin = document.getElementById('inputPin').value.trim();
-        const eventId = document.getElementById('inputIdEvento').value;
-        const btn = document.getElementById('btnConfirmar');
-
-        if (!pin) {
-            mostrarMensajeAnimado('¡Atención!', 'Debes ingresar tu PIN de seguridad para continuar.', 'warning');
-            return;
+                `;
+                grid.innerHTML += cardHtml;
+            });
         }
 
-        // Animación de carga en el botón
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Procesando...';
-        btn.disabled = true;
+        renderizarAccesos();
 
-        // Llamamos a la API
-        const respuesta = await window.CloudDB.inscribirEvento(pin, eventId);
-        
-        // Restaurar botón
-        btn.innerHTML = 'Confirmar y Ganar Puntos ⭐';
-        btn.disabled = false;
+        // 5. Lógica para Agregar Nuevo Acceso
+        const formNuevo = document.getElementById('form-nuevo-acceso');
+        if (formNuevo) {
+            formNuevo.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const nuevo = {
+                    nombre: document.getElementById('acc-nombre').value,
+                    ruta: document.getElementById('acc-ruta').value,
+                    icono: document.getElementById('acc-icono').value,
+                    color: '#0d6efd' // Color por defecto para los nuevos
+                };
 
-        // Esconder el modal del PIN
-        const modalElement = document.getElementById('modalInscripcion');
-        const modalInstancia = bootstrap.Modal.getInstance(modalElement);
-        if (modalInstancia) modalInstancia.hide();
+                accesosPersonalizados.push(nuevo);
+                localStorage.setItem('accesosPersonalizados', JSON.stringify(accesosPersonalizados));
+                
+                todosLosAccesos.push(nuevo);
+                renderizarAccesos();
 
-        // Mostrar resultado
-        if (respuesta.status === 'ok') {
-            mostrarMensajeAnimado('¡Aventura Confirmada!', respuesta.message, 'success');
-            // Redirigir al ranking al cerrar el modal de éxito
-            document.getElementById('btnCerrarMensaje').onclick = () => window.location.hash = '#usuarios';
-        } else {
-            mostrarMensajeAnimado('Error de Inscripción', respuesta.message || respuesta.error, 'error');
-            document.getElementById('btnCerrarMensaje').onclick = null; // No redirigir si falla
+                // Cerrar modal
+                const modalEl = document.getElementById('modalNuevoAcceso');
+                const modalIns = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+                modalIns.hide();
+                formNuevo.reset();
+            });
         }
-    }
-
-    // 4. Controlador Universal de Mensajes (reemplaza a `alert`)
-    function mostrarMensajeAnimado(titulo, texto, tipo) {
-        const iconos = {
-            success: '<div class="mx-auto bg-success bg-opacity-10 text-success rounded-circle d-flex align-items-center justify-content-center" style="width: 80px; height: 80px; font-size: 2.5rem;">🎉</div>',
-            error: '<div class="mx-auto bg-danger bg-opacity-10 text-danger rounded-circle d-flex align-items-center justify-content-center" style="width: 80px; height: 80px; font-size: 2.5rem;">❌</div>',
-            warning: '<div class="mx-auto bg-warning bg-opacity-10 text-warning rounded-circle d-flex align-items-center justify-content-center" style="width: 80px; height: 80px; font-size: 2.5rem;">⚠️</div>'
-        };
-
-        document.getElementById('modalIcono').innerHTML = iconos[tipo] || iconos.success;
-        document.getElementById('modalTituloMensaje').innerText = titulo;
-        document.getElementById('modalTextoMensaje').innerText = texto;
-
-        const modal = new bootstrap.Modal(document.getElementById('modalMensaje'));
-        modal.show();
-    }
-
-    // Ejecutar apenas carga la pantalla
-    setTimeout(cargarEventos, 100);
+    })();
 </script>

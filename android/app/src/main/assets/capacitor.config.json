@@ -1,6 +1,6 @@
 {
-	"appId": "com.tribuplay.app",
-	"appName": "TribuPlay",
+	"appId": "com.alatir.app",
+	"appName": "alatir",
 	"webDir": "www",
 	"bundledWebRuntime": false
 }

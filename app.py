@@ -12,6 +12,12 @@ app = Flask(__name__)
 CORS(app)
 bcrypt = Bcrypt(app)
 
+# ==========================================
+# CONEXIÓN CON EL HIJO (MÓDULO DE CHAT)
+# ==========================================
+from chat import chat_bp
+app.register_blueprint(chat_bp)
+
 # --- CONFIGURACIÓN DE RUTAS ---
 # Ruta absoluta en PythonAnywhere
 BASE_DB_PATH = '/home/kenth1977/myDBs/DBs'
@@ -296,6 +302,57 @@ def editar_perfil(app_slug):
         if session:
             session.close()
 
+# ==============================================================================
+# NUEVO: RUTA PARA OBTENER LA LISTA DE CONTACTOS (CORREGIDA PARA SQLALCHEMY)
+# ==============================================================================
+@app.route('/api/<app_slug>/contactos/<mi_pin>', methods=['GET'])
+def obtener_contactos(app_slug, mi_pin):
+    """Devuelve la lista de usuarios y la cantidad de mensajes sin leer"""
+    session = None
+    try:
+        # Usamos tu motor dinámico existente en lugar de sqlite3 crudo
+        session = get_db_session(app_slug)
+        
+        # 1. Obtenemos todos los miembros excepto nosotros mismos
+        miembros = session.execute(
+            text("SELECT id, nombre, apellido1, pin FROM member WHERE pin != :pin"),
+            {"pin": mi_pin}
+        ).mappings().fetchall()
+        
+        contactos = []
+        for m in miembros:
+            # Evitamos que salga "None" si el usuario no tiene apellido
+            apellido = m['apellido1'] if m['apellido1'] else ''
+            nombre_completo = f"{m['nombre']} {apellido}".strip()
+            
+            # 2. Contamos cuántos mensajes nos ha enviado que no hemos leído
+            try:
+                res = session.execute(
+                    text("""
+                        SELECT COUNT(*) as no_leidos 
+                        FROM chat_message 
+                        WHERE sender_pin = :sender AND receiver_pin = :receiver AND is_read = 0
+                    """),
+                    {"sender": m['pin'], "receiver": mi_pin}
+                ).mappings().fetchone()
+                no_leidos = res['no_leidos']
+            except Exception:
+                # Si la tabla de chat no existe aún, son 0
+                no_leidos = 0 
+                
+            contactos.append({
+                "pin": m['pin'],
+                "nombre": nombre_completo,
+                "no_leidos": no_leidos
+            })
+            
+        return jsonify({"contactos": contactos})
+    except Exception as e:
+        print(f"Error cargando contactos para {app_slug}: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if session:
+            session.close()
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)

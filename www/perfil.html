@@ -1,3 +1,4 @@
+<!-- Vista: perfil.html -->
 <!-- Contenedor Principal SPA -->
 <div class="min-vh-100 d-flex flex-column pb-safe" style="background-color: #f8f9fa;">
     
@@ -18,114 +19,59 @@
                  style="width: 130px; height: 130px; object-fit: cover; border: 4px solid white;">
             
             <h4 class="fw-bold text-dark mb-0" id="userName">Cargando...</h4>
-            <p class="text-muted small mb-0" id="userEmail">Cargando...</p>
-            <span class="badge bg-primary rounded-pill mt-2 px-3 py-2"><i class="bi bi-star-fill text-warning me-1"></i> <span id="userPuntos">0</span> Puntos</span>
-        </div>
-
-        <!-- Tarjeta de Datos Personales -->
-        <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+            <p class="text-muted small" id="userEmail">cargando@email.com</p>
             
-            <h6 class="fw-bold text-primary mb-3"><i class="bi bi-person-lines-fill me-2"></i>Datos Personales</h6>
-            
-            <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
-                <span class="text-muted small">Teléfono</span>
-                <span class="fw-medium text-dark" id="userPhone">--</span>
-            </div>
-
-            <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
-                <span class="text-muted small">PIN de Seguridad</span>
-                <span class="fw-bold text-primary font-monospace" id="userPin">--</span>
-            </div>
-
-            <h6 class="fw-bold text-danger mt-4 mb-3"><i class="bi bi-heart-pulse-fill me-2"></i>Emergencia</h6>
-            
-            <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
-                <span class="text-muted small">Contacto</span>
-                <span class="fw-medium text-dark" id="userEmgName">--</span>
-            </div>
-            
-            <div class="d-flex justify-content-between align-items-center py-2">
-                <span class="text-muted small">Teléfono</span>
-                <span class="fw-medium text-dark" id="userEmgPhone">--</span>
+            <div class="d-inline-block bg-warning text-dark px-3 py-1 rounded-pill mt-2 fw-bold shadow-sm">
+                <i class="bi bi-key-fill me-1"></i> PIN: <span id="userPin" class="font-monospace">------</span>
             </div>
         </div>
 
-        <!-- Menú de Opciones -->
-        <div class="card border-0 shadow-sm rounded-4 p-3 mb-4">
-            <a href="#mis_eventos" class="text-decoration-none text-dark d-flex align-items-center border-bottom py-2 mb-2">
-                <i class="bi bi-calendar-check text-primary fs-5 me-3"></i>
-                <span class="fw-medium">Mis Caminatas</span>
-                <i class="bi bi-chevron-right ms-auto text-muted small"></i>
-            </a>
-            <a href="#cambiarPass" class="text-decoration-none text-dark d-flex align-items-center py-2">
-                <i class="bi bi-shield-lock text-success fs-5 me-3"></i>
-                <span class="fw-medium">Seguridad y Contraseña</span>
-                <i class="bi bi-chevron-right ms-auto text-muted small"></i>
-            </a>
+        <!-- Tarjeta de Detalles -->
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-body p-4">
+                <h6 class="fw-bold text-secondary mb-3 border-bottom pb-2">Información Personal</h6>
+                
+                <div class="d-flex justify-content-between mb-3">
+                    <span class="text-muted"><i class="bi bi-telephone me-2"></i>Teléfono</span>
+                    <span class="fw-medium text-dark" id="userPhone">--</span>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted"><i class="bi bi-calendar-event me-2"></i>Edad</span>
+                    <span class="fw-medium text-dark" id="userAge">-- años</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tarjeta de Emergencia -->
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-body p-4">
+                <h6 class="fw-bold text-danger mb-3 border-bottom border-danger pb-2">Contacto de Emergencia</h6>
+                
+                <div class="d-flex justify-content-between mb-3">
+                    <span class="text-muted"><i class="bi bi-person-hearts me-2"></i>Nombre</span>
+                    <span class="fw-medium text-dark text-end" id="userEmgName">--</span>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted"><i class="bi bi-telephone-plus me-2"></i>Teléfono</span>
+                    <span class="fw-medium text-dark" id="userEmgPhone">--</span>
+                </div>
+            </div>
         </div>
 
         <!-- Botones de Acción -->
-        <div class="mt-auto pt-2 mb-4">
-            <a href="#editar_perfil" class="btn btn-outline-primary w-100 rounded-pill py-3 fw-bold shadow-sm d-flex justify-content-center align-items-center">
-                <i class="bi bi-pencil-square fs-5 me-2"></i> Editar Perfil
+        <div class="d-flex flex-column gap-3 mb-5 pb-5">
+            <a href="#editar_perfil" class="btn btn-primary rounded-pill py-3 fw-bold shadow-sm">
+                <i class="bi bi-pencil-square me-2"></i>Editar Perfil
+            </a>
+            <a href="#cambiarPass" class="btn btn-outline-secondary rounded-pill py-3 fw-bold bg-white shadow-sm">
+                <i class="bi bi-shield-lock me-2"></i>Cambiar Contraseña
             </a>
         </div>
 
     </div>
 </div>
 
-<script>
-    // Usamos una función autoejecutable para aislar las variables y que se ejecute al inyectar el HTML
-    (function cargarDatosPerfil() {
-        try {
-            // 1. Buscamos primero si hay un usuario logueado en la sesión actual
-            let datosGuardados = localStorage.getItem('usuarioActual'); 
-            
-            // 2. Si no hay usuario logueado (sesión), intentamos cargar el último registrado
-            if (!datosGuardados) {
-                 datosGuardados = localStorage.getItem('usuarioRegistrado');
-            }
-            
-            if (datosGuardados) {
-                const usuario = JSON.parse(datosGuardados);
-                
-                // Inyectamos los datos en el HTML
-                document.getElementById('userName').textContent = usuario.nombre || usuario.username || 'Miembro de la Tribu';
-                document.getElementById('userEmail').textContent = usuario.email || 'Sin correo';
-                
-                if (document.getElementById('userPuntos')) {
-                    document.getElementById('userPuntos').textContent = usuario.puntos || '0';
-                }
-                
-                // Formateamos el teléfono para que se vea como "8888-8888" si tiene 8 dígitos
-                let telFmt = usuario.telefono || '--';
-                if(telFmt && telFmt.length === 8) telFmt = telFmt.slice(0,4) + '-' + telFmt.slice(4);
-                if(document.getElementById('userPhone')) document.getElementById('userPhone').textContent = telFmt;
-                
-                if(document.getElementById('userPin')) document.getElementById('userPin').textContent = usuario.pin || '--';
-                if(document.getElementById('userEmgName')) document.getElementById('userEmgName').textContent = usuario.emgNombre || 'No registrado';
-                
-                let emgTelFmt = usuario.emgTelefono || '--';
-                if(emgTelFmt && emgTelFmt.length === 8) emgTelFmt = emgTelFmt.slice(0,4) + '-' + emgTelFmt.slice(4);
-                if(document.getElementById('userEmgPhone')) document.getElementById('userEmgPhone').textContent = emgTelFmt;
-
-                // 3. Lógica inteligente para el Avatar
-                const avatarImg = document.getElementById('userAvatar');
-                if (usuario.avatar && usuario.avatar.startsWith('data:image')) {
-                    // Si el usuario se tomó una foto o subió una, la mostramos
-                    avatarImg.src = usuario.avatar;
-                } else {
-                    // Si no tiene foto, usamos una API gratuita para generar una imagen con sus iniciales
-                    const nombreUrl = encodeURIComponent(usuario.nombre || usuario.username || 'Usuario');
-                    avatarImg.src = `https://ui-avatars.com/api/?name=${nombreUrl}&background=0d6efd&color=fff&size=150&font-size=0.4`;
-                }
-            } else {
-                // Si por alguna razón entra al perfil pero no hay datos locales
-                document.getElementById('userName').textContent = 'Usuario Invitado';
-                document.getElementById('userEmail').textContent = 'Inicia sesión para ver tus datos';
-            }
-        } catch (error) {
-            console.error("Error al cargar los datos del perfil:", error);
-        }
-    })();
-</script>
+<!-- 🔥 EL TRUCO MAGICO PARA SPA: Este elemento invisible ejecuta la carga de datos en el milisegundo exacto en que la vista se inyecta en la pantalla -->
+<img src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" onload="if(typeof window.cargarDatosPerfil === 'function') window.cargarDatosPerfil();" style="display:none;" aria-hidden="true">

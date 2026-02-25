@@ -1,6 +1,6 @@
 {
-  "appId": "com.dudu.app",
-  "appName": "dudu",
+  "appId": "com.geeko.app",
+  "appName": "Geeko",
   "webDir": "www",
   "bundledWebRuntime": false
 }

@@ -5,7 +5,7 @@ setlocal enabledelayedexpansion
 cd /d "%~dp0"
 
 echo ==========================================
-echo    MOTOR COMPILADOR ANDROID (CORE V4 - DEFINITIVO)
+echo    MOTOR COMPILADOR ANDROID (CORE V5 - UI FIX)
 echo ==========================================
 
 :: 2. CARGAR VARIABLES Y RUTAS
@@ -24,7 +24,7 @@ if not "!ICON_PATH!"=="" (
     )
 )
 
-:: 3. CONFIGURACION VISUAL (Nombre e Iconos)
+:: 3. CONFIGURACION VISUAL Y FIX DE UI OVERLAP
 echo [INFO] Preparando nombre visible de la app: !CUSTOM_NAME!
 set "STRINGS_FILE=app\src\main\res\values\strings.xml"
 if exist "%STRINGS_FILE%" (
@@ -38,6 +38,28 @@ if exist "%STRINGS_FILE%" (
         echo ^</resources^>
     ) > "%STRINGS_FILE%"
 )
+
+:: --- NUEVO: FIX DE BARRA DE ESTADO PARA ANDROID 15 ---
+:: Forzamos a Android a respetar la ventana y no dibujar debajo de la barra de estado
+set "STYLES_FILE=app\src\main\res\values\styles.xml"
+if not exist "app\src\main\res\values" mkdir "app\src\main\res\values"
+if exist "%STYLES_FILE%" (
+    echo [INFO] Inyectando fix de barra de estado en styles.xml...
+    powershell -Command "(Get-Content '!STYLES_FILE!') -replace '</style>', '<item name=\"android:windowLayoutInDisplayCutoutMode\">default</item><item name=\"android:windowTranslucentStatus\">false</item><item name=\"android:windowTranslucentNavigation\">false</item></style>' | Set-Content '!STYLES_FILE!' -Encoding ASCII"
+) else (
+    (
+        echo ^<?xml version="1.0" encoding="utf-8"?^>
+        echo ^<resources^>
+        echo     ^<style name="AppTheme.NoActionBar" parent="Theme.AppCompat.NoActionBar"^>
+        echo         ^<item name="android:windowLayoutInDisplayCutoutMode"^>default^</item^>
+        echo         ^<item name="android:windowTranslucentStatus"^>false^</item^>
+        echo         ^<item name="android:windowTranslucentNavigation"^>false^</item^>
+        echo         ^<item name="android:statusBarColor"^>@android:color/transparent^</item^>
+        echo     ^</style^>
+        echo ^</resources^>
+    ) > "%STYLES_FILE%"
+)
+:: --------------------------------------------------
 
 if not "!ICON_PATH!"=="" if exist "!ICON_PATH!" (
     echo [INFO] Inyectando y optimizando iconos...
@@ -101,7 +123,7 @@ echo sdk.dir=!SDK_FWD!> local.properties
 set "ANDROID_HOME=!SDK_PATH!"
 echo [OK] SDK enlazado exitosamente en: !SDK_PATH!
 
-:: --- NUEVO: AUTO-ACEPTAR LICENCIAS DE GOOGLE ---
+:: --- AUTO-ACEPTAR LICENCIAS DE GOOGLE ---
 echo [INFO] Auto-aceptando terminos y licencias del SDK para evitar interrupciones...
 if not exist "!SDK_PATH!\licenses" mkdir "!SDK_PATH!\licenses"
 
@@ -127,6 +149,13 @@ if not exist "node_modules\@capacitor\core" (
     echo [INFO] Descargando dependencias Capacitor...
     call npm.cmd install --legacy-peer-deps
 )
+
+:: Auto-Instalación del plugin de barra de estado
+if not exist "node_modules\@capacitor\status-bar" (
+    echo [INFO] Instalando plugin de Barra de Estado para corregir diseño solapado...
+    call npm.cmd install @capacitor/status-bar --legacy-peer-deps
+)
+
 call npx.cmd cap sync android
 if %ERRORLEVEL% NEQ 0 (
     echo [ERROR] Sincronizacion de Capacitor fallida. Deteniendo proceso.

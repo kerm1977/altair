@@ -7,20 +7,20 @@
     <meta name="theme-color" content="#0d6efd">
     
     <!-- CSP CRÍTICO: Permite conexión local y al Gateway de PythonAnywhere -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' capacitor://localhost http://localhost data: gap: https://kenth1977.pythonanywhere.com http://127.0.0.1:5000; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'self' https://kenth1977.pythonanywhere.com capacitor://localhost http://localhost http://127.0.0.1:5000;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' capacitor://localhost http://localhost data: gap: https://kenth1977.pythonanywhere.com http://127.0.0.1:5000; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; connect-src 'self' https://kenth1977.pythonanywhere.com capacitor://localhost http://localhost http://127.0.0.1:5000; font-src 'self' https://cdn.jsdelivr.net data:;">
     
     <title>Motor Universal App</title>
     
-    <!-- FRAMEWORK PRINCIPAL (Archivos Locales) -->
-    <link href="css/bootstrap.css" rel="stylesheet">
-    <link href="css/bootstrap-icons.css" rel="stylesheet">
+    <!-- FRAMEWORK PRINCIPAL (Usando CDN para el preview interactivo. En producción usa tus locales: css/bootstrap.css) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     
     <style>
         /* Estilos base para simular comportamiento nativo */
         body { 
             background-color: #f8f9fa; 
             -webkit-tap-highlight-color: transparent; 
-            user-select: none; /* Evita que el texto se seleccione como en la web */
+            user-select: none; 
             overflow-x: hidden;
         }
         
@@ -114,10 +114,9 @@
     <!-- CONTENEDOR DINÁMICO: Aquí se cargan los templates de forma fluida -->
     <div id="app-root" class="container-fluid pt-safe fade-in">
         <!-- Spinner de carga inicial -->
-        <div class="d-flex justify-content-center align-items-center" style="height: 80vh;">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Cargando...</span>
-            </div>
+        <div class="d-flex flex-column justify-content-center align-items-center h-100" style="min-height: 80vh;">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-3 text-muted fw-bold small">Conectando Motor SQLite...</p>
         </div>
     </div>
 
@@ -171,13 +170,12 @@
 
                 <div class="card app-card text-start">
                     <div class="card-body p-4">
-                        <!-- El formulario llama al JS de api_db.js si ya lo tienes enlazado, o a la función local -->
-                        <form id="form-login" onsubmit="event.preventDefault(); simularLogin();">
+                        <form id="form-login" onsubmit="event.preventDefault(); iniciarSesionApp();">
                             <div class="mb-3">
                                 <label class="form-label text-muted small fw-bold">Correo Electrónico</label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-light border-end-0"><i class="bi bi-envelope text-muted"></i></span>
-                                    <input type="email" id="login-email" class="form-control border-start-0 ps-0" placeholder="usuario@app.com" required>
+                                    <input type="email" id="login-email" class="form-control border-start-0 ps-0" placeholder="correo@app.com" required>
                                 </div>
                             </div>
                             <div class="mb-4">
@@ -188,12 +186,12 @@
                                 </div>
                             </div>
                             <!-- Error UI -->
-                            <div id="login-error" class="alert alert-danger d-none py-2 small" role="alert"></div>
+                            <div id="login-error" class="alert alert-danger d-none py-2 small fw-bold" role="alert"></div>
 
                             <button type="submit" class="btn btn-primary w-100 py-2 fw-bold rounded-pill shadow-sm mb-3">
                                 INGRESAR
                             </button>
-                            <button type="button" id="btn-bio-login" class="btn btn-outline-secondary w-100 py-2 fw-bold rounded-pill" onclick="if(window.procesarLoginBiometrico) procesarLoginBiometrico(); else mostrarNotificacion('Biometría iniciada', 'primary');">
+                            <button type="button" id="btn-bio-login" class="btn btn-outline-secondary w-100 py-2 fw-bold rounded-pill" onclick="mostrarNotificacion('Biometría en desarrollo', 'primary');">
                                 <i class="bi bi-fingerprint fs-5 me-2 align-middle"></i> Huella Digital
                             </button>
                         </form>
@@ -202,6 +200,9 @@
                 
                 <p class="mt-4 text-muted small">
                     ¿No tienes cuenta? <a href="#" onclick="cargarVista('registro', 'Registro')" class="text-primary fw-bold text-decoration-none">Regístrate aquí</a>
+                    <br><br>
+                    <!-- Botón de emergencia para resetear caché en pruebas Web -->
+                    <a href="#" onclick="sqliteService.limpiarBD()" class="text-danger small fw-bold text-decoration-none"><i class="bi bi-trash"></i> Limpiar Caché Local</a>
                 </p>
             </div>
         </div>
@@ -249,7 +250,7 @@
                 <div class="card app-card bg-primary text-white">
                     <div class="card-body d-flex justify-content-between align-items-center p-4">
                         <div>
-                            <h5 class="card-title fw-bold mb-1">Hola, Usuario</h5>
+                            <h5 class="card-title fw-bold mb-1" id="inicio-nombre">Hola, Usuario</h5>
                             <p class="card-text small opacity-75 mb-0">Resumen de tu actividad hoy</p>
                         </div>
                         <i class="bi bi-cloud-check fs-1 opacity-50"></i>
@@ -303,14 +304,15 @@
     <template id="tpl-perfil">
         <div class="text-center mb-4 mt-3">
             <div class="position-relative d-inline-block">
-                <!-- Usando UI Avatars como placeholder -->
-                <img src="https://ui-avatars.com/api/?name=Admin+App&background=0d6efd&color=fff&size=120" class="rounded-circle shadow-sm mb-3" alt="Avatar">
+                <!-- Avatar autogenerado por UI Avatars -->
+                <img src="https://ui-avatars.com/api/?name=Usuario+App&background=0d6efd&color=fff&size=120" class="rounded-circle shadow-sm mb-3" alt="Avatar">
                 <button class="btn btn-sm btn-primary rounded-circle position-absolute bottom-0 end-0 mb-3 me-2 shadow">
                     <i class="bi bi-camera"></i>
                 </button>
             </div>
-            <h4 class="fw-bold mb-0">Administrador</h4>
-            <p class="text-muted" id="perfil-email">admin@pepino.com</p>
+            <h4 class="fw-bold mb-0" id="perfil-nombre">Administrador</h4>
+            <p class="text-muted mb-2" id="perfil-email">Cargando...</p>
+            <span class="badge bg-primary" id="perfil-rol">Cargando...</span>
         </div>
 
         <div class="card app-card border-0">
@@ -321,8 +323,8 @@
                         <span>No especificado</span>
                     </div>
                     <div class="list-group-item py-3">
-                        <small class="text-muted d-block fw-bold mb-1">Rol en el sistema</small>
-                        <span class="badge bg-primary">Superusuario</span>
+                        <small class="text-muted d-block fw-bold mb-1">Privilegios</small>
+                        <span class="text-success fw-bold"><i class="bi bi-shield-check me-1"></i> Acceso Total</span>
                     </div>
                 </div>
             </div>
@@ -335,7 +337,7 @@
         <div class="d-flex justify-content-between align-items-center mb-3">
             <div class="input-group">
                 <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
-                <input type="text" class="form-control border-start-0 ps-0" placeholder="Buscar usuario...">
+                <input type="text" class="form-control border-start-0 ps-0" placeholder="Buscar usuario en DB...">
             </div>
             <button class="btn btn-primary ms-2 rounded-circle shadow-sm" style="width: 40px; height: 40px; flex-shrink: 0;"><i class="bi bi-plus-lg"></i></button>
         </div>
@@ -351,22 +353,7 @@
                         </tr>
                     </thead>
                     <tbody id="lista-usuarios-admin">
-                        <!-- Carga simulada -->
-                        <tr>
-                            <td class="ps-3">
-                                <div class="d-flex align-items-center">
-                                    <div class="bg-primary text-white rounded-circle d-flex justify-content-center align-items-center me-2" style="width:36px; height:36px; font-size:12px; font-weight:bold;">KA</div>
-                                    <div>
-                                        <div class="fw-bold" style="font-size: 0.9rem;">Admin Principal</div>
-                                        <div class="text-muted" style="font-size: 0.75rem;">admin@pepino.com</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="text-center"><span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 rounded-pill">Activo</span></td>
-                            <td class="text-end pe-3">
-                                <button class="btn btn-sm btn-light text-primary"><i class="bi bi-pencil"></i></button>
-                            </td>
-                        </tr>
+                        <!-- LA BASE DE DATOS LLENARÁ ESTO DINÁMICAMENTE -->
                     </tbody>
                 </table>
             </div>
@@ -402,40 +389,193 @@
         <h6 class="fw-bold text-muted mb-3 px-1 small">SISTEMA Y SINCRONIZACIÓN</h6>
         <div class="card app-card mb-4 border-0">
             <div class="list-group list-group-flush rounded-3">
-                <button class="list-group-item list-group-item-action py-3 text-primary d-flex align-items-center" onclick="mostrarNotificacion('Sincronizando con PythonAnywhere...', 'info')">
-                    <i class="bi bi-cloud-arrow-up fs-5 me-3"></i> 
-                    <span class="fw-medium">Sincronizar Datos</span>
+                <button class="list-group-item list-group-item-action py-3 text-primary d-flex align-items-center" onclick="sqliteService.testConnection()">
+                    <i class="bi bi-database-check fs-5 me-3"></i> 
+                    <span class="fw-medium">Probar Conexión SQLite</span>
                 </button>
-                <button class="list-group-item list-group-item-action py-3 text-danger d-flex align-items-center" onclick="mostrarNotificacion('Caché borrado exitosamente.', 'success')">
+                <button class="list-group-item list-group-item-action py-3 text-danger d-flex align-items-center" onclick="sqliteService.limpiarBD()">
                     <i class="bi bi-trash fs-5 me-3"></i> 
-                    <span class="fw-medium">Limpiar Caché Local</span>
+                    <span class="fw-medium">Formatear Base de Datos Local</span>
                 </button>
             </div>
         </div>
 
-        <button class="btn btn-outline-danger w-100 py-3 fw-bold rounded-pill mb-4 shadow-sm" onclick="if(window.apiDb) apiDb.cerrarSesion(); else cerrarSesion();">
+        <button class="btn btn-outline-danger w-100 py-3 fw-bold rounded-pill mb-4 shadow-sm" onclick="cerrarSesion()">
             <i class="bi bi-box-arrow-right me-2"></i> CERRAR SESIÓN
         </button>
     </template>
 
     <!-- ==========================================
-         SCRIPTS Y LÓGICA DE NAVEGACIÓN
+         SCRIPTS Y LÓGICA CORE
     =========================================== -->
-    <script src="js/bootstrap.js"></script>
-    <script src="js/api_db.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-        // Lógica de enrutamiento visual (SPA)
+        // ---------------------------------------------------------
+        // 1. MOTOR AVANZADO SQLITE (Conectado a toda la app)
+        // ---------------------------------------------------------
+        const sqliteService = {
+            db: null,
+            dbName: "motor_db", // Nombre por defecto
+            isWeb: !window.Capacitor || !window.Capacitor.isNativePlatform(),
+            
+            init: async function() {
+                console.log("[SQLite] Iniciando Motor de Base de Datos...");
+                try {
+                    // 1. LEER init_data.json PRIMERO y evadir caché del navegador (?t=timestamp)
+                    let superusers = [];
+                    try {
+                        const response = await fetch('init_data.json?t=' + new Date().getTime());
+                        if (response.ok) {
+                            const data = await response.json();
+                            if (data.dbName) this.dbName = data.dbName.replace('.db', ''); 
+                            if (data.superusers) superusers = data.superusers;
+                        }
+                    } catch (e) {
+                        console.log("[SQLite] init_data.json no encontrado o inaccesible (CORS).");
+                    }
+
+                    if (!this.isWeb && window.capacitorExports) {
+                        const { CapacitorSQLite, SQLiteConnection } = capacitorExports;
+                        const sqlite = new SQLiteConnection(CapacitorSQLite);
+                        
+                        this.db = await sqlite.createConnection(this.dbName, false, "no-encryption", 1, false);
+                        await this.db.open();
+                        
+                        await this.crearTablas();
+                        await this.cargarSuperusuariosIniciales(superusers);
+                        console.log(`[SQLite] Base de datos NATIVA lista: ${this.dbName}`);
+                    } else {
+                        console.log(`[SQLite] Ejecutando en Web. Simulando SQLite: ${this.dbName}`);
+                        await this.simularBDWeb(superusers);
+                    }
+                } catch (e) {
+                    console.error("[SQLite] Error Crítico al inicializar:", e);
+                }
+            },
+
+            crearTablas: async function() {
+                const query = `
+                    CREATE TABLE IF NOT EXISTS usuarios (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        email TEXT UNIQUE NOT NULL,
+                        password TEXT NOT NULL,
+                        pin TEXT,
+                        rol TEXT DEFAULT 'admin',
+                        estado TEXT DEFAULT 'activo'
+                    );
+                `;
+                await this.db.execute(query);
+            },
+
+            cargarSuperusuariosIniciales: async function(superusersFromJSON) {
+                const res = await this.db.query("SELECT COUNT(*) AS total FROM usuarios");
+                if (res.values[0].total === 0 && superusersFromJSON && superusersFromJSON.length > 0) {
+                    for (const user of superusersFromJSON) {
+                        await this.db.run(
+                            "INSERT INTO usuarios (email, password, pin, rol) VALUES (?, ?, ?, ?)",
+                            [user.email, user.password, user.pin, 'superusuario']
+                        );
+                    }
+                    console.log(`[SQLite] Ingresados ${superusersFromJSON.length} superusuarios a la DB nativa.`);
+                }
+            },
+
+            simularBDWeb: async function(superusersFromJSON) {
+                // Si el JSON trajo datos frescos, SOBREESCRIBIMOS lo que tenga el navegador
+                if (superusersFromJSON && superusersFromJSON.length > 0) {
+                    const adaptado = superusersFromJSON.map(u => ({...u, rol: 'superusuario', estado: 'activo'}));
+                    localStorage.setItem("mock_db_usuarios", JSON.stringify(adaptado));
+                    console.log("[SQLite] DB Web (localStorage) actualizada con usuarios frescos.");
+                } 
+                // Si no hay JSON y el storage está vacío, ponemos el default
+                else if (!localStorage.getItem("mock_db_usuarios")) {
+                    localStorage.setItem("mock_db_usuarios", JSON.stringify([{email: "admin@app.com", password: "admin", pin: "00000000", rol: "superusuario", estado: "activo"}]));
+                }
+            },
+
+            // --- Lógica Conectada a la App ---
+            login: async function(email, password) {
+                if (!this.isWeb && this.db) {
+                    const res = await this.db.query("SELECT * FROM usuarios WHERE email = ? AND password = ?", [email, password]);
+                    return (res.values && res.values.length > 0) ? res.values[0] : null;
+                } else {
+                    const users = JSON.parse(localStorage.getItem("mock_db_usuarios") || "[]");
+                    return users.find(u => u.email === email && u.password === password) || null;
+                }
+            },
+
+            getUsuarios: async function() {
+                if (!this.isWeb && this.db) {
+                    const res = await this.db.query("SELECT * FROM usuarios");
+                    return res.values || [];
+                } else {
+                    return JSON.parse(localStorage.getItem("mock_db_usuarios") || "[]");
+                }
+            },
+
+            testConnection: async function() {
+                const users = await this.getUsuarios();
+                mostrarNotificacion(`Conexión OK. La DB tiene ${users.length} usuario(s).`, "success");
+            },
+
+            limpiarBD: function() {
+                localStorage.removeItem("mock_db_usuarios");
+                localStorage.removeItem("usuario_activo");
+                mostrarNotificacion("Base de datos local formateada.", "danger");
+                setTimeout(() => window.location.reload(), 1500);
+            }
+        };
+
+        // ---------------------------------------------------------
+        // 2. SISTEMA DE AUTENTICACIÓN
+        // ---------------------------------------------------------
+        async function iniciarSesionApp() {
+            const emailInput = document.getElementById('login-email').value;
+            const passInput = document.getElementById('login-pass').value;
+            const errorDiv = document.getElementById('login-error');
+
+            mostrarNotificacion("Consultando Base de Datos...", "info");
+            errorDiv.classList.add('d-none');
+            
+            // Retardo estético de procesamiento
+            await new Promise(r => setTimeout(r, 800));
+
+            try {
+                // Consulta directa a SQLite
+                const user = await sqliteService.login(emailInput, passInput);
+
+                if (user) {
+                    mostrarNotificacion("¡Acceso concedido!", "success");
+                    // Guardar sesión persistente
+                    localStorage.setItem('usuario_activo', JSON.stringify(user));
+                    cargarVista('inicio', 'Inicio');
+                } else {
+                    errorDiv.textContent = "Credenciales incorrectas o usuario inexistente en DB.";
+                    errorDiv.classList.remove('d-none');
+                }
+            } catch(e) {
+                errorDiv.textContent = "Error interno de base de datos.";
+                errorDiv.classList.remove('d-none');
+                console.error(e);
+            }
+        }
+
+        function cerrarSesion() {
+            localStorage.removeItem('usuario_activo');
+            mostrarNotificacion('Sesión cerrada correctamente', 'success');
+            cargarVista('login', 'Login');
+        }
+
+        // ---------------------------------------------------------
+        // 3. ENRUTAMIENTO Y POBLACIÓN DE VISTAS DESDE SQLITE
+        // ---------------------------------------------------------
         function cargarVista(vistaId, titulo) {
             const root = document.getElementById('app-root');
             const header = document.getElementById('app-header');
             const bottomNav = document.getElementById('app-bottom-nav');
             const titleEl = document.getElementById('view-title');
             
-            // Si estuviéramos cargando desde archivos físicos usaríamos fetch()
-            // fetch(vistaId + '.html').then(r => r.text()).then(html => root.innerHTML = html);
-            
-            // Implementación local vía templates
             root.classList.remove('fade-in');
             const template = document.getElementById('tpl-' + vistaId);
             
@@ -447,7 +587,6 @@
                     
                     if (titleEl && titulo) titleEl.innerText = titulo;
 
-                    // Mostrar/Ocultar barras dependiendo de si es login
                     const esAuth = vistaId === 'login' || vistaId === 'registro';
                     
                     if (esAuth) {
@@ -459,19 +598,91 @@
                         bottomNav.classList.remove('d-none');
                         bottomNav.classList.add('d-flex');
                         
-                        // Actualizar estado 'active' en la barra inferior
                         document.querySelectorAll('.bottom-nav .nav-item').forEach(btn => {
-                            btn.classList.remove('active');
+                            btn.classList.remove('active', 'text-primary');
                             btn.classList.add('text-secondary');
                         });
                         
                         const activeBtn = document.getElementById('nav-' + vistaId); 
                         if(activeBtn) {
-                            activeBtn.classList.add('active');
+                            activeBtn.classList.add('active', 'text-primary');
                             activeBtn.classList.remove('text-secondary');
                         }
                     }
+
+                    // --- LLENAR DATOS DINÁMICOS EN LA VISTA ---
+                    ejecutarLogicaVista(vistaId);
+
                 }, 50);
+            }
+        }
+
+        async function ejecutarLogicaVista(vistaId) {
+            const usuarioActivo = JSON.parse(localStorage.getItem('usuario_activo') || 'null');
+
+            // Lógica de la vista INICIO
+            if (vistaId === 'inicio' && usuarioActivo) {
+                const nombre = usuarioActivo.email.split('@')[0];
+                const el = document.getElementById('inicio-nombre');
+                if (el) el.innerText = `Hola, ${nombre.charAt(0).toUpperCase() + nombre.slice(1)}`;
+            }
+            
+            // Lógica de la vista PERFIL
+            if (vistaId === 'perfil' && usuarioActivo) {
+                const elEmail = document.getElementById('perfil-email');
+                const elRol = document.getElementById('perfil-rol');
+                const elNombre = document.getElementById('perfil-nombre');
+                
+                const nombre = usuarioActivo.email.split('@')[0];
+                if (elNombre) elNombre.innerText = nombre.charAt(0).toUpperCase() + nombre.slice(1);
+                if (elEmail) elEmail.innerText = usuarioActivo.email;
+                if (elRol) elRol.innerText = usuarioActivo.rol ? usuarioActivo.rol.toUpperCase() : 'USUARIO';
+            }
+
+            // Lógica de la vista ADMIN USUARIOS (Listar desde SQLite)
+            if (vistaId === 'admin_usuarios') {
+                const tbody = document.getElementById('lista-usuarios-admin');
+                if (tbody) {
+                    tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm me-2"></div>Consultando DB...</td></tr>';
+                    
+                    try {
+                        const usuarios = await sqliteService.getUsuarios();
+                        tbody.innerHTML = '';
+                        
+                        if(usuarios.length === 0) {
+                            tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-4">No hay usuarios registrados</td></tr>';
+                            return;
+                        }
+
+                        // Iterar y pintar usuarios extraídos de la base de datos
+                        usuarios.forEach(u => {
+                            const nombre = u.email.split('@')[0];
+                            const iniciales = nombre.substring(0,2).toUpperCase();
+                            const estadoClase = u.estado === 'activo' ? 'success' : 'secondary';
+                            const estadoTexto = u.estado ? u.estado.charAt(0).toUpperCase() + u.estado.slice(1) : 'Activo';
+                            
+                            tbody.innerHTML += `
+                                <tr>
+                                    <td class="ps-3">
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-primary text-white rounded-circle d-flex justify-content-center align-items-center me-2 shadow-sm" style="width:36px; height:36px; font-size:12px; font-weight:bold;">${iniciales}</div>
+                                            <div>
+                                                <div class="fw-bold text-dark" style="font-size: 0.9rem;">${nombre.charAt(0).toUpperCase() + nombre.slice(1)}</div>
+                                                <div class="text-muted" style="font-size: 0.75rem;">${u.email}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="text-center"><span class="badge bg-${estadoClase} bg-opacity-10 text-${estadoClase} border border-${estadoClase} border-opacity-25 rounded-pill">${estadoTexto}</span></td>
+                                    <td class="text-end pe-3">
+                                        <button class="btn btn-sm btn-light text-primary shadow-sm"><i class="bi bi-pencil"></i></button>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                    } catch(e) {
+                        tbody.innerHTML = '<tr><td colspan="3" class="text-center text-danger py-4">Error al consultar DB local</td></tr>';
+                    }
+                }
             }
         }
 
@@ -489,29 +700,22 @@
             appToast.show();
         }
 
-        // Simulación básica de login (Fallback si no carga api_db.js)
-        function simularLogin() {
-            mostrarNotificacion('Verificando usuario...', 'info');
-            setTimeout(() => {
-                cargarVista('inicio', 'Inicio');
-            }, 800);
-        }
-
-        function cerrarSesion() {
-            cargarVista('login', 'Login');
-            mostrarNotificacion('Sesión cerrada correctamente', 'success');
-        }
-
-        // Inicializar APP
-        window.addEventListener('DOMContentLoaded', () => {
-            // Verificar si hay token activo en api_db.js
-            let logueado = false;
-            if (typeof apiDb !== 'undefined' && apiDb.obtenerToken()) {
-                logueado = true;
-            }
+        // ---------------------------------------------------------
+        // 4. INICIALIZACIÓN GLOBAL DE LA APP
+        // ---------------------------------------------------------
+        window.addEventListener('DOMContentLoaded', async () => {
+            // Iniciar Base de datos
+            await sqliteService.init();
             
-            // Iniciar en la vista correspondiente
-            cargarVista(logueado ? 'inicio' : 'login', logueado ? 'Inicio' : 'Login');
+            // Verificar si hay una sesión guardada activa
+            const usuarioActivo = JSON.parse(localStorage.getItem('usuario_activo'));
+            
+            if (usuarioActivo) {
+                mostrarNotificacion(`Sesión restaurada: ${usuarioActivo.email}`, 'info');
+                cargarVista('inicio', 'Inicio');
+            } else {
+                cargarVista('login', 'Login');
+            }
         });
     </script>
 </body>

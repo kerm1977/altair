@@ -1,0 +1,11 @@
+{
+  "superusers": [
+    {
+      "email": "kenth1977@gmail.com",
+      "password": "ligaliga",
+      "pin": "00000000"
+    }
+  ],
+  "dbName": "altair.db",
+  "dbAction": "create"
+}

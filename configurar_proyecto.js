@@ -1,13 +1,12 @@
 // ==============================================================================
 // ARCHIVO: configurar_proyecto.js
 // RESPONSABILIDAD: Asistente de terminal (Node.js) para inicializar nuevas apps.
-//                  Crea configuraciones locales y envía superusuarios al Backend.
+//                  Crea configuraciones locales y DB SQLite (Modo 100% Local).
 // ==============================================================================
 
 const fs = require('fs');
 const path = require('path');
 const readline = require('readline');
-const https = require('https'); 
 
 // Configuración de la interfaz de terminal con soporte de promesas
 const rl = readline.createInterface({
@@ -43,7 +42,9 @@ function mostrarHeaderMovil() {
 async function configurar() {
     mostrarHeaderMovil();
 
-    // 1. Datos básicos de la App
+    // ==============================================================================
+    // 1. DATOS BÁSICOS
+    // ==============================================================================
     const appNameInput = await ask(' 📱 1. Nombre de la nueva App (Ej: Altair Pro): ');
     const appName = appNameInput.trim() || 'MiApp';
     const appSlug = appName.replace(/[^a-zA-Z0-9 ]/g, '').replace(/\s+/g, ''); // Sin espacios
@@ -52,7 +53,9 @@ async function configurar() {
     const appIdInput = await ask(` 🆔 2. ID de la App (Enter para usar: ${defaultId}): `);
     const appId = appIdInput.trim() || defaultId;
 
-    // 2. Configuración del Ícono (Soporte WSL incluido)
+    // ==============================================================================
+    // 2. CONFIGURACIÓN DEL ÍCONO
+    // ==============================================================================
     const askIcon = await ask('\n 🖼️  3. ¿Desea cambiar el icono de la aplicacion? (S/N): ');
     let iconPath = "";
     
@@ -69,7 +72,9 @@ async function configurar() {
         }
     }
 
-    // 3. Recolección de Superusuarios y PINs
+    // ==============================================================================
+    // 3. RECOLECCIÓN DE SUPERUSUARIOS (Máx 4)
+    // ==============================================================================
     console.log("\n======================================================");
     console.log("🛡️  CONFIGURACIÓN DE SUPERUSUARIOS (ADMINISTRADORES)");
     console.log("======================================================");
@@ -86,44 +91,113 @@ async function configurar() {
     const superusuarios = [];
     for (let i = 1; i <= numAdmins; i++) {
         console.log(`\n--- Superusuario ${i} ---`);
-        const email = await ask(`   Correo electrónico: `);
+        
+        const emailInput = await ask(`   Correo electrónico (Enter para 'admin@app.com'): `);
+        const email = emailInput.trim() || 'admin@app.com';
         
         let password = "";
         let passMatch = false;
         
         while (!passMatch) {
-            password = await ask(`   Contraseña temporal: `);
-            const confirm = await ask(`   Confirmar Contraseña: `);
+            const passMsg = email === 'admin@app.com' 
+                ? `   Contraseña temporal (Enter para 'admin'): ` 
+                : `   Contraseña temporal: `;
+                
+            const passInput = await ask(passMsg);
+            password = passInput.trim() || (email === 'admin@app.com' ? 'admin' : '');
             
-            if (password === confirm && password.length >= 4) {
+            if (email === 'admin@app.com' && password === 'admin') {
                 passMatch = true;
+                console.log(`   [✔] Credenciales por defecto configuradas.`);
             } else {
-                console.log("   [!] Las contraseñas no coinciden o son muy cortas.\n");
+                const confirm = await ask(`   Confirmar Contraseña: `);
+                
+                if (password === confirm && password.length >= 4) {
+                    passMatch = true;
+                } else {
+                    console.log("   [!] Las contraseñas no coinciden o son muy cortas.\n");
+                }
             }
         }
         
-        // Generamos un PIN de 8 dígitos para el acceso en la DB (Ej: Admin 1 = 00000000)
         const pin = String(i - 1).repeat(8);
         superusuarios.push({ email, password, pin });
     }
 
+    // ==============================================================================
+    // 4. GESTIÓN DE BASE DE DATOS LOCAL (SQLITE) COMBINADA CON SUPERUSUARIOS
+    // ==============================================================================
+    console.log("\n 🗄️  5. Verificación de Base de Datos Local");
+    const dbFileName = `${appSlug}.db`;
+    const dbFilePath = path.join(__dirname, dbFileName);
+    let dbAction = 'create';
+
+    if (fs.existsSync(dbFilePath)) {
+        console.log(`   [!] Se detectó la base de datos: ${dbFileName}`);
+        const action = await ask(`   ¿Deseas (C)ombinarla [Conservar datos y agregar los ${superusuarios.length} usuarios asignados] o (S)obreescribirla [Borrar todo]? (C/S): `);
+
+        if (action.trim().toUpperCase() === 'S') {
+            console.log(`\n   [⚠️] INICIANDO PROTOCOLO DE BORRADO SEGURO...`);
+            
+            const conf1 = await ask(`   1/3: ¿Estás seguro de borrar la base de datos actual? (SI/NO): `);
+            const conf1Val = conf1.trim().toUpperCase();
+            
+            // Aceptamos "S" o "SI" para que sea más amigable
+            if (conf1Val === 'SI' || conf1Val === 'S') {
+                
+                const conf2 = await ask(`   2/3: ¡ATENCIÓN! Se perderán TODOS los datos. Escribe 'BORRAR' para continuar: `);
+                if (conf2.trim() === 'BORRAR') {
+                    
+                    const conf3 = await ask(`   3/3: Última advertencia. Escribe 'ESTOY SEGURO' para eliminarla definitivamente: `);
+                    if (conf3.trim() === 'ESTOY SEGURO') {
+                        fs.unlinkSync(dbFilePath);
+                        console.log(`   [✔] Base de datos anterior eliminada permanentemente.`);
+                        fs.writeFileSync(dbFilePath, ''); 
+                        console.log(`   [✔] Nueva base de datos en blanco creada: ${dbFileName}`);
+                        dbAction = 'overwrite';
+                    } else {
+                        console.log(`   [✖] Seguridad activada (Paso 3 fallido). Operación cancelada.`);
+                        process.exit(0);
+                    }
+                } else {
+                    console.log(`   [✖] Seguridad activada (Paso 2 fallido). Operación cancelada.`);
+                    process.exit(0);
+                }
+            } else {
+                console.log(`   [✖] Operación cancelada por el usuario.`);
+                process.exit(0);
+            }
+        } else {
+            // Combinar: Mantenemos la original y hacemos una copia de seguridad por si acaso
+            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const backupName = `${appSlug}_backup_${timestamp}.db`;
+            fs.copyFileSync(dbFilePath, path.join(__dirname, backupName));
+            console.log(`   [✔] Respaldo de seguridad creado: ${backupName}`);
+            console.log(`   [✔] La DB se mantendrá. Se inyectarán los ${superusuarios.length} superusuarios a la información existente.`);
+            dbAction = 'combine';
+        }
+    } else {
+        fs.writeFileSync(dbFilePath, '');
+        console.log(`   [✔] Base de datos local creada exitosamente: ${dbFileName}`);
+    }
+
     console.log("\n⏳ Aplicando configuraciones locales y estilos nativos móviles...");
     
-    // 4. Modificar Archivos Locales (Capacitor, Package, Android, api_db, init_data)
+    // ==============================================================================
+    // 5. MODIFICAR ARCHIVOS LOCALES
+    // ==============================================================================
     try {
         if (fs.existsSync(capacitorFile)) {
             let cap = JSON.parse(fs.readFileSync(capacitorFile, 'utf8'));
             cap.appId = appId; 
             cap.appName = appName;
             
-            // --- NUEVO: CONFIGURACIÓN DE BARRA DE ESTADO MÓVIL (STATUS BAR) ---
             if (!cap.plugins) cap.plugins = {};
             cap.plugins.StatusBar = {
                 overlaysWebView: false,
-                style: "DARK", // Texto blanco en la batería/hora
-                backgroundColor: "#0d6efd" // Azul primario de Bootstrap
+                style: "DARK", 
+                backgroundColor: "#0d6efd" 
             };
-            // -------------------------------------------------------------------
 
             fs.writeFileSync(capacitorFile, JSON.stringify(cap, null, 2));
             console.log(`  [✔] capacitor.config.json -> Inyectado AppId y Barra de Estado Móvil`);
@@ -144,71 +218,27 @@ async function configurar() {
 
         if (fs.existsSync(apiDbFile)) {
             let apiDbContent = fs.readFileSync(apiDbFile, 'utf8');
-            // Reemplaza la URL dinámicamente
-            apiDbContent = apiDbContent.replace(/const API_URL\s*=\s*['"].*?['"];?/, `const API_URL = "https://kenth1977.pythonanywhere.com/api/${appSlug}";`);
+            // Solo actualizamos el APP_SLUG para modo local, eliminamos la reescritura de API_URL hacia PythonAnywhere
+            apiDbContent = apiDbContent.replace(/const APP_SLUG\s*=\s*['"].*?['"];?/, `const APP_SLUG = "${appSlug}";`);
             fs.writeFileSync(apiDbFile, apiDbContent, 'utf8');
-            console.log(`  [✔] api_db.js             -> API_URL apuntada a /api/${appSlug}`);
+            console.log(`  [✔] api_db.js             -> Variable APP_SLUG actualizada`);
         }
 
-        // --- CREACIÓN DE init_data.json PARA LA APP ---
+        // --- CREACIÓN DE init_data.json CON BANDERA DE ACCIÓN ---
         const initDataPath = path.join(__dirname, 'www', 'init_data.json');
-        fs.writeFileSync(initDataPath, JSON.stringify({ superusers: superusuarios }, null, 2));
-        console.log(`  [✔] init_data.json        -> Generado con ${superusuarios.length} superusuarios iniciales.`);
-        // ----------------------------------------------
+        fs.writeFileSync(initDataPath, JSON.stringify({ 
+            superusers: superusuarios, 
+            dbName: dbFileName,
+            dbAction: dbAction // 'create', 'overwrite' o 'combine'
+        }, null, 2));
+        console.log(`  [✔] init_data.json        -> Generado con acción '${dbAction}' y ${superusuarios.length} superusuarios.`);
 
     } catch (e) {
         console.log("  [ADVERTENCIA] No se pudieron actualizar todos los archivos locales: " + e.message);
     }
 
-    // 5. Enviar los Superusuarios a PythonAnywhere (El Abuelo)
-    const payloadStr = JSON.stringify({ superusers: superusuarios });
-
-    const options = {
-        hostname: 'kenth1977.pythonanywhere.com',
-        port: 443,
-        path: `/api/${appSlug}/setup_superusers`, 
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'Content-Length': Buffer.byteLength(payloadStr)
-        }
-    };
-
-    console.log("\n📡 Inyectando superusuarios a la base de datos en la nube...");
-
-    const req = https.request(options, (res) => {
-        let body = '';
-        res.on('data', d => body += d);
-        res.on('end', () => {
-            try {
-                const jsonRes = JSON.parse(body);
-                console.log("\n======================================================");
-                if (res.statusCode >= 200 && res.statusCode < 300) {
-                    console.log("✨ ¡CONFIGURACIÓN COMPLETADA Y ENLAZADA!");
-                    console.log(`📡 Base de datos creada/vinculada: ${appSlug}.db`);
-                    console.log(`  [✔] Servidor Respondió: ${jsonRes.message || 'Usuarios guardados exitosamente.'}`);
-                } else {
-                    console.log("⚠️ HUBO UN PROBLEMA EN EL SERVIDOR:");
-                    console.log(`  [!] El servidor rechazó la operación: ${jsonRes.error || jsonRes.message}`);
-                }
-            } catch (e) {
-                console.log("\n  [❌] ERROR CRÍTICO EN EL SERVIDOR DE PYTHONANYWHERE [❌]");
-                console.log(`  El servidor ha devuelto un error en lugar de procesar los datos.`);
-                console.log(`  Verifica el error.log en PythonAnywhere o reinicia el servidor.`);
-            }
-            finalizar();
-        });
-    });
-
-    req.on('error', (e) => {
-        console.error("\n  [!] Error de conexión: No se pudieron guardar los superusuarios en la nube.");
-        console.error(`      Motivo: ${e.message}`);
-        console.log("  [INFO] Verifica tu conexión a internet o si el servidor está encendido.\n");
-        finalizar();
-    });
-
-    req.write(payloadStr);
-    req.end();
+    console.log("\n✨ ¡CONFIGURACIÓN LOCAL COMPLETADA!");
+    finalizar();
 }
 
 function finalizar() {

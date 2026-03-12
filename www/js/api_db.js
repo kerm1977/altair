@@ -6,7 +6,7 @@
 console.log("🚀 Iniciando api_db.js...");
 
 // 1. CONFIGURACIÓN BASE
-const APP_SLUG = "pepino"; 
+const APP_SLUG = "altair"; 
 
 // --- INTERRUPTOR DE ENTORNO ---
 const ESTOY_EN_LOCAL = true; // true = Local, false = PythonAnywhere

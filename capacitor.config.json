@@ -1,6 +1,13 @@
 {
-  "appId": "com.pepino.app",
-  "appName": "pepino",
+  "appId": "com.altair.app",
+  "appName": "altair",
   "webDir": "www",
-  "bundledWebRuntime": false
+  "bundledWebRuntime": false,
+  "plugins": {
+    "StatusBar": {
+      "overlaysWebView": false,
+      "style": "DARK",
+      "backgroundColor": "#0d6efd"
+    }
+  }
 }

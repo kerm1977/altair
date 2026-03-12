@@ -1,31 +1,20 @@
 @echo off
 setlocal enabledelayedexpansion
 
-:: Aseguramos que el script trabaje en su propio directorio
+:: 1. IR AL DIRECTORIO DEL SCRIPT
 cd /d "%~dp0"
 
 echo ==========================================
-echo    LEYENDO CONFIGURACION CENTRALIZADA
+echo    MOTOR COMPILADOR ANDROID (CORE V4 - DEFINITIVO)
 echo ==========================================
 
-:: Cargar los datos guardados previamente por el asistente Node.js
-if exist "build_config.bat" (
-    call build_config.bat
-    echo [INFO] Datos cargados. App: !CUSTOM_NAME!
-) else (
-    echo [ADVERTENCIA] build_config.bat no encontrado. Usando defaults.
-    set "CUSTOM_NAME=miapp"
-    set "ICON_PATH="
-)
+:: 2. CARGAR VARIABLES Y RUTAS
+set "CUSTOM_NAME=miapp"
+set "ICON_PATH="
+if exist "build_config.bat" call build_config.bat
+if not "!ICON_PATH!"=="" set "ICON_PATH=!ICON_PATH:"=!"
 
-:: Limpiamos las comillas que Windows pone al arrastrar archivos (por si acaso)
-if not "!ICON_PATH!"=="" (
-    set "ICON_PATH=!ICON_PATH:"=!"
-)
-
-:: =======================================================
-:: TRADUCTOR AUTOMATICO WSL -> WINDOWS (Silencioso)
-:: =======================================================
+:: Traductor WSL silencioso
 if not "!ICON_PATH!"=="" (
     echo "!ICON_PATH!" | findstr /i /c:"/mnt/" >nul
     if !errorlevel! equ 0 (
@@ -35,16 +24,10 @@ if not "!ICON_PATH!"=="" (
     )
 )
 
-echo.
-echo ==========================================
-echo    APLICANDO CAMBIOS VISUALES
-echo ==========================================
-
-:: --- A. CAMBIAR NOMBRE VISIBLE (strings.xml) ---
+:: 3. CONFIGURACION VISUAL (Nombre e Iconos)
+echo [INFO] Preparando nombre visible de la app: !CUSTOM_NAME!
 set "STRINGS_FILE=app\src\main\res\values\strings.xml"
-
 if exist "%STRINGS_FILE%" (
-    echo [CFG] Configurando nombre visible a: !CUSTOM_NAME!
     (
         echo ^<?xml version='1.0' encoding='utf-8'?^>
         echo ^<resources^>
@@ -54,214 +37,197 @@ if exist "%STRINGS_FILE%" (
         echo     ^<string name="custom_url_scheme"^>com.miapp.local^</string^>
         echo ^</resources^>
     ) > "%STRINGS_FILE%"
-) else (
-    echo [WARN] No se encontro strings.xml, el nombre interno no cambiara.
 )
 
-:: --- B. CAMBIAR ICONOS (CON CONVERSION AUTOMATICA) ---
-if not "!ICON_PATH!"=="" (
-    if exist "!ICON_PATH!" (
-        echo [CFG] Procesando imagen...
-        
-        :: Detectamos si es JPG para convertirlo
-        set "FINAL_ICON=!ICON_PATH!"
-        set "IS_JPG=0"
-        
-        for %%f in ("!ICON_PATH!") do (
-            if /i "%%~xf"==".jpg" set "IS_JPG=1"
-            if /i "%%~xf"==".jpeg" set "IS_JPG=1"
+if not "!ICON_PATH!"=="" if exist "!ICON_PATH!" (
+    echo [INFO] Inyectando y optimizando iconos...
+    set "FINAL_ICON=!ICON_PATH!"
+    echo "!ICON_PATH!" | findstr /i "\.jpg \.jpeg" >nul
+    if !errorlevel! equ 0 (
+        powershell -Command "Add-Type -AssemblyName System.Drawing; try { [System.Drawing.Image]::FromFile('!ICON_PATH!').Save('icon_temp.png', [System.Drawing.Imaging.ImageFormat]::Png) } catch { exit 1 }"
+        if exist "icon_temp.png" set "FINAL_ICON=icon_temp.png"
+    )
+    for %%D in (mipmap-mdpi mipmap-hdpi mipmap-xhdpi mipmap-xxhdpi mipmap-xxxhdpi) do (
+        if exist "app\src\main\res\%%D" (
+            copy /y "!FINAL_ICON!" "app\src\main\res\%%D\ic_launcher.png" >nul
+            copy /y "!FINAL_ICON!" "app\src\main\res\%%D\ic_launcher_round.png" >nul
+            copy /y "!FINAL_ICON!" "app\src\main\res\%%D\ic_launcher_foreground.png" >nul
         )
-        
-        if "!IS_JPG!"=="1" (
-            echo [AUTO] Detectado JPG. Convirtiendo a PNG para Android...
-            powershell -Command "Add-Type -AssemblyName System.Drawing; try { [System.Drawing.Image]::FromFile('!ICON_PATH!').Save('icon_temp.png', [System.Drawing.Imaging.ImageFormat]::Png) } catch { exit 1 }"
-            
-            if exist "icon_temp.png" (
-                set "FINAL_ICON=icon_temp.png"
-            ) else (
-                echo [ERROR] No se pudo convertir el JPG. Se intentara usar el original.
-            )
-        )
-        
-        :: Reemplazamos en todas las calidades
-        if exist "!FINAL_ICON!" (
-            echo [CFG] Reemplazando iconos en carpetas mipmap...
-            set "RES_FOLDERS=mipmap-mdpi mipmap-hdpi mipmap-xhdpi mipmap-xxhdpi mipmap-xxxhdpi"
-            
-            for %%D in (!RES_FOLDERS!) do (
-                set "TARGET_DIR=app\src\main\res\%%D"
-                if exist "!TARGET_DIR!" (
-                    copy /y "!FINAL_ICON!" "!TARGET_DIR!\ic_launcher.png" >nul
-                    copy /y "!FINAL_ICON!" "!TARGET_DIR!\ic_launcher_round.png" >nul
-                    copy /y "!FINAL_ICON!" "!TARGET_DIR!\ic_launcher_foreground.png" >nul
-                )
-            )
-            
-            :: Si creamos un temporal, lo borramos
-            if "!IS_JPG!"=="1" del "icon_temp.png"
-            echo [OK] Iconos actualizados exitosamente.
-        )
-        
+    )
+    if exist "icon_temp.png" del "icon_temp.png"
+)
+
+:: 4. LIMPIEZA DEL ENTORNO
+if exist "local.properties" (
+    echo [INFO] Limpiando configuraciones antiguas de SDK...
+    del /F /Q "local.properties"
+)
+
+:: 5. BUSQUEDA INTELIGENTE DEL SDK DE ANDROID
+echo.
+echo [1/5] Buscando e inyectando SDK de Android...
+set "SDK_PATH="
+
+:: Probar ubicaciones comunes
+if defined ANDROID_HOME (
+    if exist "!ANDROID_HOME!" set "SDK_PATH=!ANDROID_HOME!"
+)
+if "!SDK_PATH!"=="" if exist "%LOCALAPPDATA%\Android\Sdk" set "SDK_PATH=%LOCALAPPDATA%\Android\Sdk"
+if "!SDK_PATH!"=="" if exist "%USERPROFILE%\AppData\Local\Android\Sdk" set "SDK_PATH=%USERPROFILE%\AppData\Local\Android\Sdk"
+if "!SDK_PATH!"=="" if exist "C:\Android\Sdk" set "SDK_PATH=C:\Android\Sdk"
+
+:: Si no existe en ningun lado, interaccion con el usuario
+:PEDIR_SDK
+if "!SDK_PATH!"=="" (
+    echo.
+    echo [ADVERTENCIA] No se encontro el SDK de Android automaticamente.
+    echo Necesitas el SDK para compilar. Si tienes Android Studio, busca la carpeta "Sdk".
+    set /p "SDK_INPUT=Por favor, arrastra o escribe la ruta de tu SDK aqui: "
+    
+    :: Limpiar comillas de la entrada
+    set "SDK_INPUT=!SDK_INPUT:"=!"
+    
+    if exist "!SDK_INPUT!" (
+        set "SDK_PATH=!SDK_INPUT!"
     ) else (
-        echo [ERROR] No encontre el archivo de imagen en: "!ICON_PATH!"
+        echo [ERROR] La ruta proporcionada no existe. Intenta de nuevo.
+        goto PEDIR_SDK
     )
 )
 
-echo.
-echo ==========================================
-echo    SINCRONIZANDO CAMBIOS WEB (CRITICO)
-echo ==========================================
-cd ..
+:: Guardar la ruta formateada con barras normales (/) que Gradle acepta nativamente sin errores
+set "SDK_FWD=!SDK_PATH:\=/!"
+echo sdk.dir=!SDK_FWD!> local.properties
+set "ANDROID_HOME=!SDK_PATH!"
+echo [OK] SDK enlazado exitosamente en: !SDK_PATH!
 
-:: Sincronizamos de manera natural sin forzar instalaciones de npm
-echo Copiando archivos de 'www' hacia 'android'...
-call npx cap sync android
+:: --- NUEVO: AUTO-ACEPTAR LICENCIAS DE GOOGLE ---
+echo [INFO] Auto-aceptando terminos y licencias del SDK para evitar interrupciones...
+if not exist "!SDK_PATH!\licenses" mkdir "!SDK_PATH!\licenses"
 
-:: =======================================================
-:: PARCHE SEGURO DE JAVA 17 (SIN CORROMPER EL ARCHIVO)
-:: =======================================================
-set "BAD_JAVA=node_modules\@capgo\capacitor-updater\android\src\main\java\ee\forgr\capacitor_updater\DelayUpdateUtils.java"
-if exist "!BAD_JAVA!" (
-    echo [AUTO] Corrigiendo incompatibilidad del plugin con Java 17 de manera segura...
-    :: Se usa System.Text.UTF8Encoding($false) para ASEGURAR que no se inyecte el BOM (\ufeff)
-    powershell -Command "$path='!BAD_JAVA!'; $txt=[System.IO.File]::ReadAllText($path); $txt=$txt -replace 'case DelayUntilNext\.', 'case '; [System.IO.File]::WriteAllText($path, $txt, (New-Object System.Text.UTF8Encoding($false)))"
+:: Escribir los hashes universales de licencia (Sin espacios adicionales)
+echo 24333f8a63b6825ea9c5514f83c2829b004d1fee>"!SDK_PATH!\licenses\android-sdk-license"
+echo 84831b9409646a918e30573bab4c9c91346d8abd>>"!SDK_PATH!\licenses\android-sdk-license"
+echo d975f751698a77b662f1254ddbeed3901e976f5a>>"!SDK_PATH!\licenses\android-sdk-license"
+echo 8933bad161af4178b1185d1a37fbf41ea5269c55>"!SDK_PATH!\licenses\android-sdk-preview-license"
+
+:: Refuerzo intentando presionar 'Yes' automaticamente si existe el comando sdkmanager
+if exist "!SDK_PATH!\cmdline-tools\latest\bin\sdkmanager.bat" (
+    echo y | call "!SDK_PATH!\cmdline-tools\latest\bin\sdkmanager.bat" --licenses >nul 2>&1
+) else if exist "!SDK_PATH!\tools\bin\sdkmanager.bat" (
+    echo y | call "!SDK_PATH!\tools\bin\sdkmanager.bat" --licenses >nul 2>&1
 )
+:: -----------------------------------------------
 
+:: 6. SINCRONIZACION CAPACITOR
+echo.
+echo [2/5] Sincronizando nucleo Web...
+cd ..
+if not exist "node_modules\@capacitor\core" (
+    echo [INFO] Descargando dependencias Capacitor...
+    call npm.cmd install --legacy-peer-deps
+)
+call npx.cmd cap sync android
+if %ERRORLEVEL% NEQ 0 (
+    echo [ERROR] Sincronizacion de Capacitor fallida. Deteniendo proceso.
+    cd android
+    pause
+    exit /b 1
+)
 cd android
 
+:: 7. PARCHE PLUGIN CAPGO
+set "BAD_JAVA=..\node_modules\@capgo\capacitor-updater\android\src\main\java\ee\forgr\capacitor_updater\DelayUpdateUtils.java"
+if exist "!BAD_JAVA!" (
+    powershell -Command "(Get-Content '!BAD_JAVA!') -replace 'case DelayUntilNext\.', 'case ' | Set-Content '!BAD_JAVA!' -Encoding ASCII"
+)
+
+:: 8. DETECCION DE JAVA
 echo.
-echo ==========================================
-echo    BUSCANDO JAVA (PRIORIDAD: 17 LTS)
-echo ==========================================
-
+echo [3/5] Buscando Java de forma segura...
 set "JAVA_HOME="
-set "DETECTED_VER=0"
-
-:: --- 1. BUSQUEDA PRIORITARIA ---
-set "LOCATIONS="C:\Program Files\Eclipse Adoptium" "C:\Program Files\Java" "C:\Program Files\Microsoft""
-set "STABLE_VERSIONS=17 21"
-
-for %%V in (%STABLE_VERSIONS%) do (
-    for %%L in (%LOCATIONS%) do (
-        if not defined JAVA_HOME (
-            for /d %%D in ("%%~L\jdk-%%V*") do (
-                if exist "%%~fD\bin\javac.exe" (
-                    set "JAVA_HOME=%%~fD"
-                    echo [AUTO] Encontrado Java %%V: %%~fD
-                    goto :VERIFY_VERSION
-                )
-            )
-        )
-    )
+if exist "C:\Program Files\Android\Android Studio\jbr\bin\javac.exe" (
+    set "JAVA_HOME=C:\Program Files\Android\Android Studio\jbr"
+) else (
+    for /d %%D in ("C:\Program Files\Microsoft\jdk-17*") do if exist "%%~fD\bin\javac.exe" set "JAVA_HOME=%%~fD"
+    if not defined JAVA_HOME for /d %%D in ("C:\Program Files\Eclipse Adoptium\jdk-17*") do if exist "%%~fD\bin\javac.exe" set "JAVA_HOME=%%~fD"
+    if not defined JAVA_HOME for /d %%D in ("C:\Program Files\Java\jdk-17*") do if exist "%%~fD\bin\javac.exe" set "JAVA_HOME=%%~fD"
 )
 
-:: --- 2. FALLBACK SISTEMA ---
 if not defined JAVA_HOME (
-    for /f "delims=" %%i in ('where javac 2^>nul') do set "SYSTEM_JAVAC=%%i"
-    if defined SYSTEM_JAVAC (
-        for %%F in ("!SYSTEM_JAVAC!\..\..") do set "JAVA_HOME=%%~fF"
-    )
-)
-
-:VERIFY_VERSION
-if not defined JAVA_HOME (
-    echo [ERROR] No se encontro Java 17.
+    echo [ERROR CRITICO] No se detecto JDK 17.
     pause
-    exit
+    exit /b 1
 )
+echo [OK] Usando nucleo Java: !JAVA_HOME!
 
-set PATH=%JAVA_HOME%\bin;%PATH%
-for /f "tokens=3" %%g in ('java -version 2^>^&1 ^| findstr "version"') do set "JAVA_VER_RAW=%%g"
-set "JAVA_VER_RAW=!JAVA_VER_RAW:"=!"
-for /f "delims=." %%v in ("!JAVA_VER_RAW!") do set "DETECTED_VER=%%v"
+:: 9. INYECCION FORZADA DE COMPATIBILIDAD GRADLE
+echo.
+echo [4/5] Aplicando reglas de SDK 35 y Java 17...
+(
+    echo ext {
+    echo     minSdkVersion = 24
+    echo     compileSdkVersion = 35
+    echo     targetSdkVersion = 35
+    echo     javaVersion = 17
+    echo     androidxActivityVersion = '1.9.0'
+    echo     androidxAppCompatVersion = '1.6.1'
+    echo     androidxCoordinatorLayoutVersion = '1.2.0'
+    echo     androidxCoreVersion = '1.13.1'
+    echo     androidxFragmentVersion = '1.7.1'
+    echo     coreSplashScreenVersion = '1.0.1'
+    echo     androidxWebkitVersion = '1.11.0'
+    echo     junitVersion = '4.13.2'
+    echo     androidxJunitVersion = '1.1.5'
+    echo     androidxEspressoCoreVersion = '3.5.1'
+    echo     cordovaAndroidVersion = '13.0.0'
+    echo }
+) > variables.gradle
 
-echo [OK] Usando Java %DETECTED_VER% en: %JAVA_HOME%
+(
+    echo allprojects {
+    echo     afterEvaluate { project -^>
+    echo         if (project.hasProperty("android"^)^) {
+    echo             android {
+    echo                 compileOptions {
+    echo                     sourceCompatibility = JavaVersion.VERSION_17
+    echo                     targetCompatibility = JavaVersion.VERSION_17
+    echo                 }
+    echo             }
+    echo         }
+    echo     }
+    echo     configurations.all {
+    echo         resolutionStrategy {
+    echo             force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22'
+    echo             force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22'
+    echo             force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22'
+    echo         }
+    echo     }
+    echo }
+) > force_compat.gradle
 
-:: --- 3. REPARAR VARIABLES.GRADLE (SDK 35 / JAVA 17) ---
-if exist variables.gradle (
-    echo [CFG] Asegurando variables.gradle correcto...
-    echo ext { > variables.gradle
-    echo     minSdkVersion = 24 >> variables.gradle
-    echo     compileSdkVersion = 35 >> variables.gradle
-    echo     targetSdkVersion = 35 >> variables.gradle
-    echo     javaVersion = 17 >> variables.gradle
-    echo     androidxActivityVersion = '1.9.0' >> variables.gradle
-    echo     androidxAppCompatVersion = '1.6.1' >> variables.gradle
-    echo     androidxCoordinatorLayoutVersion = '1.2.0' >> variables.gradle
-    echo     androidxCoreVersion = '1.13.1' >> variables.gradle
-    echo     androidxFragmentVersion = '1.7.1' >> variables.gradle
-    echo     coreSplashScreenVersion = '1.0.1' >> variables.gradle
-    echo     androidxWebkitVersion = '1.11.0' >> variables.gradle
-    echo     junitVersion = '4.13.2' >> variables.gradle
-    echo     androidxJunitVersion = '1.1.5' >> variables.gradle
-    echo     androidxEspressoCoreVersion = '3.5.1' >> variables.gradle
-    echo     cordovaAndroidVersion = '13.0.0' >> variables.gradle
-    echo } >> variables.gradle
-)
-
-:: --- 4. GENERAR SCRIPT DE FORZADO ---
-echo [CFG] Creando script de anulacion de version Java y correccion Kotlin (Restaurado)...
-
-echo allprojects { > force_compat.gradle
-echo     afterEvaluate { project -^> >> force_compat.gradle
-echo         if (project.hasProperty("android")) { >> force_compat.gradle
-echo             android { >> force_compat.gradle
-echo                 compileOptions { >> force_compat.gradle
-echo                     sourceCompatibility = JavaVersion.VERSION_17 >> force_compat.gradle
-echo                     targetCompatibility = JavaVersion.VERSION_17 >> force_compat.gradle
-echo                 } >> force_compat.gradle
-echo             } >> force_compat.gradle
-echo         } >> force_compat.gradle
-echo     } >> force_compat.gradle
-echo     configurations.all { >> force_compat.gradle
-echo         resolutionStrategy { >> force_compat.gradle
-echo             force 'org.jetbrains.kotlin:kotlin-stdlib:1.8.22' >> force_compat.gradle
-echo             force 'org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22' >> force_compat.gradle
-echo             force 'org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22' >> force_compat.gradle
-echo         } >> force_compat.gradle
-echo     } >> force_compat.gradle
-echo } >> force_compat.gradle
-
-echo ==========================================
-echo    LIMPIANDO DEMONIOS Y CACHE...
-echo ==========================================
-call gradlew.bat --stop
-echo [INFO] Ejecutando Gradle Clean (Recomendado por el usuario)...
-call gradlew.bat clean
-
-echo ==========================================
-echo    COMPILANDO APK...
-echo ==========================================
-
-:: Compilación limpia respetando tus modificaciones en variables.gradle y build.gradle
+:: 10. COMPILACION FINAL
+echo.
+echo [5/5] Construyendo APK...
+call gradlew.bat --stop >nul 2>&1
+call gradlew.bat clean -Dorg.gradle.java.home="%JAVA_HOME%"
 call gradlew.bat assembleDebug -Dorg.gradle.java.home="%JAVA_HOME%" --init-script force_compat.gradle --no-daemon
 
+:: 11. LIMPIEZA
 if %ERRORLEVEL% EQU 0 (
     echo.
     echo ==========================================
-    echo    EXITO - MOVIENDO A CARPETA LIMPIA
+    echo    EXITO TOTAL - Moviendo a \apks
     echo ==========================================
-    
-    set "SOURCE_FILE=app\build\outputs\apk\debug\app-debug.apk"
-    set "TARGET_DIR=..\apks"
-    set "TARGET_FILE=!TARGET_DIR!\%CUSTOM_NAME%.apk"
-    
-    if not exist "!TARGET_DIR!" (
-        echo [INFO] Creando carpeta apks...
-        mkdir "!TARGET_DIR!"
-    )
-    
-    if exist "!TARGET_FILE!" del "!TARGET_FILE!"
-    
-    move /y "!SOURCE_FILE!" "!TARGET_FILE!" >nul
+    if not exist "..\apks" mkdir "..\apks"
+    if exist "..\apks\!CUSTOM_NAME!.apk" del "..\apks\!CUSTOM_NAME!.apk"
+    move /y "app\build\outputs\apk\debug\app-debug.apk" "..\apks\!CUSTOM_NAME!.apk" >nul
     del force_compat.gradle
     
-    echo.
-    echo [OK] LISTO! Tu APK esta en: miapp\apks\%CUSTOM_NAME%.apk
-    explorer "!TARGET_DIR!"
+    echo [OK] El motor compilo tu app con exito.
+    explorer "..\apks"
 ) else (
     echo.
-    echo [ERROR] Fallo la compilacion. Revisa los errores.
+    echo [ERROR] Gradle fallo en la construccion del APK.
 )
-
 pause

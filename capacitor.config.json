@@ -1,0 +1,6 @@
+{
+  "appId": "com.pepino.app",
+  "appName": "pepino",
+  "webDir": "www",
+  "bundledWebRuntime": false
+}

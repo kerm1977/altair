@@ -316,7 +316,7 @@
     <template id="tpl-perfil">
         <div class="text-center mb-4 mt-3">
             <div class="position-relative d-inline-block">
-                <div class="bg-primary text-white rounded-circle shadow-sm mb-3 d-flex align-items-center justify-content-center fw-bold" style="width:120px; height:120px; font-size: 3rem;" id="perfil-avatar">U</div>
+                <div class="bg-primary text-white rounded-circle shadow-sm mb-3 d-flex align-items-center justify-content-center fw-bold overflow-hidden" style="width:120px; height:120px; font-size: 3rem; cursor: pointer;" id="perfil-avatar" onclick="window.ImageEditorManager.abrirSelectorImagen()">U</div>
                 <button class="btn btn-sm btn-primary rounded-circle position-absolute bottom-0 end-0 mb-3 me-2 shadow" onclick="window.editarMiPerfil()">
                     <i class="bi bi-pencil"></i>
                 </button>
@@ -497,10 +497,14 @@
     <!-- Lógica y Controladores Separados -->
     <script src="js/temas.js"></script>
     <script src="js/search.js"></script>
-    <!-- NUEVO: Controlador de Registro -->
     <script src="js/registro.js"></script>
     
-    <!-- Lógica Principal SIEMPRE AL FINAL -->
-    <script src="js/index.js"></script>
+    <!-- ESTRUCTURA MODULAR ACTIVA -->
+    <script src="js/database.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/router.js"></script>
+    <script src="js/userController.js"></script>
+    <script src="js/imageEditor.js"></script>
+    <script src="js/utils.js"></script>
 </body>
 </html>

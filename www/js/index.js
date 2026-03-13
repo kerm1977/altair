@@ -112,6 +112,21 @@ const sqliteService = {
         }
     },
 
+    // --- NUEVO: BÚSQUEDA DE USUARIOS ---
+    buscarUsuarios: async function(termino) {
+        if (!this.isWeb && this.db) {
+            // Buscamos cualquier usuario cuyo email empiece con o contenga el texto (LIKE %texto%)
+            const query = "SELECT * FROM usuarios WHERE email LIKE ?";
+            const res = await this.db.query(query, [`%${termino}%`]);
+            return res.values || [];
+        } else {
+            // Simulación en Web usando filter
+            const users = JSON.parse(localStorage.getItem("mock_db_usuarios") || "[]");
+            const terminoMin = termino.toLowerCase();
+            return users.filter(u => u.email.toLowerCase().includes(terminoMin));
+        }
+    },
+
     testConnection: async function() {
         const inicio = performance.now();
         const users = await this.getUsuarios();
@@ -232,6 +247,47 @@ function cargarVista(vistaId, titulo) {
     }
 }
 
+// --- NUEVO: FUNCIÓN AUXILIAR DE RENDERIZADO DE USUARIOS ---
+function renderizarUsuarios(usuarios, tbody) {
+    if (!tbody) return;
+
+    if(usuarios.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-4">No hay usuarios registrados</td></tr>';
+        return;
+    }
+
+    let htmlBuffer = '';
+    
+    usuarios.forEach(u => {
+        const nombre = u.email.split('@')[0];
+        const iniciales = nombre.substring(0,2).toUpperCase();
+        const estadoClase = u.estado === 'activo' ? 'success' : 'secondary';
+        const estadoTexto = u.estado ? u.estado.charAt(0).toUpperCase() + u.estado.slice(1) : 'Activo';
+        
+        htmlBuffer += `
+            <tr>
+                <td class="ps-3">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-primary text-white rounded-circle d-flex justify-content-center align-items-center me-2 shadow-sm" style="width:36px; height:36px; font-size:12px; font-weight:bold;">${iniciales}</div>
+                        <div>
+                            <div class="fw-bold text-dark" style="font-size: 0.9rem;">${nombre.charAt(0).toUpperCase() + nombre.slice(1)}</div>
+                            <div class="text-muted" style="font-size: 0.75rem;">${u.email}</div>
+                        </div>
+                    </div>
+                </td>
+                <td class="text-center"><span class="badge bg-${estadoClase} bg-opacity-10 text-${estadoClase} border border-${estadoClase} border-opacity-25 rounded-pill">${estadoTexto}</span></td>
+                <td class="text-end pe-3">
+                    <button class="btn btn-sm btn-light text-primary shadow-sm"><i class="bi bi-pencil"></i></button>
+                </td>
+            </tr>
+        `;
+    });
+    
+    requestAnimationFrame(() => {
+        tbody.innerHTML = htmlBuffer;
+    });
+}
+
 async function ejecutarLogicaVista(vistaId) {
     const usuarioActivo = JSON.parse(localStorage.getItem('usuario_activo') || 'null');
 
@@ -256,48 +312,30 @@ async function ejecutarLogicaVista(vistaId) {
 
     if (vistaId === 'admin_usuarios') {
         const tbody = document.getElementById('lista-usuarios-admin');
+        const searchInput = document.getElementById('buscador-usuarios'); // IMPORTANTE: Debemos agregar este ID al HTML
+
         if (tbody) {
             tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm me-2"></div>Consultando...</td></tr>';
             
             try {
+                // Carga inicial completa
                 const usuarios = await sqliteService.getUsuarios();
-                tbody.innerHTML = '';
-                
-                if(usuarios.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-4">No hay usuarios registrados</td></tr>';
-                    return;
-                }
+                renderizarUsuarios(usuarios, tbody);
 
-                let htmlBuffer = '';
-                
-                usuarios.forEach(u => {
-                    const nombre = u.email.split('@')[0];
-                    const iniciales = nombre.substring(0,2).toUpperCase();
-                    const estadoClase = u.estado === 'activo' ? 'success' : 'secondary';
-                    const estadoTexto = u.estado ? u.estado.charAt(0).toUpperCase() + u.estado.slice(1) : 'Activo';
-                    
-                    htmlBuffer += `
-                        <tr>
-                            <td class="ps-3">
-                                <div class="d-flex align-items-center">
-                                    <div class="bg-primary text-white rounded-circle d-flex justify-content-center align-items-center me-2 shadow-sm" style="width:36px; height:36px; font-size:12px; font-weight:bold;">${iniciales}</div>
-                                    <div>
-                                        <div class="fw-bold text-dark" style="font-size: 0.9rem;">${nombre.charAt(0).toUpperCase() + nombre.slice(1)}</div>
-                                        <div class="text-muted" style="font-size: 0.75rem;">${u.email}</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="text-center"><span class="badge bg-${estadoClase} bg-opacity-10 text-${estadoClase} border border-${estadoClase} border-opacity-25 rounded-pill">${estadoTexto}</span></td>
-                            <td class="text-end pe-3">
-                                <button class="btn btn-sm btn-light text-primary shadow-sm"><i class="bi bi-pencil"></i></button>
-                            </td>
-                        </tr>
-                    `;
-                });
-                
-                requestAnimationFrame(() => {
-                    tbody.innerHTML = htmlBuffer;
-                });
+                // Configurar el buscador en vivo
+                if (searchInput) {
+                    searchInput.addEventListener('input', async (e) => {
+                        const termino = e.target.value.trim();
+                        // Delegamos al controlador de búsqueda si existe (search.js), sino usamos el nativo
+                        if (window.SearchManager) {
+                            window.SearchManager.buscar(termino, tbody);
+                        } else {
+                            // Fallback
+                            const res = await sqliteService.buscarUsuarios(termino);
+                            renderizarUsuarios(res, tbody);
+                        }
+                    });
+                }
                 
             } catch(e) {
                 tbody.innerHTML = '<tr><td colspan="3" class="text-center text-danger py-4">Error al consultar DB local</td></tr>';
@@ -371,3 +409,4 @@ window.iniciarSesionApp = iniciarSesionApp;
 window.cerrarSesion = cerrarSesion;
 window.cargarVista = cargarVista;
 window.mostrarNotificacion = mostrarNotificacion;
+window.renderizarUsuarios = renderizarUsuarios;

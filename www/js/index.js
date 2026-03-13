@@ -44,7 +44,9 @@ const sqliteService = {
                 if(logElement) logElement.innerText = "Verificando estructura...";
                 await this.crearTablas();
                 await this.cargarSuperusuariosIniciales(superusers);
+                console.log(`[SQLite] NATIVO ACTIVADO. Operando en Android/iOS.`);
             } else {
+                console.log("⚠️ [MODO WEB] SQLite nativo NO existe en navegadores de PC. Simulando entorno...");
                 await this.simularBDWeb(superusers);
             }
             
@@ -67,8 +69,47 @@ const sqliteService = {
                 estado TEXT DEFAULT 'activo'
             );
             CREATE INDEX IF NOT EXISTS idx_usuarios_auth ON usuarios(email, password);
+
+            -- TABLA PARA GUARDAR LA SESIÓN ACTIVA Y PREFERENCIAS SIN USAR EL NAVEGADOR
+            CREATE TABLE IF NOT EXISTS app_config (
+                clave TEXT UNIQUE NOT NULL,
+                valor TEXT NOT NULL
+            );
         `;
         await this.db.execute(query);
+    },
+
+    // --- NUEVO: FUNCIONES DE SESIÓN INTEGRADAS EN SQLITE ---
+    setSession: async function(userObj) {
+        if (!this.isWeb && this.db) {
+            await this.db.run(
+                "INSERT OR REPLACE INTO app_config (clave, valor) VALUES (?, ?)",
+                ['usuario_activo', JSON.stringify(userObj)]
+            );
+        } else {
+            // Fallback exclusivo para cuando pruebes en el PC
+            localStorage.setItem('usuario_activo', JSON.stringify(userObj));
+        }
+    },
+
+    getSession: async function() {
+        if (!this.isWeb && this.db) {
+            const res = await this.db.query("SELECT valor FROM app_config WHERE clave = ?", ['usuario_activo']);
+            if (res.values && res.values.length > 0) {
+                return JSON.parse(res.values[0].valor);
+            }
+            return null;
+        } else {
+            return JSON.parse(localStorage.getItem('usuario_activo') || 'null');
+        }
+    },
+
+    clearSession: async function() {
+        if (!this.isWeb && this.db) {
+            await this.db.run("DELETE FROM app_config WHERE clave = ?", ['usuario_activo']);
+        } else {
+            localStorage.removeItem('usuario_activo');
+        }
     },
 
     cargarSuperusuariosIniciales: async function(superusersFromJSON) {
@@ -84,12 +125,14 @@ const sqliteService = {
     },
 
     simularBDWeb: async function(superusersFromJSON) {
-        if (superusersFromJSON && superusersFromJSON.length > 0) {
-            const adaptado = superusersFromJSON.map(u => ({...u, rol: 'superusuario', estado: 'activo'}));
-            localStorage.setItem("mock_db_usuarios", JSON.stringify(adaptado));
-        } 
-        else if (!localStorage.getItem("mock_db_usuarios")) {
-            localStorage.setItem("mock_db_usuarios", JSON.stringify([{email: "admin@app.com", password: "admin", pin: "00000000", rol: "superusuario", estado: "activo"}]));
+        let users = JSON.parse(localStorage.getItem("mock_db_usuarios") || "[]");
+        if (users.length === 0) {
+            if (superusersFromJSON && superusersFromJSON.length > 0) {
+                const adaptado = superusersFromJSON.map(u => ({...u, rol: 'superusuario', estado: 'activo'}));
+                localStorage.setItem("mock_db_usuarios", JSON.stringify(adaptado));
+            } else {
+                localStorage.setItem("mock_db_usuarios", JSON.stringify([{email: "admin@app.com", password: "admin", pin: "00000000", rol: "superusuario", estado: "activo"}]));
+            }
         }
     },
 
@@ -103,15 +146,12 @@ const sqliteService = {
         }
     },
 
-    // --- NUEVO: REGISTRO DE USUARIOS EN LA DB ---
     registrarUsuario: async function(email, password, nombre) {
         if (!this.isWeb && this.db) {
             try {
-                // Prevenir duplicados (la DB ya tiene UNIQUE en email, pero esto es por seguridad extra)
                 const check = await this.db.query("SELECT id FROM usuarios WHERE email = ?", [email]);
                 if (check.values && check.values.length > 0) return false;
 
-                // CORRECCIÓN: Asignar rol 'usuario' en lugar de 'admin'
                 await this.db.run(
                     "INSERT INTO usuarios (email, password, rol, estado) VALUES (?, ?, ?, ?)",
                     [email, password, 'usuario', 'activo'] 
@@ -124,7 +164,6 @@ const sqliteService = {
         } else {
             const users = JSON.parse(localStorage.getItem("mock_db_usuarios") || "[]");
             if (users.find(u => u.email === email)) return false; 
-            // CORRECCIÓN: Asignar rol 'usuario' en el simulador Web
             users.push({email, password, rol: 'usuario', estado: 'activo', nombre});
             localStorage.setItem("mock_db_usuarios", JSON.stringify(users));
             return true;
@@ -152,6 +191,41 @@ const sqliteService = {
         }
     },
 
+    getUsuarioByEmail: async function(email) {
+        if (!this.isWeb && this.db) {
+            const res = await this.db.query("SELECT * FROM usuarios WHERE email = ?", [email]);
+            return (res.values && res.values.length > 0) ? res.values[0] : null;
+        } else {
+            const users = JSON.parse(localStorage.getItem("mock_db_usuarios") || "[]");
+            return users.find(u => u.email === email) || null;
+        }
+    },
+
+    actualizarUsuario: async function(email, datos) {
+        if (!this.isWeb && this.db) {
+            try {
+                await this.db.run(
+                    "UPDATE usuarios SET rol = ?, estado = ? WHERE email = ?",
+                    [datos.rol, datos.estado, email]
+                );
+                return true;
+            } catch(e) {
+                console.error("[SQLite] Error al actualizar usuario:", e);
+                return false;
+            }
+        } else {
+            let users = JSON.parse(localStorage.getItem("mock_db_usuarios") || "[]");
+            let index = users.findIndex(u => u.email === email);
+            if (index !== -1) {
+                users[index].rol = datos.rol;
+                users[index].estado = datos.estado;
+                localStorage.setItem("mock_db_usuarios", JSON.stringify(users));
+                return true;
+            }
+            return false;
+        }
+    },
+
     testConnection: async function() {
         const inicio = performance.now();
         const users = await this.getUsuarios();
@@ -159,10 +233,10 @@ const sqliteService = {
         window.mostrarNotificacion(`Conexión OK. DB: ${users.length} usuarios. Tiempo: ${(fin - inicio).toFixed(2)} ms`, "success");
     },
 
-    limpiarBD: function() {
+    limpiarBD: async function() {
         localStorage.removeItem("mock_db_usuarios");
-        localStorage.removeItem("usuario_activo");
-        window.mostrarNotificacion("Base de datos local formateada.", "danger");
+        await this.clearSession(); // Limpiamos tabla SQLITE
+        window.mostrarNotificacion("Base de datos formateada.", "danger");
         setTimeout(() => window.location.reload(), 1000);
     }
 };
@@ -186,13 +260,22 @@ async function iniciarSesionApp() {
     try {
         const user = await sqliteService.login(emailInput, passInput);
 
-        if (user) {
+        if (user && user.estado !== 'inactivo') {
             window.mostrarNotificacion("¡Acceso concedido!", "success");
-            localStorage.setItem('usuario_activo', JSON.stringify(user));
+            
+            // GUARDAMOS SESIÓN EN LA BASE DE DATOS (NO EN NAVEGADOR)
+            await sqliteService.setSession(user);
             
             requestAnimationFrame(() => {
                 window.cargarVista('inicio', 'Inicio');
             });
+        } else if (user && user.estado === 'inactivo') {
+            errorDiv.textContent = "Tu cuenta está inactiva o ha sido bloqueada.";
+            errorDiv.classList.remove('d-none');
+            if(btnSubmit) {
+                btnSubmit.disabled = false;
+                btnSubmit.innerHTML = 'INGRESAR';
+            }
         } else {
             errorDiv.textContent = "Credenciales incorrectas o usuario inexistente en DB.";
             errorDiv.classList.remove('d-none');
@@ -211,7 +294,6 @@ async function iniciarSesionApp() {
     }
 }
 
-// --- FUNCIÓN DE REGISTRO CONECTADA A LA DB ---
 async function registrarUsuarioApp() {
     const btnSubmit = document.getElementById('btn-reg-submit');
     const emailInput = document.getElementById('reg-email').value;
@@ -257,8 +339,8 @@ async function registrarUsuarioApp() {
     }
 }
 
-function cerrarSesion() {
-    localStorage.removeItem('usuario_activo');
+async function cerrarSesion() {
+    await sqliteService.clearSession(); // ELIMINA REGISTRO DE SQLITE
     window.mostrarNotificacion('Sesión cerrada correctamente', 'success');
     window.cargarVista('login', 'Login');
 }
@@ -310,11 +392,65 @@ function cargarVista(vistaId, titulo) {
                 if(activeBtn) {
                     activeBtn.classList.add('active', 'text-primary');
                     activeBtn.classList.remove('text-secondary');
+                } else if (vistaId === 'editar_usuario') {
+                    const adminBtn = document.getElementById('nav-admin_usuarios');
+                    if (adminBtn) {
+                        adminBtn.classList.add('active', 'text-primary');
+                        adminBtn.classList.remove('text-secondary');
+                    }
                 }
             }
 
             ejecutarLogicaVista(vistaId);
         });
+    }
+}
+
+async function abrirEditorUsuario(email) {
+    const user = await sqliteService.getUsuarioByEmail(email);
+    if (user) {
+        // Almacenamos temporalmente en RAM, no en LocalStorage
+        window.usuarioEnEdicion = user;
+        window.cargarVista('editar_usuario', 'Editar Usuario');
+    } else {
+        window.mostrarNotificacion("Error: Usuario no encontrado", "danger");
+    }
+}
+
+async function guardarEdicionUsuario() {
+    const user = window.usuarioEnEdicion;
+    if (!user) return;
+
+    const rolSel = document.getElementById('edit-rol').value;
+    const estadoSel = document.getElementById('edit-estado').value;
+    const btn = document.getElementById('btn-save-edit');
+    
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>GUARDANDO...';
+    }
+
+    const exito = await sqliteService.actualizarUsuario(user.email, { rol: rolSel, estado: estadoSel });
+    
+    if (exito) {
+        window.mostrarNotificacion("Privilegios actualizados correctamente", "success");
+        
+        const usuarioActivo = await sqliteService.getSession();
+        if (usuarioActivo && usuarioActivo.email === user.email) {
+            usuarioActivo.rol = rolSel;
+            usuarioActivo.estado = estadoSel;
+            await sqliteService.setSession(usuarioActivo); // Actualiza sesión en DB
+        }
+
+        setTimeout(() => {
+            window.cargarVista('admin_usuarios', 'Usuarios');
+        }, 300);
+    } else {
+        window.mostrarNotificacion("Error al actualizar privilegios", "danger");
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-check2-circle me-1"></i> GUARDAR CAMBIOS';
+        }
     }
 }
 
@@ -347,7 +483,7 @@ function renderizarUsuarios(usuarios, tbody) {
                 </td>
                 <td class="text-center"><span class="badge bg-${estadoClase} bg-opacity-10 text-${estadoClase} border border-${estadoClase} border-opacity-25 rounded-pill">${estadoTexto}</span></td>
                 <td class="text-end pe-3">
-                    <button class="btn btn-sm btn-light text-primary shadow-sm"><i class="bi bi-pencil"></i></button>
+                    <button class="btn btn-sm btn-light text-primary shadow-sm" onclick="window.abrirEditorUsuario('${u.email}')"><i class="bi bi-pencil"></i></button>
                 </td>
             </tr>
         `;
@@ -359,9 +495,9 @@ function renderizarUsuarios(usuarios, tbody) {
 }
 
 async function ejecutarLogicaVista(vistaId) {
-    const usuarioActivo = JSON.parse(localStorage.getItem('usuario_activo') || 'null');
+    // CARGA DE SESIÓN DESDE SQLITE
+    const usuarioActivo = await sqliteService.getSession();
 
-    // Lógica para ocultar el botón "Usuarios" en el menú inferior
     const navAdminUsuarios = document.getElementById('nav-admin_usuarios');
     if (navAdminUsuarios) {
         if (usuarioActivo && (usuarioActivo.rol === 'superusuario' || usuarioActivo.rol === 'admin')) {
@@ -376,7 +512,6 @@ async function ejecutarLogicaVista(vistaId) {
         const el = document.getElementById('inicio-nombre');
         if (el) el.innerText = `Hola, ${nombre.charAt(0).toUpperCase() + nombre.slice(1)}`;
 
-        // Lógica para ocultar la tarjeta "Gestión de Usuarios" en Inicio
         const tarjetaAdminUsuarios = document.querySelector('button[onclick*="admin_usuarios"]');
         if (tarjetaAdminUsuarios) {
             if (usuarioActivo.rol === 'superusuario' || usuarioActivo.rol === 'admin') {
@@ -408,28 +543,37 @@ async function ejecutarLogicaVista(vistaId) {
             tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm me-2"></div>Consultando...</td></tr>';
             
             try {
-                // Carga inicial completa
                 const usuarios = await sqliteService.getUsuarios();
                 window.renderizarUsuarios(usuarios, tbody);
 
-                // Configurar el buscador en vivo
                 if (searchInput) {
                     searchInput.addEventListener('input', async (e) => {
                         const termino = e.target.value.trim();
-                        // Delegamos al controlador de búsqueda si existe (search.js), sino usamos el nativo
                         if (window.SearchManager) {
                             window.SearchManager.buscar(termino, tbody);
                         } else {
-                            // Fallback
                             const res = await sqliteService.buscarUsuarios(termino);
                             window.renderizarUsuarios(res, tbody);
                         }
                     });
                 }
-                
             } catch(e) {
                 tbody.innerHTML = '<tr><td colspan="3" class="text-center text-danger py-4">Error al consultar DB local</td></tr>';
             }
+        }
+    }
+
+    // EXTRAER DATOS DESDE LA RAM, NO DESDE NAVEGADOR
+    if (vistaId === 'editar_usuario') {
+        const userEdit = window.usuarioEnEdicion;
+        if (userEdit) {
+            const elEmail = document.getElementById('edit-email-display');
+            const selRol = document.getElementById('edit-rol');
+            const selEstado = document.getElementById('edit-estado');
+            
+            if (elEmail) elEmail.innerText = userEdit.email;
+            if (selRol) selRol.value = userEdit.rol || 'usuario';
+            if (selEstado) selEstado.value = userEdit.estado || 'activo';
         }
     }
 }
@@ -472,7 +616,9 @@ async function bootApp() {
     }
 
     const dbReady = await sqliteService.init();
-    const usuarioActivo = JSON.parse(localStorage.getItem('usuario_activo'));
+    
+    // CARGAR SESIÓN DIRECTO DESDE SQLITE
+    const usuarioActivo = await sqliteService.getSession();
     
     requestAnimationFrame(() => {
         if (usuarioActivo && dbReady) {
@@ -497,3 +643,5 @@ window.cerrarSesion = cerrarSesion;
 window.cargarVista = cargarVista;
 window.mostrarNotificacion = mostrarNotificacion;
 window.renderizarUsuarios = renderizarUsuarios;
+window.abrirEditorUsuario = abrirEditorUsuario;
+window.guardarEdicionUsuario = guardarEdicionUsuario;

@@ -35,7 +35,6 @@ const sqliteService = {
                 this.db = await sqlite.createConnection(this.dbName, USE_ENCRYPTION, ENCRYPTION_MODE, 1, false);
                 await this.db.open();
                 
-                // Optimizaciones de rendimiento (Pragmas)
                 await this.db.execute("PRAGMA journal_mode = WAL;");
                 await this.db.execute("PRAGMA synchronous = NORMAL;");
                 await this.db.execute("PRAGMA cache_size = -10000;");
@@ -43,6 +42,11 @@ const sqliteService = {
                 
                 if(logElement) logElement.innerText = "Verificando estructura...";
                 await this.crearTablas();
+
+                // MIGRACIÓN SUAVE: Añadir columnas si no existían (Previene errores si la DB ya estaba creada)
+                try { await this.db.execute("ALTER TABLE usuarios ADD COLUMN nombre TEXT DEFAULT '';"); } catch(e){}
+                try { await this.db.execute("ALTER TABLE usuarios ADD COLUMN telefono TEXT DEFAULT '';"); } catch(e){}
+
                 await this.cargarSuperusuariosIniciales(superusers);
                 console.log(`[SQLite] NATIVO ACTIVADO. Operando en Android/iOS.`);
             } else {
@@ -62,15 +66,16 @@ const sqliteService = {
         const query = `
             CREATE TABLE IF NOT EXISTS usuarios (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nombre TEXT DEFAULT '',
                 email TEXT UNIQUE NOT NULL,
                 password TEXT NOT NULL,
+                telefono TEXT DEFAULT '',
                 pin TEXT,
                 rol TEXT DEFAULT 'usuario',
                 estado TEXT DEFAULT 'activo'
             );
             CREATE INDEX IF NOT EXISTS idx_usuarios_auth ON usuarios(email, password);
 
-            -- TABLA PARA GUARDAR LA SESIÓN ACTIVA Y PREFERENCIAS SIN USAR EL NAVEGADOR
             CREATE TABLE IF NOT EXISTS app_config (
                 clave TEXT UNIQUE NOT NULL,
                 valor TEXT NOT NULL
@@ -79,7 +84,6 @@ const sqliteService = {
         await this.db.execute(query);
     },
 
-    // --- NUEVO: FUNCIONES DE SESIÓN INTEGRADAS EN SQLITE ---
     setSession: async function(userObj) {
         if (!this.isWeb && this.db) {
             await this.db.run(
@@ -87,7 +91,6 @@ const sqliteService = {
                 ['usuario_activo', JSON.stringify(userObj)]
             );
         } else {
-            // Fallback exclusivo para cuando pruebes en el PC
             localStorage.setItem('usuario_activo', JSON.stringify(userObj));
         }
     },
@@ -153,8 +156,8 @@ const sqliteService = {
                 if (check.values && check.values.length > 0) return false;
 
                 await this.db.run(
-                    "INSERT INTO usuarios (email, password, rol, estado) VALUES (?, ?, ?, ?)",
-                    [email, password, 'usuario', 'activo'] 
+                    "INSERT INTO usuarios (nombre, email, password, rol, estado) VALUES (?, ?, ?, ?, ?)",
+                    [nombre, email, password, 'usuario', 'activo'] 
                 );
                 return true;
             } catch(e) {
@@ -164,7 +167,7 @@ const sqliteService = {
         } else {
             const users = JSON.parse(localStorage.getItem("mock_db_usuarios") || "[]");
             if (users.find(u => u.email === email)) return false; 
-            users.push({email, password, rol: 'usuario', estado: 'activo', nombre});
+            users.push({email, password, nombre, telefono: '', rol: 'usuario', estado: 'activo'});
             localStorage.setItem("mock_db_usuarios", JSON.stringify(users));
             return true;
         }
@@ -181,13 +184,13 @@ const sqliteService = {
 
     buscarUsuarios: async function(termino) {
         if (!this.isWeb && this.db) {
-            const query = "SELECT * FROM usuarios WHERE email LIKE ?";
-            const res = await this.db.query(query, [`%${termino}%`]);
+            const query = "SELECT * FROM usuarios WHERE email LIKE ? OR nombre LIKE ?";
+            const res = await this.db.query(query, [`%${termino}%`, `%${termino}%`]);
             return res.values || [];
         } else {
             const users = JSON.parse(localStorage.getItem("mock_db_usuarios") || "[]");
             const terminoMin = termino.toLowerCase();
-            return users.filter(u => u.email.toLowerCase().includes(terminoMin));
+            return users.filter(u => u.email.toLowerCase().includes(terminoMin) || (u.nombre && u.nombre.toLowerCase().includes(terminoMin)));
         }
     },
 
@@ -201,12 +204,12 @@ const sqliteService = {
         }
     },
 
-    actualizarUsuario: async function(email, datos) {
+    actualizarUsuario: async function(emailViejo, datos) {
         if (!this.isWeb && this.db) {
             try {
                 await this.db.run(
-                    "UPDATE usuarios SET rol = ?, estado = ? WHERE email = ?",
-                    [datos.rol, datos.estado, email]
+                    "UPDATE usuarios SET nombre = ?, email = ?, telefono = ?, password = ?, rol = ?, estado = ? WHERE email = ?",
+                    [datos.nombre, datos.email, datos.telefono, datos.password, datos.rol, datos.estado, emailViejo]
                 );
                 return true;
             } catch(e) {
@@ -215,8 +218,12 @@ const sqliteService = {
             }
         } else {
             let users = JSON.parse(localStorage.getItem("mock_db_usuarios") || "[]");
-            let index = users.findIndex(u => u.email === email);
+            let index = users.findIndex(u => u.email === emailViejo);
             if (index !== -1) {
+                users[index].nombre = datos.nombre;
+                users[index].email = datos.email;
+                users[index].telefono = datos.telefono;
+                users[index].password = datos.password;
                 users[index].rol = datos.rol;
                 users[index].estado = datos.estado;
                 localStorage.setItem("mock_db_usuarios", JSON.stringify(users));
@@ -262,8 +269,6 @@ async function iniciarSesionApp() {
 
         if (user && user.estado !== 'inactivo') {
             window.mostrarNotificacion("¡Acceso concedido!", "success");
-            
-            // GUARDAMOS SESIÓN EN LA BASE DE DATOS (NO EN NAVEGADOR)
             await sqliteService.setSession(user);
             
             requestAnimationFrame(() => {
@@ -406,14 +411,32 @@ function cargarVista(vistaId, titulo) {
     }
 }
 
+// --- FUNCIÓN: ENTRAR A EDITAR UN USUARIO DESDE EL PANEL ---
 async function abrirEditorUsuario(email) {
     const user = await sqliteService.getUsuarioByEmail(email);
     if (user) {
-        // Almacenamos temporalmente en RAM, no en LocalStorage
         window.usuarioEnEdicion = user;
-        window.cargarVista('editar_usuario', 'Editar Usuario');
+        window.cargarVista('editar_usuario', 'Editar Información');
     } else {
         window.mostrarNotificacion("Error: Usuario no encontrado", "danger");
+    }
+}
+
+// --- FUNCIÓN: ENTRAR A EDITAR MI PROPIO PERFIL ---
+async function editarMiPerfil() {
+    const usuarioActivo = await sqliteService.getSession();
+    if (usuarioActivo) {
+        window.abrirEditorUsuario(usuarioActivo.email);
+    }
+}
+
+// --- CANCELAR Y DEVOLVERSE A LA PANTALLA ANTERIOR CORRECTA ---
+async function cancelarEdicion() {
+    const usuarioActivo = await sqliteService.getSession();
+    if (usuarioActivo && (usuarioActivo.rol === 'superusuario' || usuarioActivo.rol === 'admin') && window.usuarioEnEdicion && window.usuarioEnEdicion.email !== usuarioActivo.email) {
+        window.cargarVista('admin_usuarios', 'Usuarios');
+    } else {
+        window.cargarVista('perfil', 'Mi Perfil');
     }
 }
 
@@ -421,32 +444,50 @@ async function guardarEdicionUsuario() {
     const user = window.usuarioEnEdicion;
     if (!user) return;
 
-    const rolSel = document.getElementById('edit-rol').value;
-    const estadoSel = document.getElementById('edit-estado').value;
-    const btn = document.getElementById('btn-save-edit');
+    const emailViejo = user.email;
+    const txtNombre = document.getElementById('edit-nombre').value;
+    const txtEmail = document.getElementById('edit-email').value;
+    const txtTelefono = document.getElementById('edit-telefono').value;
+    const txtPassword = document.getElementById('edit-password').value;
+
+    const selRol = document.getElementById('edit-rol');
+    const selEstado = document.getElementById('edit-estado');
     
+    // Si no existen los combos (están ocultos), conservamos los roles originales
+    const rolActualizado = selRol ? selRol.value : user.rol;
+    const estadoActualizado = selEstado ? selEstado.value : user.estado;
+
+    const btn = document.getElementById('btn-save-edit');
     if (btn) {
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>GUARDANDO...';
     }
 
-    const exito = await sqliteService.actualizarUsuario(user.email, { rol: rolSel, estado: estadoSel });
+    const nuevosDatos = {
+        nombre: txtNombre,
+        email: txtEmail,
+        telefono: txtTelefono,
+        password: txtPassword,
+        rol: rolActualizado,
+        estado: estadoActualizado
+    };
+
+    const exito = await sqliteService.actualizarUsuario(emailViejo, nuevosDatos);
     
     if (exito) {
-        window.mostrarNotificacion("Privilegios actualizados correctamente", "success");
+        window.mostrarNotificacion("Información actualizada correctamente", "success");
         
+        // Si me edité a mi mismo, actualizo mi propia sesión
         const usuarioActivo = await sqliteService.getSession();
-        if (usuarioActivo && usuarioActivo.email === user.email) {
-            usuarioActivo.rol = rolSel;
-            usuarioActivo.estado = estadoSel;
-            await sqliteService.setSession(usuarioActivo); // Actualiza sesión en DB
+        if (usuarioActivo && usuarioActivo.email === emailViejo) {
+            await sqliteService.setSession(nuevosDatos); 
         }
 
-        setTimeout(() => {
-            window.cargarVista('admin_usuarios', 'Usuarios');
+        setTimeout(async () => {
+            window.cancelarEdicion();
         }, 300);
     } else {
-        window.mostrarNotificacion("Error al actualizar privilegios", "danger");
+        window.mostrarNotificacion("Error: Verifica que el correo no esté usado por otro", "danger");
         if (btn) {
             btn.disabled = false;
             btn.innerHTML = '<i class="bi bi-check2-circle me-1"></i> GUARDAR CAMBIOS';
@@ -465,8 +506,8 @@ function renderizarUsuarios(usuarios, tbody) {
     let htmlBuffer = '';
     
     usuarios.forEach(u => {
-        const nombre = u.email.split('@')[0];
-        const iniciales = nombre.substring(0,2).toUpperCase();
+        const displayNombre = u.nombre || u.email.split('@')[0];
+        const iniciales = displayNombre.substring(0,2).toUpperCase();
         const estadoClase = u.estado === 'activo' ? 'success' : 'secondary';
         const estadoTexto = u.estado ? u.estado.charAt(0).toUpperCase() + u.estado.slice(1) : 'Activo';
         
@@ -476,7 +517,7 @@ function renderizarUsuarios(usuarios, tbody) {
                     <div class="d-flex align-items-center">
                         <div class="bg-primary text-white rounded-circle d-flex justify-content-center align-items-center me-2 shadow-sm" style="width:36px; height:36px; font-size:12px; font-weight:bold;">${iniciales}</div>
                         <div>
-                            <div class="fw-bold text-dark" style="font-size: 0.9rem;">${nombre.charAt(0).toUpperCase() + nombre.slice(1)}</div>
+                            <div class="fw-bold text-dark" style="font-size: 0.9rem;">${displayNombre}</div>
                             <div class="text-muted" style="font-size: 0.75rem;">${u.email}</div>
                         </div>
                     </div>
@@ -495,7 +536,6 @@ function renderizarUsuarios(usuarios, tbody) {
 }
 
 async function ejecutarLogicaVista(vistaId) {
-    // CARGA DE SESIÓN DESDE SQLITE
     const usuarioActivo = await sqliteService.getSession();
 
     const navAdminUsuarios = document.getElementById('nav-admin_usuarios');
@@ -508,9 +548,9 @@ async function ejecutarLogicaVista(vistaId) {
     }
 
     if (vistaId === 'inicio' && usuarioActivo) {
-        const nombre = usuarioActivo.email.split('@')[0];
+        const displayNombre = usuarioActivo.nombre || usuarioActivo.email.split('@')[0];
         const el = document.getElementById('inicio-nombre');
-        if (el) el.innerText = `Hola, ${nombre.charAt(0).toUpperCase() + nombre.slice(1)}`;
+        if (el) el.innerText = `Hola, ${displayNombre}`;
 
         const tarjetaAdminUsuarios = document.querySelector('button[onclick*="admin_usuarios"]');
         if (tarjetaAdminUsuarios) {
@@ -527,12 +567,14 @@ async function ejecutarLogicaVista(vistaId) {
         const elRol = document.getElementById('perfil-rol');
         const elNombre = document.getElementById('perfil-nombre');
         const elAvatar = document.getElementById('perfil-avatar');
+        const elTelefono = document.getElementById('perfil-telefono');
         
-        const nombre = usuarioActivo.email.split('@')[0];
-        if (elNombre) elNombre.innerText = nombre.charAt(0).toUpperCase() + nombre.slice(1);
+        const displayNombre = usuarioActivo.nombre || usuarioActivo.email.split('@')[0];
+        if (elNombre) elNombre.innerText = displayNombre;
         if (elEmail) elEmail.innerText = usuarioActivo.email;
+        if (elTelefono) elTelefono.innerText = usuarioActivo.telefono || 'No especificado';
         if (elRol) elRol.innerText = usuarioActivo.rol ? usuarioActivo.rol.toUpperCase() : 'USUARIO';
-        if (elAvatar) elAvatar.innerText = nombre.charAt(0).toUpperCase();
+        if (elAvatar) elAvatar.innerText = displayNombre.charAt(0).toUpperCase();
     }
 
     if (vistaId === 'admin_usuarios') {
@@ -541,7 +583,6 @@ async function ejecutarLogicaVista(vistaId) {
 
         if (tbody) {
             tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm me-2"></div>Consultando...</td></tr>';
-            
             try {
                 const usuarios = await sqliteService.getUsuarios();
                 window.renderizarUsuarios(usuarios, tbody);
@@ -563,17 +604,33 @@ async function ejecutarLogicaVista(vistaId) {
         }
     }
 
-    // EXTRAER DATOS DESDE LA RAM, NO DESDE NAVEGADOR
+    // --- RELLENAR LOS NUEVOS CAMPOS DEL EDITOR ---
     if (vistaId === 'editar_usuario') {
         const userEdit = window.usuarioEnEdicion;
+        
         if (userEdit) {
-            const elEmail = document.getElementById('edit-email-display');
+            const elEmailDisplay = document.getElementById('edit-email-display');
+            const inNombre = document.getElementById('edit-nombre');
+            const inEmail = document.getElementById('edit-email');
+            const inTelefono = document.getElementById('edit-telefono');
+            const inPassword = document.getElementById('edit-password');
             const selRol = document.getElementById('edit-rol');
             const selEstado = document.getElementById('edit-estado');
+            const boxPrivilegios = document.getElementById('box-privilegios');
+
+            if (elEmailDisplay) elEmailDisplay.innerText = userEdit.email;
+            if (inNombre) inNombre.value = userEdit.nombre || '';
+            if (inEmail) inEmail.value = userEdit.email || '';
+            if (inTelefono) inTelefono.value = userEdit.telefono || '';
+            if (inPassword) inPassword.value = userEdit.password || '';
             
-            if (elEmail) elEmail.innerText = userEdit.email;
-            if (selRol) selRol.value = userEdit.rol || 'usuario';
-            if (selEstado) selEstado.value = userEdit.estado || 'activo';
+            // Seguridad: Si soy usuario normal, escondo y bloqueo la caja de privilegios
+            if (usuarioActivo.rol === 'usuario' && boxPrivilegios) {
+                boxPrivilegios.classList.add('d-none');
+            } else if (selRol && selEstado) {
+                selRol.value = userEdit.rol || 'usuario';
+                selEstado.value = userEdit.estado || 'activo';
+            }
         }
     }
 }
@@ -616,8 +673,6 @@ async function bootApp() {
     }
 
     const dbReady = await sqliteService.init();
-    
-    // CARGAR SESIÓN DIRECTO DESDE SQLITE
     const usuarioActivo = await sqliteService.getSession();
     
     requestAnimationFrame(() => {
@@ -633,9 +688,6 @@ window.addEventListener('DOMContentLoaded', () => {
     setTimeout(bootApp, 10);
 });
 
-// ============================================================================
-// SOLUCIÓN DE SCOPE (Alcance global para HTML)
-// ============================================================================
 window.sqliteService = sqliteService;
 window.iniciarSesionApp = iniciarSesionApp;
 window.registrarUsuarioApp = registrarUsuarioApp;
@@ -645,3 +697,5 @@ window.mostrarNotificacion = mostrarNotificacion;
 window.renderizarUsuarios = renderizarUsuarios;
 window.abrirEditorUsuario = abrirEditorUsuario;
 window.guardarEdicionUsuario = guardarEdicionUsuario;
+window.editarMiPerfil = editarMiPerfil;
+window.cancelarEdicion = cancelarEdicion;

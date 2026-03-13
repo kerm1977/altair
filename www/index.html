@@ -221,8 +221,8 @@
         <div class="text-center mb-4 mt-3">
             <div class="position-relative d-inline-block">
                 <div class="bg-primary text-white rounded-circle shadow-sm mb-3 d-flex align-items-center justify-content-center fw-bold" style="width:120px; height:120px; font-size: 3rem;" id="perfil-avatar">U</div>
-                <button class="btn btn-sm btn-primary rounded-circle position-absolute bottom-0 end-0 mb-3 me-2 shadow">
-                    <i class="bi bi-camera"></i>
+                <button class="btn btn-sm btn-primary rounded-circle position-absolute bottom-0 end-0 mb-3 me-2 shadow" onclick="window.editarMiPerfil()">
+                    <i class="bi bi-pencil"></i>
                 </button>
             </div>
             <h4 class="fw-bold mb-0" id="perfil-nombre">Administrador</h4>
@@ -235,16 +235,19 @@
                 <div class="list-group list-group-flush rounded-3">
                     <div class="list-group-item py-3">
                         <small class="text-muted d-block fw-bold mb-1">Teléfono</small>
-                        <span>No especificado</span>
+                        <span id="perfil-telefono">No especificado</span>
                     </div>
                     <div class="list-group-item py-3">
-                        <small class="text-muted d-block fw-bold mb-1">Privilegios</small>
-                        <span class="text-success fw-bold"><i class="bi bi-shield-check me-1"></i> Acceso Total</span>
+                        <small class="text-muted d-block fw-bold mb-1">Privilegios del Sistema</small>
+                        <span class="text-success fw-bold"><i class="bi bi-shield-check me-1"></i> Asignado</span>
                     </div>
                 </div>
             </div>
         </div>
-        <button class="btn btn-outline-primary w-100 mt-4 rounded-pill fw-bold" onclick="window.mostrarNotificacion('Editor de perfil en desarrollo', 'warning')">Editar Perfil</button>
+        <button class="btn btn-outline-primary w-100 mt-4 rounded-pill fw-bold shadow-sm" onclick="window.editarMiPerfil()"><i class="bi bi-sliders me-1"></i> Editar Información</button>
+        
+        <!-- FIX: Espaciador invisible para que la barra inferior no tape el botón -->
+        <div style="height: 100px; width: 100%;"></div>
     </template>
 
     <!-- VISTA: ADMIN USUARIOS -->
@@ -273,6 +276,9 @@
                 </table>
             </div>
         </div>
+        
+        <!-- FIX: Espaciador invisible para la tabla -->
+        <div style="height: 100px; width: 100%;"></div>
     </template>
 
     <!-- VISTA: EDITAR USUARIO -->
@@ -285,33 +291,57 @@
                     </div>
                     <div>
                         <h6 class="mb-0 fw-bold text-dark" id="edit-email-display">usuario@correo.com</h6>
-                        <small class="text-muted">Gestión de privilegios</small>
+                        <small class="text-muted">Editor de cuenta</small>
                     </div>
                 </div>
 
                 <form onsubmit="event.preventDefault(); window.guardarEdicionUsuario();">
-                    <div class="mb-4">
-                        <label class="form-label text-muted small fw-bold"><i class="bi bi-shield-lock me-1"></i> Rol del Usuario</label>
-                        <select id="edit-rol" class="form-select bg-light border-0 py-2">
-                            <option value="usuario">Usuario Regular</option>
-                            <option value="admin">Administrador</option>
-                            <option value="superusuario">Superusuario</option>
-                        </select>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">Nombre Completo</label>
+                        <input type="text" id="edit-nombre" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">Correo Electrónico</label>
+                        <input type="email" id="edit-email" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">Teléfono</label>
+                        <input type="tel" id="edit-telefono" class="form-control" placeholder="Ej: +1 234 567 8900">
                     </div>
                     <div class="mb-4">
-                        <label class="form-label text-muted small fw-bold"><i class="bi bi-activity me-1"></i> Estado de la Cuenta</label>
-                        <select id="edit-estado" class="form-select bg-light border-0 py-2">
-                            <option value="activo">Activo (Permitir acceso)</option>
-                            <option value="inactivo">Inactivo / Bloqueado</option>
-                        </select>
+                        <label class="form-label text-muted small fw-bold">Contraseña de acceso</label>
+                        <input type="text" id="edit-password" class="form-control" required>
                     </div>
 
-                    <button type="submit" id="btn-save-edit" class="btn btn-primary w-100 py-3 fw-bold rounded-pill shadow-sm mb-3 mt-2">
+                    <!-- CAJA DE ROLES (Se oculta sola si el que edita es usuario normal) -->
+                    <div id="box-privilegios" class="p-3 mb-4 rounded-3 border bg-light">
+                        <h6 class="fw-bold mb-3 small text-primary"><i class="bi bi-shield-lock me-1"></i> ZONA ADMINISTRATIVA</h6>
+                        <div class="mb-3">
+                            <label class="form-label text-muted small fw-bold">Rol en el sistema</label>
+                            <select id="edit-rol" class="form-select border-0 py-2">
+                                <option value="usuario">Usuario Regular</option>
+                                <option value="admin">Administrador</option>
+                                <option value="superusuario">Superusuario</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label text-muted small fw-bold">Estado de cuenta</label>
+                            <select id="edit-estado" class="form-select border-0 py-2">
+                                <option value="activo">Activa (Permitir acceso)</option>
+                                <option value="inactivo">Inactiva (Bloqueado)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button type="submit" id="btn-save-edit" class="btn btn-primary w-100 py-3 fw-bold rounded-pill shadow-sm mb-3">
                         <i class="bi bi-check2-circle me-1"></i> GUARDAR CAMBIOS
                     </button>
-                    <button type="button" class="btn btn-outline-secondary w-100 py-2 fw-bold rounded-pill" onclick="window.cargarVista('admin_usuarios', 'Usuarios')">
+                    <button type="button" class="btn btn-outline-secondary w-100 py-2 fw-bold rounded-pill" onclick="window.cancelarEdicion()">
                         CANCELAR
                     </button>
+                    
+                    <!-- FIX: Espaciador invisible para los botones del formulario -->
+                    <div style="height: 100px; width: 100%;"></div>
                 </form>
             </div>
         </div>

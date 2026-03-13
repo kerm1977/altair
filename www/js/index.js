@@ -254,7 +254,7 @@ const sqliteService = {
 async function iniciarSesionApp() {
     const btnSubmit = document.getElementById('btn-login-submit');
     const emailInput = document.getElementById('login-email').value;
-    const passInput = document.getElementById('login-pass').value;
+    const rawPass = document.getElementById('login-pass').value;
     const errorDiv = document.getElementById('login-error');
 
     if(btnSubmit) {
@@ -265,6 +265,13 @@ async function iniciarSesionApp() {
     errorDiv.classList.add('d-none');
 
     try {
+        // HASHEAR CONTRASEÑA DE ENTRADA (Mismo algoritmo de registro.js)
+        const encoder = new TextEncoder();
+        const data = encoder.encode(rawPass);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const passInput = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
         const user = await sqliteService.login(emailInput, passInput);
 
         if (user && user.estado !== 'inactivo') {

@@ -73,88 +73,184 @@
 
     <!-- VISTA: LOGIN -->
     <template id="tpl-login">
-        <div class="row justify-content-center align-items-center" style="min-height: 80vh;">
-            <div class="col-12 col-md-6 text-center">
-                <div class="mb-5 mt-4">
+        <div class="row justify-content-center align-items-center" style="min-height: 80vh; padding-bottom: 50px;">
+            <div class="col-12 col-md-8 col-lg-6 text-center">
+                <div class="mb-4 mt-4">
                     <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center shadow" style="width: 80px; height: 80px;">
                         <i class="bi bi-rocket-takeoff fs-1"></i>
                     </div>
-                    <h2 class="mt-3 fw-bold text-dark">Bienvenido</h2>
-                    <p class="text-muted">Ingresa a tu cuenta para continuar</p>
+                    <h2 class="mt-3 fw-bold text-dark">Bienvenido de nuevo</h2>
+                    <p class="text-muted">Ingresa tus credenciales para acceder</p>
                 </div>
 
-                <div class="card app-card text-start">
+                <div class="card app-card text-start border-0 shadow-sm">
                     <div class="card-body p-4">
                         <form id="form-login" onsubmit="event.preventDefault(); window.iniciarSesionApp();">
                             <div class="mb-3">
                                 <label class="form-label text-muted small fw-bold">Correo Electrónico</label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-light border-end-0"><i class="bi bi-envelope text-muted"></i></span>
-                                    <input type="email" id="login-email" class="form-control border-start-0 ps-0" placeholder="correo@app.com" required>
+                                    <input type="email" id="login-email" class="form-control border-start-0 ps-0 bg-light" placeholder="tu@correo.com" required>
                                 </div>
                             </div>
                             <div class="mb-4">
                                 <label class="form-label text-muted small fw-bold">Contraseña</label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-light border-end-0"><i class="bi bi-lock text-muted"></i></span>
-                                    <input type="password" id="login-pass" class="form-control border-start-0 ps-0" placeholder="••••••••" required>
+                                    <input type="password" id="login-pass" class="form-control border-start-0 border-end-0 ps-0 bg-light" placeholder="••••••••" required>
+                                    <span class="input-group-text bg-light border-start-0 cursor-pointer" onclick="window.RegistroManager.togglePasswordVisibility('login-pass', this)">
+                                        <i class="bi bi-eye-slash text-muted"></i>
+                                    </span>
                                 </div>
                             </div>
+                            
                             <div id="login-error" class="alert alert-danger d-none py-2 small fw-bold" role="alert"></div>
 
-                            <button type="submit" id="btn-login-submit" class="btn btn-primary w-100 py-2 fw-bold rounded-pill shadow-sm mb-3">
-                                INGRESAR
+                            <button type="submit" id="btn-login-submit" class="btn btn-primary w-100 py-3 fw-bold rounded-pill shadow-sm mb-3 mt-2">
+                                INGRESAR AL SISTEMA
                             </button>
                             <button type="button" id="btn-bio-login" class="btn btn-outline-secondary w-100 py-2 fw-bold rounded-pill" onclick="window.mostrarNotificacion('Biometría en desarrollo', 'primary');">
-                                <i class="bi bi-fingerprint fs-5 me-2 align-middle"></i> Huella Digital
+                                <i class="bi bi-fingerprint fs-5 me-2 align-middle"></i> Acceso Biométrico
                             </button>
                         </form>
                     </div>
                 </div>
                 
-                <p class="mt-4 text-muted small">
-                    ¿No tienes cuenta? <a href="#" onclick="window.cargarVista('registro', 'Registro')" class="text-primary fw-bold text-decoration-none">Regístrate aquí</a>
+                <div class="mt-4 pt-3 border-top">
+                    <p class="text-muted small mb-1">¿Aún no eres parte de la plataforma?</p>
+                    <button class="btn btn-link text-primary fw-bold text-decoration-none p-0" onclick="window.cargarVista('registro', 'Registro')">Crear una cuenta nueva</button>
                     <br><br>
-                    <a href="#" onclick="window.sqliteService.limpiarBD()" class="text-danger small fw-bold text-decoration-none"><i class="bi bi-trash"></i> Limpiar Caché Local</a>
-                </p>
+                    <button class="btn btn-link text-danger small fw-bold text-decoration-none p-0 mt-3" onclick="window.sqliteService.limpiarBD()"><i class="bi bi-trash me-1"></i>Resetear Base de Datos</button>
+                </div>
             </div>
         </div>
     </template>
 
     <!-- VISTA: REGISTRO -->
     <template id="tpl-registro">
-        <div class="row justify-content-center align-items-center">
-            <div class="col-12 col-md-6 text-center">
-                <h3 class="mt-3 fw-bold text-dark">Crear Cuenta</h3>
-                <p class="text-muted">Completa tus datos para unirte</p>
+        <div class="row justify-content-center align-items-center pb-5">
+            <div class="col-12 col-md-8 col-lg-6 text-center">
+                <div class="mb-4 mt-3">
+                    <h2 class="fw-bold text-dark mb-1">Crear Cuenta</h2>
+                    <p class="text-muted small">Completa tus datos reales para unirte</p>
+                </div>
 
-                <div class="card app-card text-start mt-4">
+                <div class="card app-card text-start border-0 shadow-sm mb-4">
                     <div class="card-body p-4">
-                        <form id="form-registro" onsubmit="event.preventDefault(); window.registrarUsuarioApp();">
+                        <form id="form-registro" onsubmit="event.preventDefault(); window.RegistroManager.procesarRegistro();">
+                            
+                            <h6 class="fw-bold text-primary mb-3 small border-bottom pb-2"><i class="bi bi-person-lines-fill me-2"></i>DATOS PERSONALES</h6>
+                            
+                            <!-- Nombre -->
                             <div class="mb-3">
-                                <label class="form-label text-muted small fw-bold">Nombre Completo</label>
-                                <input type="text" id="reg-nombre" class="form-control" required>
+                                <label class="form-label text-muted small fw-bold">Nombre(s) <span class="text-danger">*</span></label>
+                                <input type="text" id="reg-nombre" class="form-control bg-light" placeholder="Ej: Juan Carlos" required>
+                                <div class="invalid-feedback" id="err-nombre">Solo letras. Máx 1 espacio. Primera letra mayúscula.</div>
                             </div>
+
+                            <!-- Apellidos -->
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label text-muted small fw-bold">1er Apellido <span class="text-danger">*</span></label>
+                                    <input type="text" id="reg-apellido1" class="form-control bg-light" placeholder="Ej: Perez" required>
+                                    <div class="invalid-feedback" id="err-apellido1">Sin espacios ni números.</div>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label text-muted small fw-bold">2do Apellido</label>
+                                    <input type="text" id="reg-apellido2" class="form-control bg-light" placeholder="Opcional">
+                                    <div class="invalid-feedback" id="err-apellido2">Sin espacios ni números.</div>
+                                </div>
+                            </div>
+
+                            <!-- Fecha de Nacimiento & Edad -->
+                            <label class="form-label text-muted small fw-bold mb-1">Fecha de Nacimiento <span class="text-danger">*</span></label>
+                            <div class="row g-2 mb-1">
+                                <div class="col-3">
+                                    <input type="number" id="reg-dia" class="form-control bg-light text-center" placeholder="DD" min="1" max="31" required>
+                                </div>
+                                <div class="col-5">
+                                    <select id="reg-mes" class="form-select bg-light" required>
+                                        <option value="" selected disabled>Mes</option>
+                                        <option value="01">Ene</option>
+                                        <option value="02">Feb</option>
+                                        <option value="03">Mar</option>
+                                        <option value="04">Abr</option>
+                                        <option value="05">May</option>
+                                        <option value="06">Jun</option>
+                                        <option value="07">Jul</option>
+                                        <option value="08">Ago</option>
+                                        <option value="09">Sep</option>
+                                        <option value="10">Oct</option>
+                                        <option value="11">Nov</option>
+                                        <option value="12">Dic</option>
+                                    </select>
+                                </div>
+                                <div class="col-4">
+                                    <input type="number" id="reg-anio" class="form-control bg-light text-center" placeholder="AAAA" min="1900" max="2026" required>
+                                </div>
+                            </div>
+                            <div class="mb-4 d-flex justify-content-between align-items-center px-1">
+                                <small class="text-danger d-none" id="err-fecha">Fecha inválida.</small>
+                                <span class="badge bg-secondary rounded-pill d-none px-3" id="badge-edad">0 años</span>
+                            </div>
+
+                            <h6 class="fw-bold text-primary mb-3 small border-bottom pb-2 mt-4"><i class="bi bi-envelope-at me-2"></i>CONTACTO Y SEGURIDAD</h6>
+
+                            <!-- ID y Teléfono -->
+                            <div class="row g-2 mb-3">
+                                <div class="col-5">
+                                    <label class="form-label text-muted small fw-bold">ID Nacional</label>
+                                    <input type="text" id="reg-id" class="form-control bg-light" placeholder="Opcional">
+                                </div>
+                                <div class="col-7">
+                                    <label class="form-label text-muted small fw-bold">Teléfono <span class="text-danger">*</span></label>
+                                    <input type="tel" id="reg-telefono" class="form-control bg-light" placeholder="Solo números" required>
+                                    <div class="invalid-feedback" id="err-telefono">Solo números permitidos.</div>
+                                </div>
+                            </div>
+
+                            <!-- Email -->
                             <div class="mb-3">
-                                <label class="form-label text-muted small fw-bold">Correo Electrónico</label>
-                                <input type="email" id="reg-email" class="form-control" required>
+                                <label class="form-label text-muted small fw-bold">Correo Electrónico <span class="text-danger">*</span></label>
+                                <input type="email" id="reg-email" class="form-control bg-light" placeholder="tu@correo.com" required>
                             </div>
+
+                            <!-- Contraseña -->
+                            <div class="mb-3">
+                                <label class="form-label text-muted small fw-bold">Crear Contraseña <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <input type="password" id="reg-pass" class="form-control border-end-0 bg-light" placeholder="Mínimo 6 caracteres" required>
+                                    <span class="input-group-text bg-light cursor-pointer" onclick="window.RegistroManager.togglePasswordVisibility('reg-pass', this)">
+                                        <i class="bi bi-eye-slash text-muted"></i>
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Verificar Contraseña -->
                             <div class="mb-4">
-                                <label class="form-label text-muted small fw-bold">Contraseña</label>
-                                <input type="password" id="reg-pass" class="form-control" required>
+                                <label class="form-label text-muted small fw-bold">Verificar Contraseña <span class="text-danger">*</span></label>
+                                <div class="input-group">
+                                    <input type="password" id="reg-pass-verify" class="form-control border-end-0 bg-light" placeholder="Repite la contraseña" required>
+                                    <span class="input-group-text bg-light cursor-pointer" onclick="window.RegistroManager.togglePasswordVisibility('reg-pass-verify', this)">
+                                        <i class="bi bi-eye-slash text-muted"></i>
+                                    </span>
+                                </div>
+                                <div class="invalid-feedback" id="err-pass">Las contraseñas no coinciden.</div>
                             </div>
                             
                             <div id="reg-error" class="alert alert-danger d-none py-2 small fw-bold" role="alert"></div>
 
-                            <button type="submit" id="btn-reg-submit" class="btn btn-success w-100 py-2 fw-bold rounded-pill shadow-sm mb-3">
-                                REGISTRARME
+                            <button type="submit" id="btn-reg-submit" class="btn btn-success w-100 py-3 fw-bold rounded-pill shadow-sm mb-3 mt-3">
+                                CREAR MI CUENTA
                             </button>
-                            <button type="button" class="btn btn-light w-100 py-2 fw-bold rounded-pill" onclick="window.cargarVista('login', 'Login')">
-                                Volver al Login
-                            </button>
+                            
                         </form>
                     </div>
                 </div>
+                
+                <button class="btn btn-light w-100 py-3 fw-bold rounded-pill mb-4 shadow-sm" onclick="window.cargarVista('login', 'Login')">
+                    <i class="bi bi-arrow-left me-2"></i> Volver al Login
+                </button>
             </div>
         </div>
     </template>
@@ -401,6 +497,8 @@
     <!-- Lógica y Controladores Separados -->
     <script src="js/temas.js"></script>
     <script src="js/search.js"></script>
+    <!-- NUEVO: Controlador de Registro -->
+    <script src="js/registro.js"></script>
     
     <!-- Lógica Principal SIEMPRE AL FINAL -->
     <script src="js/index.js"></script>

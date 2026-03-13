@@ -1,6 +1,6 @@
 {
   "appId": "com.altair.app",
-  "appName": "altair",
+  "appName": "Altair",
   "webDir": "www",
   "bundledWebRuntime": false,
   "plugins": {

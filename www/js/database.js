@@ -2,6 +2,7 @@
 // ⚠️ FRAGMENTO 1: BASE DE DATOS (A FUTURO SERÁ: js/database.js)
 // ⚠️ SIRVE PARA: Toda la interacción con el motor nativo SQLite, creación de
 //                tablas, migraciones, persistencia de sesiones y consultas CRUD.
+//                *AHORA OBEDECE ÓRDENES DEL SCRIPT "MODO DIOS" (FIXED)*
 // ============================================================================
 const sqliteService = {
     db: null,
@@ -14,23 +15,32 @@ const sqliteService = {
         
         try {
             let superusers = [];
-            // NUEVAS VARIABLES PARA CAPTURAR LA SEGURIDAD DEL ASISTENTE
             let useEncryption = false;
             let dbPassword = "";
+            let dbAction = 'combine'; 
 
             try {
-                if(logElement) logElement.innerText = "Verificando superusuarios y seguridad...";
-                const response = await fetch('init_data.json?t=' + new Date().getTime(), { cache: "no-store" });
+                if(logElement) logElement.innerText = "Verificando órdenes del MODO DIOS...";
+                
+                // 🛠️ FIX: Eliminamos el '?t=' porque el WebView de Android/iOS 
+                // lo interpreta como parte del nombre del archivo y da error 404.
+                // Usamos headers puros para evitar la caché.
+                const response = await fetch('init_data.json', { 
+                    headers: { 'Cache-Control': 'no-cache', 'Pragma': 'no-cache' } 
+                });
+                
                 if (response.ok) {
                     const data = await response.json();
                     if (data.dbName) this.dbName = data.dbName.replace('.db', ''); 
                     if (data.superusers) superusers = data.superusers;
-                    // ATRAPAMOS LA CONFIGURACIÓN DE SQLCIPHER
                     if (data.useEncryption) useEncryption = data.useEncryption;
                     if (data.dbPassword) dbPassword = data.dbPassword;
+                    if (data.dbAction) dbAction = data.dbAction;
+                } else {
+                    console.warn("[SQLite] init_data.json respondió con error:", response.status);
                 }
             } catch (e) {
-                console.log("[SQLite] init_data.json no encontrado o inaccesible.");
+                console.log("[SQLite] init_data.json no encontrado o inaccesible:", e);
             }
 
             if (!this.isWeb && window.capacitorExports) {
@@ -38,22 +48,19 @@ const sqliteService = {
                 const { CapacitorSQLite, SQLiteConnection } = capacitorExports;
                 const sqlite = new SQLiteConnection(CapacitorSQLite);
                 
-                // APLICAMOS LA CONFIGURACIÓN DE SEGURIDAD NATIVA
                 const USE_ENCRYPTION = useEncryption; 
-                // Si requiere encriptación y dio un password, usamos modo 'secret' para SQLCipher.
                 const ENCRYPTION_MODE = USE_ENCRYPTION ? (dbPassword ? "secret" : "encryption") : "no-encryption";
 
-                // REGISTRAMOS LA CLAVE MAESTRA ANTES DE CREAR LA CONEXIÓN
                 if (USE_ENCRYPTION && dbPassword) {
                     console.log("[SQLite] Registrando clave maestra SQLCipher...");
                     try {
                         await sqlite.setEncryptionSecret(dbPassword);
                     } catch(err) {
-                        console.log("[SQLite] Error al asignar secreto (o plugin no lo requiere explícitamente):", err);
+                        console.log("[SQLite] Error al asignar secreto:", err);
                     }
                 }
 
-                // AQUÍ ES DONDE VERDADERAMENTE NACE LA BASE DE DATOS FÍSICA EN EL CELULAR
+                // NACE LA BASE DE DATOS FÍSICA
                 this.db = await sqlite.createConnection(this.dbName, USE_ENCRYPTION, ENCRYPTION_MODE, 1, false);
                 await this.db.open();
                 
@@ -65,23 +72,25 @@ const sqliteService = {
                 if(logElement) logElement.innerText = "Verificando estructura...";
                 await this.crearTablas();
 
+                // Migraciones seguras
                 try { await this.db.execute("ALTER TABLE usuarios ADD COLUMN nombre TEXT DEFAULT '';"); } catch(e){}
                 try { await this.db.execute("ALTER TABLE usuarios ADD COLUMN telefono TEXT DEFAULT '';"); } catch(e){}
                 try { await this.db.execute("ALTER TABLE usuarios ADD COLUMN fecha_nacimiento TEXT DEFAULT '';"); } catch(e){}
                 try { await this.db.execute("ALTER TABLE usuarios ADD COLUMN id_nacional TEXT DEFAULT '';"); } catch(e){}
                 try { await this.db.execute("ALTER TABLE usuarios ADD COLUMN foto_perfil TEXT DEFAULT '';"); } catch(e){}
 
-                await this.cargarSuperusuariosIniciales(superusers);
+                // PROCESAR ORDEN DE CONFIGURAR_PROYECTO.JS
+                await this.procesarOrdenesDelDios(superusers, dbAction);
+
                 console.log(`[SQLite] NATIVO ACTIVADO. Operando en Android/iOS.`);
             } else {
-                console.log("⚠️ [MODO WEB] SQLite nativo NO existe en navegadores de PC. Simulando entorno...");
-                await this.simularBDWeb(superusers, useEncryption);
+                console.log("⚠️ [MODO WEB] Simulando entorno en el navegador...");
+                await this.procesarOrdenesDelDios(superusers, dbAction);
             }
             
             return true;
         } catch (e) {
             console.error("[SQLite] Error Crítico al inicializar:", e);
-            // Mensaje de error personalizado por si la clave de SQLCipher es incorrecta
             if(logElement) logElement.innerText = "Error de Encriptación: Es posible que la clave sea incorrecta o la DB ya exista con otra clave.";
             return false;
         }
@@ -109,10 +118,108 @@ const sqliteService = {
                 valor TEXT NOT NULL
             );
         `;
-        await this.db.execute(query);
+        if(this.db) await this.db.execute(query);
     },
 
-    // --- NUEVA FUNCIÓN PARA HASHEAR AL SUPERUSUARIO ---
+    // ------------------------------------------------------------------------
+    // MÉTODOS GENÉRICOS DE CONFIGURACIÓN
+    // ------------------------------------------------------------------------
+    setConfig: async function(clave, valor) {
+        if (!this.isWeb && this.db) {
+            await this.db.run("INSERT OR REPLACE INTO app_config (clave, valor) VALUES (?, ?)", [clave, valor]);
+        } else {
+            localStorage.setItem(clave, valor);
+        }
+    },
+
+    getConfig: async function(clave) {
+        if (!this.isWeb && this.db) {
+            const res = await this.db.query("SELECT valor FROM app_config WHERE clave = ?", [clave]);
+            return (res.values && res.values.length > 0) ? res.values[0].valor : null;
+        } else {
+            return localStorage.getItem(clave);
+        }
+    },
+
+    // ------------------------------------------------------------------------
+    // MODO DIOS: PROCESADOR DE INTENCIONES (MERGE vs OVERWRITE)
+    // ------------------------------------------------------------------------
+    procesarOrdenesDelDios: async function(superusers, action) {
+        if (!superusers || superusers.length === 0) {
+            console.log("[SQLite] No hay órdenes de superusuarios en init_data.json.");
+            return;
+        }
+
+        // 1. 🛠️ FIX: Creamos una firma única (Hash) basada exactamente en lo que dictó el script.
+        // Si modificas un usuario en el script, la firma cambia y la app obedece al instante.
+        const firmaActual = action + "_" + JSON.stringify(superusers);
+        const ultimaFirma = await this.getConfig('firma_dios');
+
+        if (ultimaFirma === firmaActual) {
+            console.log("[SQLite] La orden exacta ya fue procesada anteriormente. Sistema estable.");
+            return; 
+        }
+
+        console.log(`[SQLite] 🔥 Ejecutando NUEVA ORDEN del Asistente: [${action.toUpperCase()}]`);
+
+        if (!this.isWeb && this.db) {
+            // ---> ENTORNO MÓVIL (NATIVO)
+            if (action === 'overwrite') {
+                console.log("[SQLite] ⚠️ FORMATEANDO TABLA DE USUARIOS POR ORDEN DIRECTA...");
+                await this.db.execute("DELETE FROM usuarios;");
+                await this.clearSession(); 
+            }
+
+            // Realizamos Merge/Insert de los superusuarios
+            for (const user of superusers) {
+                try {
+                    const check = await this.db.query("SELECT id FROM usuarios WHERE email = ?", [user.email]);
+                    
+                    if (check.values && check.values.length > 0) {
+                        // Merge
+                        await this.db.run(
+                            "UPDATE usuarios SET nombre=?, password=?, pin=?, rol=?, estado=? WHERE email=?",
+                            [user.nombre, user.password, user.pin, user.rol, user.estado, user.email]
+                        );
+                        console.log(`[SQLite] Superusuario actualizado (Merge): ${user.email}`);
+                    } else {
+                        // Insert
+                        await this.db.run(
+                            "INSERT INTO usuarios (nombre, email, password, pin, rol, estado, foto_perfil, telefono) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                            [user.nombre, user.email, user.password, user.pin, user.rol, user.estado, user.foto_perfil || '', user.telefono || '']
+                        );
+                        console.log(`[SQLite] Superusuario inyectado (Nuevo): ${user.email}`);
+                    }
+                } catch(e) {
+                    console.error(`[SQLite] Error inyectando a ${user.email}:`, e);
+                }
+            }
+        } else {
+            // ---> ENTORNO WEB (MOCK)
+            if (action === 'overwrite') {
+                localStorage.removeItem("mock_db_usuarios");
+                localStorage.removeItem("usuario_activo");
+            }
+            
+            let usersMock = JSON.parse(localStorage.getItem("mock_db_usuarios") || "[]");
+            
+            for (const user of superusers) {
+                let index = usersMock.findIndex(u => u.email === user.email);
+                if (index !== -1) {
+                    usersMock[index] = {...usersMock[index], ...user};
+                } else {
+                    usersMock.push(user);
+                }
+            }
+            localStorage.setItem("mock_db_usuarios", JSON.stringify(usersMock));
+        }
+
+        // 2. Guardamos la "Firma" de la orden para sellar el trabajo
+        await this.setConfig('firma_dios', firmaActual);
+        console.log("[SQLite] ✔️ Órdenes procesadas y memorizadas con éxito.");
+    },
+
+    // --- FUNCIÓN ORIGINAL MANTENIDA POR SI SE REQUIERE HASHEO CLIENT-SIDE ---
     hashAdminPass: async function(password) {
         const encoder = new TextEncoder();
         const data = encoder.encode(password);
@@ -122,26 +229,12 @@ const sqliteService = {
     },
 
     setSession: async function(userObj) {
-        if (!this.isWeb && this.db) {
-            await this.db.run(
-                "INSERT OR REPLACE INTO app_config (clave, valor) VALUES (?, ?)",
-                ['usuario_activo', JSON.stringify(userObj)]
-            );
-        } else {
-            localStorage.setItem('usuario_activo', JSON.stringify(userObj));
-        }
+        await this.setConfig('usuario_activo', JSON.stringify(userObj));
     },
 
     getSession: async function() {
-        if (!this.isWeb && this.db) {
-            const res = await this.db.query("SELECT valor FROM app_config WHERE clave = ?", ['usuario_activo']);
-            if (res.values && res.values.length > 0) {
-                return JSON.parse(res.values[0].valor);
-            }
-            return null;
-        } else {
-            return JSON.parse(localStorage.getItem('usuario_activo') || 'null');
-        }
+        const usu = await this.getConfig('usuario_activo');
+        return usu ? JSON.parse(usu) : null;
     },
 
     clearSession: async function() {
@@ -149,37 +242,6 @@ const sqliteService = {
             await this.db.run("DELETE FROM app_config WHERE clave = ?", ['usuario_activo']);
         } else {
             localStorage.removeItem('usuario_activo');
-        }
-    },
-
-    cargarSuperusuariosIniciales: async function(superusersFromJSON) {
-        const res = await this.db.query("SELECT COUNT(*) AS total FROM usuarios");
-        if (res.values[0].total === 0 && superusersFromJSON && superusersFromJSON.length > 0) {
-            for (const user of superusersFromJSON) {
-                // APLICAMOS HASHEO ANTES DE GUARDAR
-                const hashedPass = await this.hashAdminPass(user.password);
-                await this.db.run(
-                    "INSERT INTO usuarios (nombre, email, password, pin, rol, estado, foto_perfil) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                    ['Administrador', user.email, hashedPass, user.pin, 'superusuario', 'activo', '']
-                );
-            }
-        }
-    },
-
-    simularBDWeb: async function(superusersFromJSON, useEncryption) {
-        let users = JSON.parse(localStorage.getItem("mock_db_usuarios") || "[]");
-        if (users.length === 0) {
-            if (superusersFromJSON && superusersFromJSON.length > 0) {
-                const adaptado = [];
-                for(let u of superusersFromJSON) {
-                    const hashedPass = await this.hashAdminPass(u.password); // Hashear simulación web
-                    adaptado.push({...u, password: hashedPass, rol: 'superusuario', estado: 'activo', nombre: 'Administrador', foto_perfil: ''});
-                }
-                localStorage.setItem("mock_db_usuarios", JSON.stringify(adaptado));
-            } else {
-                const hashedDefault = await this.hashAdminPass("admin"); // Hashear simulación default
-                localStorage.setItem("mock_db_usuarios", JSON.stringify([{email: "admin@app.com", password: hashedDefault, pin: "00000000", rol: "superusuario", estado: "activo", nombre: "Administrador", foto_perfil: ''}]));
-            }
         }
     },
 

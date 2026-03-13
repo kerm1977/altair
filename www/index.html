@@ -11,7 +11,7 @@
     
     <title>Motor Universal App</title>
     
-    <!-- FRAMEWORK PRINCIPAL (Usando CDN para el preview interactivo. En producción usa tus locales: css/bootstrap.css) -->
+    <!-- FRAMEWORK PRINCIPAL -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     
@@ -22,29 +22,29 @@
             -webkit-tap-highlight-color: transparent; 
             user-select: none; 
             overflow-x: hidden;
-            /* Padding vital para que la UI no se pise con el StatusBar/Notch */
-            padding-top: env(safe-area-inset-top, 24px);
-            padding-bottom: env(safe-area-inset-bottom, 24px);
         }
         
-        /* Padding seguro para el notch de iOS y barra de estado Android */
+        /* Padding seguro del contenedor principal para respetar las barras fijas */
         .pt-safe { 
-            padding-top: max(env(safe-area-inset-top), 60px); 
-            padding-bottom: max(env(safe-area-inset-bottom), 80px);
+            /* 70px fijos para despejar la barra azul superior + el safe area del notch si lo hay */
+            padding-top: calc(70px + env(safe-area-inset-top, 0px)); 
+            /* 80px fijos para que el contenido no se oculte detrás del menú inferior */
+            padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
             min-height: 100vh;
         }
 
-        /* Barra superior */
+        /* Barra superior azul */
         .top-navbar {
             position: fixed;
             top: 0;
             width: 100%;
             z-index: 1030;
-            padding-top: env(safe-area-inset-top);
+            padding-top: env(safe-area-inset-top, 0px);
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            min-height: 60px;
         }
 
-        /* Barra de navegación inferior nativa */
+        /* Barra de navegación inferior nativa (Limpiada de márgenes forzados) */
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -52,7 +52,9 @@
             background: #ffffff;
             border-top: 1px solid #e9ecef;
             z-index: 1030;
-            padding-bottom: env(safe-area-inset-bottom);
+            /* Padding base delgado. El SO agregará espacio solo si el teléfono lo necesita */
+            padding-top: 0.5rem;
+            padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
             box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
         }
         
@@ -60,7 +62,7 @@
             cursor: pointer;
             padding: 0.5rem 0;
             flex: 1;
-            transition: color 0.15s ease; /* Reducimos la animación para mejor rendimiento */
+            transition: color 0.15s ease;
         }
         
         .nav-item i {
@@ -77,15 +79,14 @@
         .nav-item.text-secondary:hover { color: #495057 !important; }
         .nav-item.active {
             color: #0d6efd !important;
-            /* Eliminamos el translateY para evitar repintados costosos en móviles gama baja */
         }
 
-        /* Animación de carga de fragmentos OPTIMIZADA POR HARDWARE */
+        /* Animación de carga de fragmentos */
         .fade-in {
-            animation: fadeIn 0.25s ease-out forwards; /* Más rápida y fluida */
+            animation: fadeIn 0.25s ease-out forwards;
         }
         @keyframes fadeIn {
-            from { opacity: 0; transform: translate3d(0, 10px, 0); } /* translate3d usa la GPU */
+            from { opacity: 0; transform: translate3d(0, 10px, 0); }
             to { opacity: 1; transform: translate3d(0, 0, 0); }
         }
 
@@ -94,7 +95,7 @@
             border: none;
             border-radius: 1rem;
             box-shadow: 0 4px 6px rgba(0,0,0,0.04);
-            transition: transform 0.1s; /* Más rapida */
+            transition: transform 0.1s;
         }
         .app-card:active {
             transform: scale(0.98);
@@ -123,8 +124,8 @@
         </div>
     </div>
 
-    <!-- BARRA DE NAVEGACIÓN INFERIOR (Se oculta en Login/Registro) -->
-    <nav class="bottom-nav d-none justify-content-around py-2" id="app-bottom-nav">
+    <!-- BARRA DE NAVEGACIÓN INFERIOR -->
+    <nav class="bottom-nav d-none justify-content-around" id="app-bottom-nav">
         <div class="nav-item text-center active" id="nav-inicio" onclick="cargarVista('inicio', 'Inicio')">
             <i class="bi bi-house-fill fs-4"></i>
             <span>Inicio</span>
@@ -204,7 +205,6 @@
                 <p class="mt-4 text-muted small">
                     ¿No tienes cuenta? <a href="#" onclick="cargarVista('registro', 'Registro')" class="text-primary fw-bold text-decoration-none">Regístrate aquí</a>
                     <br><br>
-                    <!-- Botón de emergencia para resetear caché en pruebas Web -->
                     <a href="#" onclick="sqliteService.limpiarBD()" class="text-danger small fw-bold text-decoration-none"><i class="bi bi-trash"></i> Limpiar Caché Local</a>
                 </p>
             </div>
@@ -307,7 +307,6 @@
     <template id="tpl-perfil">
         <div class="text-center mb-4 mt-3">
             <div class="position-relative d-inline-block">
-                <!-- Avatar autogenerado por UI Avatars -->
                 <img src="https://ui-avatars.com/api/?name=Usuario+App&background=0d6efd&color=fff&size=120" class="rounded-circle shadow-sm mb-3" alt="Avatar">
                 <button class="btn btn-sm btn-primary rounded-circle position-absolute bottom-0 end-0 mb-3 me-2 shadow">
                     <i class="bi bi-camera"></i>
@@ -419,7 +418,7 @@
         // ---------------------------------------------------------
         const sqliteService = {
             db: null,
-            dbName: "motor_db", // Nombre por defecto
+            dbName: "motor_db",
             isWeb: !window.Capacitor || !window.Capacitor.isNativePlatform(),
             
             init: async function() {
@@ -428,11 +427,9 @@
                 console.log("[SQLite] Iniciando Motor de Base de Datos...");
                 
                 try {
-                    // 1. LEER init_data.json PRIMERO y evadir caché del navegador (?t=timestamp)
                     let superusers = [];
                     try {
                         if(logElement) logElement.innerText = "Verificando superusuarios...";
-                        // Pequeño timeout para no ahogar la red local
                         const response = await fetch('init_data.json?t=' + new Date().getTime(), { cache: "no-store" });
                         if (response.ok) {
                             const data = await response.json();
@@ -448,20 +445,13 @@
                         const { CapacitorSQLite, SQLiteConnection } = capacitorExports;
                         const sqlite = new SQLiteConnection(CapacitorSQLite);
                         
-                        // ====================================================================
-                        // IMPLEMENTACIÓN DE SQLCIPHER (ENCRIPTACIÓN AES-256)
-                        // Para activar la encriptación, cambia false por true y "no-encryption"
-                        // por "encryption". 
-                        // ====================================================================
                         const USE_ENCRYPTION = false; 
                         const ENCRYPTION_MODE = USE_ENCRYPTION ? "encryption" : "no-encryption";
 
                         this.db = await sqlite.createConnection(this.dbName, USE_ENCRYPTION, ENCRYPTION_MODE, 1, false);
                         await this.db.open();
                         
-                        // ====================================================================
-                        // IMPLEMENTACIÓN DE OPTIMIZACIONES DE RENDIMIENTO (PRAGMAS)
-                        // ====================================================================
+                        // Optimizaciones de rendimiento (Pragmas)
                         await this.db.execute("PRAGMA journal_mode = WAL;");
                         await this.db.execute("PRAGMA synchronous = NORMAL;");
                         await this.db.execute("PRAGMA cache_size = -10000;");
@@ -478,7 +468,7 @@
                         await this.simularBDWeb(superusers);
                     }
                     
-                    return true; // Exito
+                    return true;
                 } catch (e) {
                     console.error("[SQLite] Error Crítico al inicializar:", e);
                     if(logElement) logElement.innerText = "Error: " + e.message;
@@ -496,7 +486,6 @@
                         rol TEXT DEFAULT 'admin',
                         estado TEXT DEFAULT 'activo'
                     );
-                    -- Indice para acelerar el inicio de sesión y búsquedas concurrentes
                     CREATE INDEX IF NOT EXISTS idx_usuarios_auth ON usuarios(email, password);
                 `;
                 await this.db.execute(query);
@@ -516,19 +505,16 @@
             },
 
             simularBDWeb: async function(superusersFromJSON) {
-                // Si el JSON trajo datos frescos, SOBREESCRIBIMOS lo que tenga el navegador
                 if (superusersFromJSON && superusersFromJSON.length > 0) {
                     const adaptado = superusersFromJSON.map(u => ({...u, rol: 'superusuario', estado: 'activo'}));
                     localStorage.setItem("mock_db_usuarios", JSON.stringify(adaptado));
                     console.log("[SQLite] DB Web (localStorage) actualizada con usuarios frescos.");
                 } 
-                // Si no hay JSON y el storage está vacío, ponemos el default
                 else if (!localStorage.getItem("mock_db_usuarios")) {
                     localStorage.setItem("mock_db_usuarios", JSON.stringify([{email: "admin@app.com", password: "admin", pin: "00000000", rol: "superusuario", estado: "activo"}]));
                 }
             },
 
-            // --- Lógica Conectada a la App ---
             login: async function(email, password) {
                 if (!this.isWeb && this.db) {
                     const res = await this.db.query("SELECT * FROM usuarios WHERE email = ? AND password = ?", [email, password]);
@@ -580,15 +566,12 @@
             errorDiv.classList.add('d-none');
 
             try {
-                // Consulta directa a SQLite (Mucho más rápida sin el timeout falso)
                 const user = await sqliteService.login(emailInput, passInput);
 
                 if (user) {
                     mostrarNotificacion("¡Acceso concedido!", "success");
-                    // Guardar sesión persistente
                     localStorage.setItem('usuario_activo', JSON.stringify(user));
                     
-                    // Transición inmediata
                     requestAnimationFrame(() => {
                         cargarVista('inicio', 'Inicio');
                     });
@@ -620,25 +603,21 @@
         // ---------------------------------------------------------
         // 3. ENRUTAMIENTO Y POBLACIÓN DE VISTAS DESDE SQLITE
         // ---------------------------------------------------------
-        // Cachear elementos estáticos del DOM
         const root = document.getElementById('app-root');
         const header = document.getElementById('app-header');
         const bottomNav = document.getElementById('app-bottom-nav');
         const titleEl = document.getElementById('view-title');
 
         function cargarVista(vistaId, titulo) {
-            // Evitar doble carga si ya estamos en la vista
             if(root.dataset.vistaActual === vistaId) return;
             root.dataset.vistaActual = vistaId;
             
-            // Forzar reflow limpio
             root.style.display = 'none';
             root.classList.remove('fade-in');
             
             const template = document.getElementById('tpl-' + vistaId);
             
             if (template) {
-                // Usamos requestAnimationFrame para asegurar que el navegador limpie la pantalla antes de insertar lo nuevo
                 requestAnimationFrame(() => {
                     root.innerHTML = '';
                     root.appendChild(template.content.cloneNode(true));
@@ -671,7 +650,6 @@
                         }
                     }
 
-                    // --- LLENAR DATOS DINÁMICOS EN LA VISTA ---
                     ejecutarLogicaVista(vistaId);
                 });
             }
@@ -680,14 +658,12 @@
         async function ejecutarLogicaVista(vistaId) {
             const usuarioActivo = JSON.parse(localStorage.getItem('usuario_activo') || 'null');
 
-            // Lógica de la vista INICIO
             if (vistaId === 'inicio' && usuarioActivo) {
                 const nombre = usuarioActivo.email.split('@')[0];
                 const el = document.getElementById('inicio-nombre');
                 if (el) el.innerText = `Hola, ${nombre.charAt(0).toUpperCase() + nombre.slice(1)}`;
             }
             
-            // Lógica de la vista PERFIL
             if (vistaId === 'perfil' && usuarioActivo) {
                 const elEmail = document.getElementById('perfil-email');
                 const elRol = document.getElementById('perfil-rol');
@@ -699,7 +675,6 @@
                 if (elRol) elRol.innerText = usuarioActivo.rol ? usuarioActivo.rol.toUpperCase() : 'USUARIO';
             }
 
-            // Lógica de la vista ADMIN USUARIOS (Listar desde SQLite)
             if (vistaId === 'admin_usuarios') {
                 const tbody = document.getElementById('lista-usuarios-admin');
                 if (tbody) {
@@ -714,7 +689,6 @@
                             return;
                         }
 
-                        // Construimos todo el HTML primero en memoria para no estresar el DOM
                         let htmlBuffer = '';
                         
                         usuarios.forEach(u => {
@@ -742,7 +716,6 @@
                             `;
                         });
                         
-                        // Inserción única al DOM (Más rápido)
                         requestAnimationFrame(() => {
                             tbody.innerHTML = htmlBuffer;
                         });
@@ -769,16 +742,13 @@
         }
 
         // ---------------------------------------------------------
-        // 4. INICIALIZACIÓN GLOBAL OPTIMIZADA
+        // 4. INICIALIZACIÓN GLOBAL OPTIMIZADA Y DETECTOR ANDROID
         // ---------------------------------------------------------
         
-        // Usamos una función asíncrona dedicada para no bloquear el EventListener
         async function bootApp() {
-            // 1. Configuramos UI nativa de inmediato si existe
-            if (window.Capacitor && window.Capacitor.isNativePlatform()) {
+            if (window.Capacitor && window.Capacitor.getPlatform() === 'android') {                
                 try {
                     const { StatusBar, Style } = capacitorExports;
-                    // Llamadas NO bloqueantes (sin await) para agilizar el arranque
                     StatusBar.setOverlaysWebView({ overlay: false }).catch(e => console.log(e));
                     StatusBar.setBackgroundColor({ color: '#0d6efd' }).catch(e => console.log(e));
                     StatusBar.setStyle({ style: Style.Dark }).catch(e => console.log(e));
@@ -787,17 +757,11 @@
                 }
             }
 
-            // 2. Iniciamos DB en segundo plano
             const dbReady = await sqliteService.init();
-
-            // 3. Una vez lista, evaluamos la sesión
             const usuarioActivo = JSON.parse(localStorage.getItem('usuario_activo'));
             
-            // requestAnimationFrame asegura que la UI no se congele durante la primera carga
             requestAnimationFrame(() => {
                 if (usuarioActivo && dbReady) {
-                    // Notificación silenciosa (opcional, comentada para mayor velocidad)
-                    // mostrarNotificacion(`Sesión activa: ${usuarioActivo.email}`, 'info');
                     cargarVista('inicio', 'Inicio');
                 } else {
                     cargarVista('login', 'Login');
@@ -805,10 +769,8 @@
             });
         }
 
-        // Iniciar la app solo cuando el DOM base esté listo, sin bloquearlo
         window.addEventListener('DOMContentLoaded', () => {
-             // Pequeño timeout de 10ms para permitir que el navegador dibuje el spinner de carga base primero
-             setTimeout(bootApp, 10);
+            setTimeout(bootApp, 10);
         });
     </script>
 </body>

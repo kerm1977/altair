@@ -9,7 +9,6 @@ const sqliteService = {
     init: async function() {
         const logElement = document.getElementById('loading-text');
         if(logElement) logElement.innerText = "Iniciando Motor de Base de Datos...";
-        console.log("[SQLite] Iniciando Motor de Base de Datos...");
         
         try {
             let superusers = [];
@@ -22,7 +21,7 @@ const sqliteService = {
                     if (data.superusers) superusers = data.superusers;
                 }
             } catch (e) {
-                console.log("[SQLite] init_data.json no encontrado o inaccesible (CORS).");
+                console.log("[SQLite] init_data.json no encontrado o inaccesible.");
             }
 
             if (!this.isWeb && window.capacitorExports) {
@@ -41,15 +40,11 @@ const sqliteService = {
                 await this.db.execute("PRAGMA synchronous = NORMAL;");
                 await this.db.execute("PRAGMA cache_size = -10000;");
                 await this.db.execute("PRAGMA temp_store = MEMORY;");
-
-                console.log(`[SQLite] Optimizaciones Empresariales Aplicadas a: ${this.dbName}`);
                 
                 if(logElement) logElement.innerText = "Verificando estructura...";
                 await this.crearTablas();
                 await this.cargarSuperusuariosIniciales(superusers);
-                console.log(`[SQLite] Base de datos NATIVA lista: ${this.dbName}`);
             } else {
-                console.log(`[SQLite] Ejecutando en Web. Simulando SQLite: ${this.dbName}`);
                 await this.simularBDWeb(superusers);
             }
             
@@ -85,7 +80,6 @@ const sqliteService = {
                     [user.email, user.password, user.pin, 'superusuario']
                 );
             }
-            console.log(`[SQLite] Ingresados ${superusersFromJSON.length} superusuarios a la DB nativa.`);
         }
     },
 
@@ -93,7 +87,6 @@ const sqliteService = {
         if (superusersFromJSON && superusersFromJSON.length > 0) {
             const adaptado = superusersFromJSON.map(u => ({...u, rol: 'superusuario', estado: 'activo'}));
             localStorage.setItem("mock_db_usuarios", JSON.stringify(adaptado));
-            console.log("[SQLite] DB Web (localStorage) actualizada con usuarios frescos.");
         } 
         else if (!localStorage.getItem("mock_db_usuarios")) {
             localStorage.setItem("mock_db_usuarios", JSON.stringify([{email: "admin@app.com", password: "admin", pin: "00000000", rol: "superusuario", estado: "activo"}]));
@@ -171,7 +164,6 @@ async function iniciarSesionApp() {
     } catch(e) {
         errorDiv.textContent = "Error interno de base de datos.";
         errorDiv.classList.remove('d-none');
-        console.error(e);
         if(btnSubmit) {
             btnSubmit.disabled = false;
             btnSubmit.innerHTML = 'INGRESAR';
@@ -253,11 +245,13 @@ async function ejecutarLogicaVista(vistaId) {
         const elEmail = document.getElementById('perfil-email');
         const elRol = document.getElementById('perfil-rol');
         const elNombre = document.getElementById('perfil-nombre');
+        const elAvatar = document.getElementById('perfil-avatar');
         
         const nombre = usuarioActivo.email.split('@')[0];
         if (elNombre) elNombre.innerText = nombre.charAt(0).toUpperCase() + nombre.slice(1);
         if (elEmail) elEmail.innerText = usuarioActivo.email;
         if (elRol) elRol.innerText = usuarioActivo.rol ? usuarioActivo.rol.toUpperCase() : 'USUARIO';
+        if (elAvatar) elAvatar.innerText = nombre.charAt(0).toUpperCase();
     }
 
     if (vistaId === 'admin_usuarios') {
@@ -321,8 +315,21 @@ function mostrarNotificacion(mensaje, tipo = 'primary') {
     if(toastHeader) toastHeader.className = `toast-header text-white bg-${tipo}`;
     if(toastBody) toastBody.innerText = mensaje;
     
-    if (!appToast && window.bootstrap) appToast = new bootstrap.Toast(toastEl, { delay: 2500 });
-    if(appToast) appToast.show();
+    if (!appToast && window.bootstrap) {
+        appToast = new bootstrap.Toast(toastEl, { delay: 2500 });
+    }
+    
+    if(appToast) {
+        appToast.show();
+    } else {
+        // Fallback robusto en caso de que bootstrap.js falle
+        toastEl.style.display = 'block';
+        toastEl.classList.add('show');
+        setTimeout(() => {
+            toastEl.classList.remove('show');
+            toastEl.style.display = 'none';
+        }, 2500);
+    }
 }
 
 // =========================================================
@@ -331,12 +338,13 @@ function mostrarNotificacion(mensaje, tipo = 'primary') {
 async function bootApp() {
     if (window.Capacitor && window.Capacitor.getPlatform() === 'android') {                
         document.documentElement.style.setProperty('--android-nav-spacing', '28px');
-        try {
-            const { StatusBar, Style } = capacitorExports;
-            StatusBar.setOverlaysWebView({ overlay: false }).catch(e => console.log(e));
-            StatusBar.setBackgroundColor({ color: '#0d6efd' }).catch(e => console.log(e));
-            StatusBar.setStyle({ style: Style.Dark }).catch(e => console.log(e));
-        } catch (e) {}
+    }
+
+    // INICIAR TEMA PRIMERO PARA EVITAR DESTELLOS BLANCOS
+    if (window.ThemeManager) {
+        await window.ThemeManager.init();
+    } else {
+        console.error("[App] ATENCIÓN: temas.js no se cargó correctamente antes que index.js");
     }
 
     const dbReady = await sqliteService.init();
@@ -356,9 +364,7 @@ window.addEventListener('DOMContentLoaded', () => {
 });
 
 // ============================================================================
-// ¡LA SOLUCIÓN DE SCOPE ESTÁ AQUÍ ABAJO! 
-// Exportamos todo explícitamente al objeto window para que el HTML (onclick)
-// SIEMPRE las pueda encontrar, sin importar si usas type="module" o no.
+// SOLUCIÓN DE SCOPE (Alcance global para HTML)
 // ============================================================================
 window.sqliteService = sqliteService;
 window.iniciarSesionApp = iniciarSesionApp;

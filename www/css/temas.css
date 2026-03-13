@@ -1,0 +1,72 @@
+/* =========================================================
+   TEMAS.CSS - GESTIÓN DE MODO OSCURO (DARK MODE)
+   ========================================================= */
+
+/* Bootstrap 5.3+ usa el atributo data-bs-theme="dark" en el html/body */
+[data-bs-theme="dark"] body {
+    background-color: #121212 !important;
+    color: #e0e0e0 !important;
+}
+
+/* Adaptación de la Barra de Navegación Inferior */
+[data-bs-theme="dark"] .bottom-nav {
+    background-color: #1e1e1e !important;
+    border-top-color: #333 !important;
+}
+
+/* Adaptación de la Barra Superior */
+[data-bs-theme="dark"] .top-navbar {
+    background-color: #1e1e1e !important;
+    border-bottom: 1px solid #333 !important;
+}
+
+/* Adaptación de Tarjetas y Contenedores */
+[data-bs-theme="dark"] .app-card,
+[data-bs-theme="dark"] .card {
+    background-color: #1e1e1e !important;
+    color: #e0e0e0 !important;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3) !important;
+}
+
+/* Listas y Menús */
+[data-bs-theme="dark"] .list-group-item {
+    background-color: #1e1e1e !important;
+    color: #e0e0e0 !important;
+    border-color: #333 !important;
+}
+
+/* Sobreescribiendo utilidades de Bootstrap */
+[data-bs-theme="dark"] .bg-light {
+    background-color: #2d2d2d !important;
+}
+
+[data-bs-theme="dark"] .bg-white {
+    background-color: #1e1e1e !important;
+}
+
+[data-bs-theme="dark"] .text-dark {
+    color: #f8f9fa !important;
+}
+
+[data-bs-theme="dark"] .text-muted,
+[data-bs-theme="dark"] .nav-item.text-secondary {
+    color: #888 !important;
+}
+
+/* Formularios e Inputs */
+[data-bs-theme="dark"] .form-control, 
+[data-bs-theme="dark"] .input-group-text {
+    background-color: #2d2d2d !important;
+    border-color: #444 !important;
+    color: #fff !important;
+}
+
+[data-bs-theme="dark"] .form-control::placeholder {
+    color: #888 !important;
+}
+
+/* Modales y Toasts */
+[data-bs-theme="dark"] .toast-body {
+    background-color: #2d2d2d !important;
+    color: #fff !important;
+}

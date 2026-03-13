@@ -63,7 +63,7 @@ const sqliteService = {
                 email TEXT UNIQUE NOT NULL,
                 password TEXT NOT NULL,
                 pin TEXT,
-                rol TEXT DEFAULT 'admin',
+                rol TEXT DEFAULT 'usuario',
                 estado TEXT DEFAULT 'activo'
             );
             CREATE INDEX IF NOT EXISTS idx_usuarios_auth ON usuarios(email, password);
@@ -103,6 +103,34 @@ const sqliteService = {
         }
     },
 
+    // --- NUEVO: REGISTRO DE USUARIOS EN LA DB ---
+    registrarUsuario: async function(email, password, nombre) {
+        if (!this.isWeb && this.db) {
+            try {
+                // Prevenir duplicados (la DB ya tiene UNIQUE en email, pero esto es por seguridad extra)
+                const check = await this.db.query("SELECT id FROM usuarios WHERE email = ?", [email]);
+                if (check.values && check.values.length > 0) return false;
+
+                // CORRECCIÓN: Asignar rol 'usuario' en lugar de 'admin'
+                await this.db.run(
+                    "INSERT INTO usuarios (email, password, rol, estado) VALUES (?, ?, ?, ?)",
+                    [email, password, 'usuario', 'activo'] 
+                );
+                return true;
+            } catch(e) {
+                console.error("[SQLite] Error al insertar usuario:", e);
+                return false;
+            }
+        } else {
+            const users = JSON.parse(localStorage.getItem("mock_db_usuarios") || "[]");
+            if (users.find(u => u.email === email)) return false; 
+            // CORRECCIÓN: Asignar rol 'usuario' en el simulador Web
+            users.push({email, password, rol: 'usuario', estado: 'activo', nombre});
+            localStorage.setItem("mock_db_usuarios", JSON.stringify(users));
+            return true;
+        }
+    },
+
     getUsuarios: async function() {
         if (!this.isWeb && this.db) {
             const res = await this.db.query("SELECT * FROM usuarios");
@@ -112,15 +140,12 @@ const sqliteService = {
         }
     },
 
-    // --- NUEVO: BÚSQUEDA DE USUARIOS ---
     buscarUsuarios: async function(termino) {
         if (!this.isWeb && this.db) {
-            // Buscamos cualquier usuario cuyo email empiece con o contenga el texto (LIKE %texto%)
             const query = "SELECT * FROM usuarios WHERE email LIKE ?";
             const res = await this.db.query(query, [`%${termino}%`]);
             return res.values || [];
         } else {
-            // Simulación en Web usando filter
             const users = JSON.parse(localStorage.getItem("mock_db_usuarios") || "[]");
             const terminoMin = termino.toLowerCase();
             return users.filter(u => u.email.toLowerCase().includes(terminoMin));
@@ -131,19 +156,19 @@ const sqliteService = {
         const inicio = performance.now();
         const users = await this.getUsuarios();
         const fin = performance.now();
-        mostrarNotificacion(`Conexión OK. DB: ${users.length} usuarios. Tiempo: ${(fin - inicio).toFixed(2)} ms`, "success");
+        window.mostrarNotificacion(`Conexión OK. DB: ${users.length} usuarios. Tiempo: ${(fin - inicio).toFixed(2)} ms`, "success");
     },
 
     limpiarBD: function() {
         localStorage.removeItem("mock_db_usuarios");
         localStorage.removeItem("usuario_activo");
-        mostrarNotificacion("Base de datos local formateada.", "danger");
+        window.mostrarNotificacion("Base de datos local formateada.", "danger");
         setTimeout(() => window.location.reload(), 1000);
     }
 };
 
 // =========================================================
-// 2. SISTEMA DE AUTENTICACIÓN
+// 2. SISTEMA DE AUTENTICACIÓN Y REGISTRO
 // =========================================================
 async function iniciarSesionApp() {
     const btnSubmit = document.getElementById('btn-login-submit');
@@ -162,11 +187,11 @@ async function iniciarSesionApp() {
         const user = await sqliteService.login(emailInput, passInput);
 
         if (user) {
-            mostrarNotificacion("¡Acceso concedido!", "success");
+            window.mostrarNotificacion("¡Acceso concedido!", "success");
             localStorage.setItem('usuario_activo', JSON.stringify(user));
             
             requestAnimationFrame(() => {
-                cargarVista('inicio', 'Inicio');
+                window.cargarVista('inicio', 'Inicio');
             });
         } else {
             errorDiv.textContent = "Credenciales incorrectas o usuario inexistente en DB.";
@@ -186,10 +211,56 @@ async function iniciarSesionApp() {
     }
 }
 
+// --- FUNCIÓN DE REGISTRO CONECTADA A LA DB ---
+async function registrarUsuarioApp() {
+    const btnSubmit = document.getElementById('btn-reg-submit');
+    const emailInput = document.getElementById('reg-email').value;
+    const passInput = document.getElementById('reg-pass').value;
+    const nombreInput = document.getElementById('reg-nombre').value;
+    const errorDiv = document.getElementById('reg-error');
+
+    if(btnSubmit) {
+        btnSubmit.disabled = true;
+        btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>REGISTRANDO...';
+    }
+    
+    if(errorDiv) errorDiv.classList.add('d-none');
+
+    try {
+        const exito = await sqliteService.registrarUsuario(emailInput, passInput, nombreInput);
+
+        if (exito) {
+            window.mostrarNotificacion("¡Cuenta creada! Ya puedes iniciar sesión.", "success");
+            requestAnimationFrame(() => {
+                window.cargarVista('login', 'Login');
+            });
+        } else {
+            if(errorDiv) {
+                errorDiv.textContent = "El correo electrónico ya está registrado.";
+                errorDiv.classList.remove('d-none');
+            }
+            if(btnSubmit) {
+                btnSubmit.disabled = false;
+                btnSubmit.innerHTML = 'REGISTRARME';
+            }
+        }
+    } catch(e) {
+        if(errorDiv) {
+            errorDiv.textContent = "Error interno al intentar registrar.";
+            errorDiv.classList.remove('d-none');
+        }
+        console.error(e);
+        if(btnSubmit) {
+            btnSubmit.disabled = false;
+            btnSubmit.innerHTML = 'REGISTRARME';
+        }
+    }
+}
+
 function cerrarSesion() {
     localStorage.removeItem('usuario_activo');
-    mostrarNotificacion('Sesión cerrada correctamente', 'success');
-    cargarVista('login', 'Login');
+    window.mostrarNotificacion('Sesión cerrada correctamente', 'success');
+    window.cargarVista('login', 'Login');
 }
 
 // =========================================================
@@ -247,7 +318,6 @@ function cargarVista(vistaId, titulo) {
     }
 }
 
-// --- NUEVO: FUNCIÓN AUXILIAR DE RENDERIZADO DE USUARIOS ---
 function renderizarUsuarios(usuarios, tbody) {
     if (!tbody) return;
 
@@ -291,10 +361,30 @@ function renderizarUsuarios(usuarios, tbody) {
 async function ejecutarLogicaVista(vistaId) {
     const usuarioActivo = JSON.parse(localStorage.getItem('usuario_activo') || 'null');
 
+    // Lógica para ocultar el botón "Usuarios" en el menú inferior
+    const navAdminUsuarios = document.getElementById('nav-admin_usuarios');
+    if (navAdminUsuarios) {
+        if (usuarioActivo && (usuarioActivo.rol === 'superusuario' || usuarioActivo.rol === 'admin')) {
+            navAdminUsuarios.classList.remove('d-none');
+        } else {
+            navAdminUsuarios.classList.add('d-none');
+        }
+    }
+
     if (vistaId === 'inicio' && usuarioActivo) {
         const nombre = usuarioActivo.email.split('@')[0];
         const el = document.getElementById('inicio-nombre');
         if (el) el.innerText = `Hola, ${nombre.charAt(0).toUpperCase() + nombre.slice(1)}`;
+
+        // Lógica para ocultar la tarjeta "Gestión de Usuarios" en Inicio
+        const tarjetaAdminUsuarios = document.querySelector('button[onclick*="admin_usuarios"]');
+        if (tarjetaAdminUsuarios) {
+            if (usuarioActivo.rol === 'superusuario' || usuarioActivo.rol === 'admin') {
+                tarjetaAdminUsuarios.classList.remove('d-none');
+            } else {
+                tarjetaAdminUsuarios.classList.add('d-none');
+            }
+        }
     }
     
     if (vistaId === 'perfil' && usuarioActivo) {
@@ -312,7 +402,7 @@ async function ejecutarLogicaVista(vistaId) {
 
     if (vistaId === 'admin_usuarios') {
         const tbody = document.getElementById('lista-usuarios-admin');
-        const searchInput = document.getElementById('buscador-usuarios'); // IMPORTANTE: Debemos agregar este ID al HTML
+        const searchInput = document.getElementById('buscador-usuarios'); 
 
         if (tbody) {
             tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm me-2"></div>Consultando...</td></tr>';
@@ -320,7 +410,7 @@ async function ejecutarLogicaVista(vistaId) {
             try {
                 // Carga inicial completa
                 const usuarios = await sqliteService.getUsuarios();
-                renderizarUsuarios(usuarios, tbody);
+                window.renderizarUsuarios(usuarios, tbody);
 
                 // Configurar el buscador en vivo
                 if (searchInput) {
@@ -332,7 +422,7 @@ async function ejecutarLogicaVista(vistaId) {
                         } else {
                             // Fallback
                             const res = await sqliteService.buscarUsuarios(termino);
-                            renderizarUsuarios(res, tbody);
+                            window.renderizarUsuarios(res, tbody);
                         }
                     });
                 }
@@ -354,13 +444,12 @@ function mostrarNotificacion(mensaje, tipo = 'primary') {
     if(toastBody) toastBody.innerText = mensaje;
     
     if (!appToast && window.bootstrap) {
-        appToast = new bootstrap.Toast(toastEl, { delay: 2500 });
+        appToast = new window.bootstrap.Toast(toastEl, { delay: 2500 });
     }
     
     if(appToast) {
         appToast.show();
     } else {
-        // Fallback robusto en caso de que bootstrap.js falle
         toastEl.style.display = 'block';
         toastEl.classList.add('show');
         setTimeout(() => {
@@ -378,11 +467,8 @@ async function bootApp() {
         document.documentElement.style.setProperty('--android-nav-spacing', '28px');
     }
 
-    // INICIAR TEMA PRIMERO PARA EVITAR DESTELLOS BLANCOS
     if (window.ThemeManager) {
         await window.ThemeManager.init();
-    } else {
-        console.error("[App] ATENCIÓN: temas.js no se cargó correctamente antes que index.js");
     }
 
     const dbReady = await sqliteService.init();
@@ -390,9 +476,9 @@ async function bootApp() {
     
     requestAnimationFrame(() => {
         if (usuarioActivo && dbReady) {
-            cargarVista('inicio', 'Inicio');
+            window.cargarVista('inicio', 'Inicio');
         } else {
-            cargarVista('login', 'Login');
+            window.cargarVista('login', 'Login');
         }
     });
 }
@@ -406,6 +492,7 @@ window.addEventListener('DOMContentLoaded', () => {
 // ============================================================================
 window.sqliteService = sqliteService;
 window.iniciarSesionApp = iniciarSesionApp;
+window.registrarUsuarioApp = registrarUsuarioApp;
 window.cerrarSesion = cerrarSesion;
 window.cargarVista = cargarVista;
 window.mostrarNotificacion = mostrarNotificacion;

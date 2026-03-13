@@ -37,19 +37,19 @@
 
     <!-- BARRA DE NAVEGACIÓN INFERIOR -->
     <nav class="bottom-nav d-none justify-content-around" id="app-bottom-nav">
-        <div class="nav-item text-center active" id="nav-inicio" onclick="cargarVista('inicio', 'Inicio')">
+        <div class="nav-item text-center active" id="nav-inicio" onclick="window.cargarVista('inicio', 'Inicio')">
             <i class="bi bi-house-fill fs-4"></i>
             <span>Inicio</span>
         </div>
-        <div class="nav-item text-center text-secondary" id="nav-admin_usuarios" onclick="cargarVista('admin_usuarios', 'Usuarios')">
+        <div class="nav-item text-center text-secondary" id="nav-admin_usuarios" onclick="window.cargarVista('admin_usuarios', 'Usuarios')">
             <i class="bi bi-people-fill fs-4"></i>
             <span>Usuarios</span>
         </div>
-        <div class="nav-item text-center text-secondary" id="nav-perfil" onclick="cargarVista('perfil', 'Mi Perfil')">
+        <div class="nav-item text-center text-secondary" id="nav-perfil" onclick="window.cargarVista('perfil', 'Mi Perfil')">
             <i class="bi bi-person-circle fs-4"></i>
             <span>Perfil</span>
         </div>
-        <div class="nav-item text-center text-secondary" id="nav-ajustes" onclick="cargarVista('ajustes', 'Ajustes')">
+        <div class="nav-item text-center text-secondary" id="nav-ajustes" onclick="window.cargarVista('ajustes', 'Ajustes')">
             <i class="bi bi-gear-fill fs-4"></i>
             <span>Ajustes</span>
         </div>
@@ -85,7 +85,7 @@
 
                 <div class="card app-card text-start">
                     <div class="card-body p-4">
-                        <form id="form-login" onsubmit="event.preventDefault(); iniciarSesionApp();">
+                        <form id="form-login" onsubmit="event.preventDefault(); window.iniciarSesionApp();">
                             <div class="mb-3">
                                 <label class="form-label text-muted small fw-bold">Correo Electrónico</label>
                                 <div class="input-group">
@@ -105,7 +105,7 @@
                             <button type="submit" id="btn-login-submit" class="btn btn-primary w-100 py-2 fw-bold rounded-pill shadow-sm mb-3">
                                 INGRESAR
                             </button>
-                            <button type="button" id="btn-bio-login" class="btn btn-outline-secondary w-100 py-2 fw-bold rounded-pill" onclick="mostrarNotificacion('Biometría en desarrollo', 'primary');">
+                            <button type="button" id="btn-bio-login" class="btn btn-outline-secondary w-100 py-2 fw-bold rounded-pill" onclick="window.mostrarNotificacion('Biometría en desarrollo', 'primary');">
                                 <i class="bi bi-fingerprint fs-5 me-2 align-middle"></i> Huella Digital
                             </button>
                         </form>
@@ -113,9 +113,9 @@
                 </div>
                 
                 <p class="mt-4 text-muted small">
-                    ¿No tienes cuenta? <a href="#" onclick="cargarVista('registro', 'Registro')" class="text-primary fw-bold text-decoration-none">Regístrate aquí</a>
+                    ¿No tienes cuenta? <a href="#" onclick="window.cargarVista('registro', 'Registro')" class="text-primary fw-bold text-decoration-none">Regístrate aquí</a>
                     <br><br>
-                    <a href="#" onclick="sqliteService.limpiarBD()" class="text-danger small fw-bold text-decoration-none"><i class="bi bi-trash"></i> Limpiar Caché Local</a>
+                    <a href="#" onclick="window.sqliteService.limpiarBD()" class="text-danger small fw-bold text-decoration-none"><i class="bi bi-trash"></i> Limpiar Caché Local</a>
                 </p>
             </div>
         </div>
@@ -130,23 +130,26 @@
 
                 <div class="card app-card text-start mt-4">
                     <div class="card-body p-4">
-                        <form onsubmit="event.preventDefault(); cargarVista('login', 'Login'); mostrarNotificacion('Cuenta creada exitosamente. Inicia sesión.', 'success');">
+                        <form id="form-registro" onsubmit="event.preventDefault(); window.registrarUsuarioApp();">
                             <div class="mb-3">
                                 <label class="form-label text-muted small fw-bold">Nombre Completo</label>
-                                <input type="text" class="form-control" required>
+                                <input type="text" id="reg-nombre" class="form-control" required>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label text-muted small fw-bold">Correo Electrónico</label>
-                                <input type="email" class="form-control" required>
+                                <input type="email" id="reg-email" class="form-control" required>
                             </div>
                             <div class="mb-4">
                                 <label class="form-label text-muted small fw-bold">Contraseña</label>
-                                <input type="password" class="form-control" required>
+                                <input type="password" id="reg-pass" class="form-control" required>
                             </div>
-                            <button type="submit" class="btn btn-success w-100 py-2 fw-bold rounded-pill shadow-sm mb-3">
+                            
+                            <div id="reg-error" class="alert alert-danger d-none py-2 small fw-bold" role="alert"></div>
+
+                            <button type="submit" id="btn-reg-submit" class="btn btn-success w-100 py-2 fw-bold rounded-pill shadow-sm mb-3">
                                 REGISTRARME
                             </button>
-                            <button type="button" class="btn btn-light w-100 py-2 fw-bold rounded-pill" onclick="cargarVista('login', 'Login')">
+                            <button type="button" class="btn btn-light w-100 py-2 fw-bold rounded-pill" onclick="window.cargarVista('login', 'Login')">
                                 Volver al Login
                             </button>
                         </form>
@@ -172,7 +175,7 @@
             </div>
 
             <div class="col-6">
-                <div class="card app-card h-100" onclick="mostrarNotificacion('Sincronizando con la nube...', 'info')">
+                <div class="card app-card h-100" onclick="window.mostrarNotificacion('Sincronizando con la nube...', 'info')">
                     <div class="card-body text-center">
                         <div class="text-primary mb-2"><i class="bi bi-arrow-repeat fs-1"></i></div>
                         <h6 class="fw-bold mb-0">Sincronizar</h6>
@@ -194,14 +197,14 @@
             <div class="col-12 mt-4">
                 <h6 class="fw-bold text-muted mb-3 px-1">ACCESOS RÁPIDOS</h6>
                 <div class="list-group list-group-flush rounded-3 shadow-sm bg-white app-card">
-                    <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3 border-bottom" onclick="cargarVista('admin_usuarios', 'Usuarios')">
+                    <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3 border-bottom" onclick="window.cargarVista('admin_usuarios', 'Usuarios')">
                         <div class="d-flex align-items-center">
                             <div class="bg-light rounded p-2 me-3 text-primary"><i class="bi bi-people"></i></div>
                             <span class="fw-medium">Gestión de Usuarios</span>
                         </div>
                         <i class="bi bi-chevron-right text-muted"></i>
                     </button>
-                    <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3" onclick="cargarVista('ajustes', 'Ajustes')">
+                    <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3" onclick="window.cargarVista('ajustes', 'Ajustes')">
                         <div class="d-flex align-items-center">
                             <div class="bg-light rounded p-2 me-3 text-secondary"><i class="bi bi-sliders"></i></div>
                             <span class="fw-medium">Configuración del Sistema</span>
@@ -241,7 +244,7 @@
                 </div>
             </div>
         </div>
-        <button class="btn btn-outline-primary w-100 mt-4 rounded-pill fw-bold" onclick="mostrarNotificacion('Editor de perfil en desarrollo', 'warning')">Editar Perfil</button>
+        <button class="btn btn-outline-primary w-100 mt-4 rounded-pill fw-bold" onclick="window.mostrarNotificacion('Editor de perfil en desarrollo', 'warning')">Editar Perfil</button>
     </template>
 
     <!-- VISTA: ADMIN USUARIOS -->
@@ -249,7 +252,7 @@
         <div class="d-flex justify-content-between align-items-center mb-3">
             <div class="input-group">
                 <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
-                <input type="text" class="form-control border-start-0 ps-0" placeholder="Buscar usuario en DB...">
+                <input type="text" id="buscador-usuarios" class="form-control border-start-0 ps-0" placeholder="Buscar usuario en DB...">
             </div>
             <button class="btn btn-primary ms-2 rounded-circle shadow-sm" style="width: 40px; height: 40px; flex-shrink: 0;"><i class="bi bi-plus-lg"></i></button>
         </div>
@@ -301,18 +304,18 @@
         <h6 class="fw-bold text-muted mb-3 px-1 small">SISTEMA Y SINCRONIZACIÓN</h6>
         <div class="card app-card mb-4 border-0">
             <div class="list-group list-group-flush rounded-3">
-                <button class="list-group-item list-group-item-action py-3 text-primary d-flex align-items-center" onclick="sqliteService.testConnection()">
+                <button class="list-group-item list-group-item-action py-3 text-primary d-flex align-items-center" onclick="window.sqliteService.testConnection()">
                     <i class="bi bi-speedometer2 fs-5 me-3"></i> 
                     <span class="fw-medium">Test de Rendimiento SQLite</span>
                 </button>
-                <button class="list-group-item list-group-item-action py-3 text-danger d-flex align-items-center" onclick="sqliteService.limpiarBD()">
+                <button class="list-group-item list-group-item-action py-3 text-danger d-flex align-items-center" onclick="window.sqliteService.limpiarBD()">
                     <i class="bi bi-trash fs-5 me-3"></i> 
                     <span class="fw-medium">Formatear Base de Datos Local</span>
                 </button>
             </div>
         </div>
 
-        <button class="btn btn-outline-danger w-100 py-3 fw-bold rounded-pill mb-4 shadow-sm" onclick="cerrarSesion()">
+        <button class="btn btn-outline-danger w-100 py-3 fw-bold rounded-pill mb-4 shadow-sm" onclick="window.cerrarSesion()">
             <i class="bi bi-box-arrow-right me-2"></i> CERRAR SESIÓN
         </button>
     </template>
@@ -325,10 +328,9 @@
     
     <!-- Lógica y Controladores Separados -->
     <script src="js/temas.js"></script>
-    <script src="js/search.js"></script> <!-- AÑADIR AQUÍ -->
+    <script src="js/search.js"></script>
     
     <!-- Lógica Principal SIEMPRE AL FINAL -->
     <script src="js/index.js"></script>
 </body>
 </html>
-

@@ -17,7 +17,7 @@ construir.bat
 
 En caso de necesita probar la app antes de compilarla ir a la caperte desde la terminal
 miapp/www
-npx http-server
+npx http-server www -c-1
 http://127.0.0.1:8080
 
 

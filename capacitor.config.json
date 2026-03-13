@@ -1,6 +1,6 @@
 {
-  "appId": "com.altair.app",
-  "appName": "Altair",
+  "appId": "com.titan.app",
+  "appName": "Titan",
   "webDir": "www",
   "bundledWebRuntime": false,
   "plugins": {

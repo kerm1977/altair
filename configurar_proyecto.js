@@ -11,7 +11,7 @@ const path = require('path');
 const readline = require('readline');
 const crypto = require('crypto'); // Para aplicar el mismo Hash (SHA-256) que la app
 const { execSync } = require('child_process'); // Para ejecutar comandos de terminal
-const http = require('http'); // NUEVO: Para levantar el servidor web de pruebas local
+const http = require('http'); // Para levantar el servidor web de pruebas local
 
 // Configuración de la interfaz de terminal con soporte de promesas
 const rl = readline.createInterface({
@@ -49,7 +49,19 @@ async function configurar() {
     mostrarHeaderMovil();
 
     // ==============================================================================
-    // 0. DIAGNÓSTICO PREVIO (PRE-CHECK)
+    // 0. ARRANQUE RÁPIDO (SERVIDOR WEB)
+    // ==============================================================================
+    const arranqueRapido = await ask(`  🌐 ¿Deseas iniciar el Servidor Web de Pruebas ahora mismo? (S/N): `);
+    
+    if (arranqueRapido.trim().toUpperCase() === 'S' || arranqueRapido.trim().toUpperCase() === 'SI') {
+        iniciarServidorPruebas();
+        return; // Detiene el asistente de configuración y se queda como servidor
+    }
+    
+    console.log("\n  [i] Continuando con el Asistente de Configuración...\n");
+
+    // ==============================================================================
+    // 1. DIAGNÓSTICO PREVIO (PRE-CHECK)
     // ==============================================================================
     let configPrevia = null;
     
@@ -79,7 +91,7 @@ async function configurar() {
     }
 
     // ==============================================================================
-    // 1. DATOS BÁSICOS
+    // 2. DATOS BÁSICOS
     // ==============================================================================
     const appNameInput = await ask(' 📱 1. Nombre de la App (Ej: Altair Pro): ');
     const appName = appNameInput.trim() || 'MiApp';
@@ -90,7 +102,7 @@ async function configurar() {
     const appId = appIdInput.trim() || defaultId;
 
     // ==============================================================================
-    // 2. CONFIGURACIÓN DEL ÍCONO
+    // 3. CONFIGURACIÓN DEL ÍCONO
     // ==============================================================================
     const askIcon = await ask('\n 🖼️  3. ¿Desea cambiar el icono de la aplicacion? (S/N): ');
     let iconPath = "";
@@ -109,7 +121,7 @@ async function configurar() {
     }
 
     // ==============================================================================
-    // 3. ANÁLISIS DE BASE DE DATOS EXISTENTE (MERGE vs RESET)
+    // 4. ANÁLISIS DE BASE DE DATOS EXISTENTE (MERGE vs RESET)
     // ==============================================================================
     let dbAction = 'create';
     let superusuarios = [];
@@ -117,7 +129,7 @@ async function configurar() {
     let useEncryption = false;
     let dbPassword = "";
 
-    // Como ya cargamos configPrevia en el Paso 0, solo evaluamos si existe
+    // Como ya cargamos configPrevia en el Paso 1, solo evaluamos si existe
     if (configPrevia) {
         console.log("\n======================================================");
         console.log("🗄️  INTENCIÓN SOBRE LA BASE DE DATOS NATIVA");
@@ -135,7 +147,7 @@ async function configurar() {
                     if (conf3.trim() === 'ESTOY SEGURO') {
                         console.log(`   [✔] Se ordenará el FORMATEO en el próximo inicio de la App.`);
                         dbAction = 'overwrite';
-                        configPrevia = null; // Destruimos en memoria para pedir encriptación de nuevo en el Paso 5
+                        configPrevia = null; // Destruimos en memoria para pedir encriptación de nuevo en el Paso 6
                     } else {
                         console.log(`   [✖] Operación cancelada.`); process.exit(0);
                     }
@@ -156,7 +168,7 @@ async function configurar() {
     }
 
     // ==============================================================================
-    // 4. RECOLECCIÓN DE SUPERUSUARIOS
+    // 5. RECOLECCIÓN DE SUPERUSUARIOS
     // ==============================================================================
     console.log("\n======================================================");
     console.log(dbAction === 'combine' ? "🛡️  AGREGAR NUEVOS SUPERUSUARIOS" : "🛡️  CONFIGURACIÓN DE SUPERUSUARIOS (ADMINISTRADORES)");
@@ -222,7 +234,7 @@ async function configurar() {
     }
 
     // ==============================================================================
-    // 5. CONFIGURACIÓN DE SEGURIDAD (Solo si es DB Nueva o Reset)
+    // 6. CONFIGURACIÓN DE SEGURIDAD (Solo si es DB Nueva o Reset)
     // ==============================================================================
     if (dbAction !== 'combine') {
         console.log("\n======================================================");
@@ -258,7 +270,7 @@ async function configurar() {
     console.log("\n⏳ Aplicando configuraciones locales e inyectando intenciones...");
     
     // ==============================================================================
-    // 6. MODIFICAR ARCHIVOS LOCALES
+    // 7. MODIFICAR ARCHIVOS LOCALES
     // ==============================================================================
     try {
         if (fs.existsSync(capacitorFile)) {
@@ -280,8 +292,13 @@ async function configurar() {
         if (fs.existsSync(packageJsonFile)) {
             let pkg = JSON.parse(fs.readFileSync(packageJsonFile, 'utf8'));
             pkg.name = appSlug.toLowerCase();
+            
+            // 🛠️ FIX CACHÉ DE CONSOLA: Inyectamos el script seguro para levantar http-server
+            if (!pkg.scripts) pkg.scripts = {};
+            pkg.scripts.serve = "http-server www -c-1";
+            
             fs.writeFileSync(packageJsonFile, JSON.stringify(pkg, null, 2));
-            console.log(`  [✔] package.json          -> Nombre: ${appSlug.toLowerCase()}`);
+            console.log(`  [✔] package.json          -> Script 'serve' (Sin Caché) inyectado.`);
         }
 
         if (fs.existsSync(buildConfigFile)) {
@@ -315,7 +332,7 @@ async function configurar() {
     }
 
     // ==============================================================================
-    // 7. SINCRONIZACIÓN Y PRUEBAS EN WINDOWS (MÓDULO NUEVO)
+    // 8. SINCRONIZACIÓN Y PRUEBAS EN WINDOWS
     // ==============================================================================
     console.log("\n======================================================");
     console.log("🚀 PASO FINAL: SINCRONIZACIÓN Y PRUEBAS WEB");
@@ -329,12 +346,14 @@ async function configurar() {
         console.log("  [✖] Error al sincronizar. (Asegúrate de tener instalado Capacitor).");
     }
 
-    // 🔥 LA SOLUCIÓN DEFINITIVA AL PROBLEMA DE WINDOWS:
-    const probarWeb = await ask(`\n  🌐 [2/3] ¿Estás probando en Windows y deseas levantar el Servidor Web Seguro? (Evita fallos de JSON) (S/N): `);
+    // 🔥 PREGUNTA PARA SERVIDOR INTEGRADO DESPUÉS DE CONFIGURAR
+    const probarWeb = await ask(`\n  🌐 [2/3] ¿Deseas levantar el Servidor Web Seguro ahora mismo para ver tus cambios? (S/N): `);
     
     if (probarWeb.trim().toUpperCase() === 'S' || probarWeb.trim().toUpperCase() === 'SI') {
         iniciarServidorPruebas();
-        return; // Detenemos aquí la consola porque el servidor se queda encendido escuchando
+        return; // Detenemos aquí la consola porque el servidor se queda encendido
+    } else {
+        console.log(`\n  [i] Para probar manualmente en el futuro SIN ERRORES DE CACHÉ, ejecuta: npm run serve`);
     }
 
     const compilar = await ask(`\n  🔨 [3/3] ¿Deseas compilar el APK Android automáticamente ahora mismo? (S/N): `);
@@ -359,7 +378,7 @@ async function configurar() {
 }
 
 // ==============================================================================
-// 🌐 FUNCIÓN PARA EVITAR EL BLOQUEO CORS AL LEER JSON EN WINDOWS
+// 🌐 FUNCIÓN PARA EVITAR EL BLOQUEO CORS Y CARGAR FUENTES/ICONOS CORRECTAMENTE
 // ==============================================================================
 function iniciarServidorPruebas() {
     const PORT = 8080;
@@ -370,14 +389,22 @@ function iniciarServidorPruebas() {
         '.json': 'application/json',
         '.png': 'image/png',
         '.jpg': 'image/jpeg',
-        '.svg': 'image/svg+xml'
+        '.svg': 'image/svg+xml',
+        '.woff': 'font/woff',
+        '.woff2': 'font/woff2',
+        '.ttf': 'font/ttf',
+        '.eot': 'application/vnd.ms-fontobject'
     };
 
-    console.log("\n  [INFO] Levantando Motor de Pruebas Web Local...");
+    console.log("\n  [INFO] Levantando Motor de Pruebas Web Local (Soporte de Iconos Activo)...");
     
     const server = http.createServer((req, res) => {
-        let urlLimpia = req.url.split('?')[0]; // Ignorar parámetros de caché como ?t=123
-        let filePath = path.join(__dirname, 'www', urlLimpia === '/' ? 'index.html' : urlLimpia);
+        let urlLimpia = req.url.split('?')[0]; 
+        
+        // 🛠️ FIX RUTA DE FUENTES: Si la URL empieza con /webfonts, la buscamos en la raíz del proyecto
+        // de lo contrario, la buscamos dentro de la carpeta /www
+        let baseDir = urlLimpia.startsWith('/webfonts') ? __dirname : path.join(__dirname, 'www');
+        let filePath = path.join(baseDir, urlLimpia === '/' ? 'index.html' : urlLimpia);
         
         const extname = String(path.extname(filePath)).toLowerCase();
         const contentType = MIME_TYPES[extname] || 'application/octet-stream';
@@ -385,15 +412,14 @@ function iniciarServidorPruebas() {
         fs.readFile(filePath, (error, content) => {
             if (error) {
                 res.writeHead(404);
-                res.end('Archivo no encontrado: ' + filePath);
+                res.end('Archivo no encontrado: ' + urlLimpia);
             } else {
-                // Headers MUY ESTRICTOS para evitar que el navegador guarde versiones viejas del JSON
                 res.writeHead(200, { 
                     'Content-Type': contentType,
                     'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
                     'Pragma': 'no-cache',
                     'Expires': '0',
-                    'Surrogate-Control': 'no-store'
+                    'Access-Control-Allow-Origin': '*' // Permite cargar fuentes desde cualquier origen local
                 });
                 res.end(content, 'utf-8');
             }
@@ -404,10 +430,9 @@ function iniciarServidorPruebas() {
         console.log(`\n  ======================================================`);
         console.log(`  🟢 SERVIDOR ACTIVO EN: http://localhost:${PORT}`);
         console.log(`  ======================================================`);
-        console.log(`  [i] Mantén esta ventana de terminal abierta mientras programas.`);
+        console.log(`  [i] Los iconos y el login deberían funcionar ahora correctamente.`);
         console.log(`  [i] Presiona Ctrl+C aquí en la terminal para apagar el servidor.\n`);
         
-        // Abre el navegador automáticamente (Solo Windows)
         try {
             execSync(`start http://localhost:${PORT}`);
         } catch(e) {

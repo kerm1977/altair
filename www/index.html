@@ -67,6 +67,20 @@
         </div>
     </div>
 
+    <!-- MODAL DE RESETEO PROFUNDO (3 PASOS) -->
+    <div class="modal fade" id="modalResetDB" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg rounded-4">
+                <div class="modal-body text-center p-4 pb-2" id="reset-db-body">
+                    <!-- JS inyecta dinámicamente -->
+                </div>
+                <div class="modal-footer d-flex justify-content-center border-0 pt-0 pb-4 gap-2" id="reset-db-footer">
+                    <!-- JS inyecta dinámicamente -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- ==========================================
          VISTAS DE LA APP (FRAGMENTOS)
     =========================================== -->
@@ -119,8 +133,7 @@
                 <div class="mt-4 pt-3 border-top">
                     <p class="text-muted small mb-1">¿Aún no eres parte de la plataforma?</p>
                     <button class="btn btn-link text-primary fw-bold text-decoration-none p-0" onclick="window.cargarVista('registro', 'Registro')">Crear una cuenta nueva</button>
-                    <br><br>
-                    <button class="btn btn-link text-danger small fw-bold text-decoration-none p-0 mt-3" onclick="window.sqliteService.limpiarBD()"><i class="bi bi-trash me-1"></i>Resetear Base de Datos</button>
+                    <!-- EL BOTON DE FORMATEAR FUE ELIMINADO DE AQUI POR SEGURIDAD -->
                 </div>
             </div>
         </div>
@@ -141,14 +154,12 @@
                             
                             <h6 class="fw-bold text-primary mb-3 small border-bottom pb-2"><i class="bi bi-person-lines-fill me-2"></i>DATOS PERSONALES</h6>
                             
-                            <!-- Nombre -->
                             <div class="mb-3">
                                 <label class="form-label text-muted small fw-bold">Nombre(s) <span class="text-danger">*</span></label>
                                 <input type="text" id="reg-nombre" class="form-control bg-light" placeholder="Ej: Juan Carlos" required>
                                 <div class="invalid-feedback" id="err-nombre">Solo letras. Máx 1 espacio. Primera letra mayúscula.</div>
                             </div>
 
-                            <!-- Apellidos -->
                             <div class="row g-2 mb-3">
                                 <div class="col-6">
                                     <label class="form-label text-muted small fw-bold">1er Apellido <span class="text-danger">*</span></label>
@@ -162,7 +173,6 @@
                                 </div>
                             </div>
 
-                            <!-- Fecha de Nacimiento & Edad -->
                             <label class="form-label text-muted small fw-bold mb-1">Fecha de Nacimiento <span class="text-danger">*</span></label>
                             <div class="row g-2 mb-1">
                                 <div class="col-3">
@@ -196,7 +206,6 @@
 
                             <h6 class="fw-bold text-primary mb-3 small border-bottom pb-2 mt-4"><i class="bi bi-envelope-at me-2"></i>CONTACTO Y SEGURIDAD</h6>
 
-                            <!-- ID y Teléfono -->
                             <div class="row g-2 mb-3">
                                 <div class="col-5">
                                     <label class="form-label text-muted small fw-bold">ID Nacional</label>
@@ -209,13 +218,11 @@
                                 </div>
                             </div>
 
-                            <!-- Email -->
                             <div class="mb-3">
                                 <label class="form-label text-muted small fw-bold">Correo Electrónico <span class="text-danger">*</span></label>
                                 <input type="email" id="reg-email" class="form-control bg-light" placeholder="tu@correo.com" required>
                             </div>
 
-                            <!-- Contraseña -->
                             <div class="mb-3">
                                 <label class="form-label text-muted small fw-bold">Crear Contraseña <span class="text-danger">*</span></label>
                                 <div class="input-group">
@@ -226,7 +233,6 @@
                                 </div>
                             </div>
 
-                            <!-- Verificar Contraseña -->
                             <div class="mb-4">
                                 <label class="form-label text-muted small fw-bold">Verificar Contraseña <span class="text-danger">*</span></label>
                                 <div class="input-group">
@@ -381,35 +387,84 @@
     <template id="tpl-editar_usuario">
         <div class="card app-card border-0 mt-2 mb-4">
             <div class="card-body p-4">
-                <div class="d-flex align-items-center mb-4 pb-3 border-bottom">
-                    <div class="bg-primary text-white rounded-circle d-flex justify-content-center align-items-center me-3 shadow-sm" style="width:50px; height:50px; font-size:24px;">
-                        <i class="bi bi-person-gear"></i>
+                <div class="text-center mb-4 pb-3 border-bottom">
+                    <div class="position-relative d-inline-block">
+                        <div class="bg-primary text-white rounded-circle shadow-sm mb-2 d-flex align-items-center justify-content-center fw-bold overflow-hidden" style="width:100px; height:100px; font-size: 2.5rem; cursor: pointer; margin: 0 auto;" id="edit-avatar" onclick="window.ImageEditorManager.abrirSelectorImagen()">U</div>
+                        <button class="btn btn-sm btn-primary rounded-circle position-absolute bottom-0 end-0 mb-2 shadow" style="transform: translate(25%, 25%);" onclick="window.ImageEditorManager.abrirSelectorImagen()">
+                            <i class="bi bi-camera-fill"></i>
+                        </button>
                     </div>
-                    <div>
-                        <h6 class="mb-0 fw-bold text-dark" id="edit-email-display">usuario@correo.com</h6>
-                        <small class="text-muted">Editor de cuenta</small>
-                    </div>
+                    <h6 class="mb-0 fw-bold text-dark mt-2" id="edit-email-display">usuario@correo.com</h6>
+                    <small class="text-muted">Editor de Perfil Completo</small>
                 </div>
 
                 <form onsubmit="event.preventDefault(); window.guardarEdicionUsuario();">
+                    
+                    <h6 class="fw-bold text-primary mb-3 small border-bottom pb-2"><i class="bi bi-person-lines-fill me-2"></i>DATOS PERSONALES</h6>
+                    
                     <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">Nombre Completo</label>
-                        <input type="text" id="edit-nombre" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">Correo Electrónico</label>
-                        <input type="email" id="edit-email" class="form-control" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">Teléfono</label>
-                        <input type="tel" id="edit-telefono" class="form-control" placeholder="Ej: +1 234 567 8900">
-                    </div>
-                    <div class="mb-4">
-                        <label class="form-label text-muted small fw-bold">Contraseña de acceso</label>
-                        <input type="text" id="edit-password" class="form-control" required>
+                        <label class="form-label text-muted small fw-bold">Nombre Completo <span class="text-danger">*</span></label>
+                        <input type="text" id="edit-nombre" class="form-control bg-light" placeholder="Ej: Juan Carlos Perez" required>
+                        <small class="text-muted" style="font-size: 0.70rem;">Separe nombres y apellidos por espacios</small>
                     </div>
 
-                    <!-- CAJA DE ROLES (Se oculta sola si el que edita es usuario normal) -->
+                    <label class="form-label text-muted small fw-bold mb-1">Fecha de Nacimiento <span class="text-danger">*</span></label>
+                    <div class="row g-2 mb-3">
+                        <div class="col-3">
+                            <input type="number" id="edit-dia" class="form-control bg-light text-center" placeholder="DD" min="1" max="31" required>
+                        </div>
+                        <div class="col-5">
+                            <select id="edit-mes" class="form-select bg-light" required>
+                                <option value="" selected disabled>Mes</option>
+                                <option value="01">Ene</option>
+                                <option value="02">Feb</option>
+                                <option value="03">Mar</option>
+                                <option value="04">Abr</option>
+                                <option value="05">May</option>
+                                <option value="06">Jun</option>
+                                <option value="07">Jul</option>
+                                <option value="08">Ago</option>
+                                <option value="09">Sep</option>
+                                <option value="10">Oct</option>
+                                <option value="11">Nov</option>
+                                <option value="12">Dic</option>
+                            </select>
+                        </div>
+                        <div class="col-4">
+                            <input type="number" id="edit-anio" class="form-control bg-light text-center" placeholder="AAAA" min="1900" max="2026" required>
+                        </div>
+                    </div>
+
+                    <h6 class="fw-bold text-primary mb-3 small border-bottom pb-2 mt-4"><i class="bi bi-envelope-at me-2"></i>CONTACTO Y SEGURIDAD</h6>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-5">
+                            <label class="form-label text-muted small fw-bold">ID Nacional</label>
+                            <input type="text" id="edit-id_nacional" class="form-control bg-light" placeholder="Opcional">
+                        </div>
+                        <div class="col-7">
+                            <label class="form-label text-muted small fw-bold">Teléfono</label>
+                            <input type="tel" id="edit-telefono" class="form-control bg-light" placeholder="Ej: 88888888">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-bold">Correo Electrónico (No editable)</label>
+                        <input type="email" id="edit-email" class="form-control bg-light" readonly>
+                        <small class="text-muted" style="font-size: 0.70rem;">El correo electrónico es el identificador único y no puede cambiarse.</small>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label text-muted small fw-bold">Contraseña de acceso</label>
+                        <div class="input-group">
+                            <input type="password" id="edit-password" class="form-control border-end-0 bg-light" required>
+                            <span class="input-group-text bg-light cursor-pointer border-start-0" onclick="window.RegistroManager.togglePasswordVisibility('edit-password', this)">
+                                <i class="bi bi-eye-slash text-muted"></i>
+                            </span>
+                        </div>
+                        <small class="text-muted" style="font-size: 0.70rem;">Se encuentra encriptada. Escriba una nueva si desea cambiarla.</small>
+                    </div>
+
                     <div id="box-privilegios" class="p-3 mb-4 rounded-3 border bg-light">
                         <h6 class="fw-bold mb-3 small text-primary"><i class="bi bi-shield-lock me-1"></i> ZONA ADMINISTRATIVA</h6>
                         <div class="mb-3">
@@ -436,7 +491,6 @@
                         CANCELAR
                     </button>
                     
-                    <!-- FIX: Espaciador invisible para los botones del formulario -->
                     <div style="height: 100px; width: 100%;"></div>
                 </form>
             </div>
@@ -469,23 +523,58 @@
             </div>
         </div>
 
-        <h6 class="fw-bold text-muted mb-3 px-1 small">SISTEMA Y SINCRONIZACIÓN</h6>
+        <h6 class="fw-bold text-muted mb-3 px-1 small">SISTEMA Y RENDIMIENTO</h6>
         <div class="card app-card mb-4 border-0">
             <div class="list-group list-group-flush rounded-3">
                 <button class="list-group-item list-group-item-action py-3 text-primary d-flex align-items-center" onclick="window.sqliteService.testConnection()">
                     <i class="bi bi-speedometer2 fs-5 me-3"></i> 
                     <span class="fw-medium">Test de Rendimiento SQLite</span>
                 </button>
-                <button class="list-group-item list-group-item-action py-3 text-danger d-flex align-items-center" onclick="window.sqliteService.limpiarBD()">
-                    <i class="bi bi-trash fs-5 me-3"></i> 
-                    <span class="fw-medium">Formatear Base de Datos Local</span>
-                </button>
+            </div>
+        </div>
+
+        <!-- ZONA ADMINISTRATIVA DE DATOS (Solo visible para Superusuarios a través del script adminDb.js) -->
+        <div id="admin-db-controls" class="d-none mb-4">
+            <h6 class="fw-bold text-danger mb-3 px-1 small"><i class="bi bi-shield-lock-fill me-1"></i> ZONA ADMINISTRATIVA DE DATOS</h6>
+            <div class="card app-card border-0 border border-danger border-opacity-25">
+                <div class="list-group list-group-flush rounded-3">
+                    
+                    <!-- EXPORTACIONES SIMPLES (JSON) -->
+                    <button class="list-group-item list-group-item-action py-3 text-primary d-flex align-items-center" onclick="window.AdminDBManager.respaldarBD()">
+                        <i class="bi bi-filetype-json fs-5 me-3"></i> 
+                        <span class="fw-medium">Exportar Usuarios (JSON)</span>
+                    </button>
+                    <label class="list-group-item list-group-item-action py-3 text-success d-flex align-items-center mb-0 cursor-pointer" style="margin: 0; border-bottom: 1px solid rgba(0,0,0,0.125);">
+                        <i class="bi bi-file-earmark-arrow-up fs-5 me-3"></i> 
+                        <span class="fw-medium">Importar Usuarios (JSON)</span>
+                        <input type="file" accept=".json" class="d-none" onchange="window.AdminDBManager.cargarBD(event)">
+                    </label>
+
+                    <!-- EXPORTACIONES COMPLETAS (.DB OFUSCADO) -->
+                    <button class="list-group-item list-group-item-action py-3 text-primary fw-bold d-flex align-items-center bg-light" onclick="window.AdminDBManager.respaldarBDCompleta()">
+                        <i class="bi bi-database-down fs-5 me-3"></i> 
+                        <span class="fw-medium">Respaldo Completo (.db)</span>
+                    </button>
+                    <label class="list-group-item list-group-item-action py-3 text-success fw-bold d-flex align-items-center mb-0 cursor-pointer bg-light" style="margin: 0; border-bottom: 1px solid rgba(0,0,0,0.125);">
+                        <i class="bi bi-database-up fs-5 me-3"></i> 
+                        <span class="fw-medium">Restaurar Completo (.db)</span>
+                        <input type="file" accept=".db" class="d-none" onchange="window.AdminDBManager.cargarBDCompleta(event)">
+                    </label>
+
+                    <!-- RESETEO FATAL -->
+                    <button class="list-group-item list-group-item-action py-3 text-danger d-flex align-items-center" onclick="window.AdminDBManager.iniciarReseteo()">
+                        <i class="bi bi-exclamation-triangle fs-5 me-3"></i> 
+                        <span class="fw-medium fw-bold">Resetear Base de Datos</span>
+                    </button>
+                </div>
             </div>
         </div>
 
         <button class="btn btn-outline-danger w-100 py-3 fw-bold rounded-pill mb-4 shadow-sm" onclick="window.cerrarSesion()">
             <i class="bi bi-box-arrow-right me-2"></i> CERRAR SESIÓN
         </button>
+        
+        <div style="height: 100px; width: 100%;"></div>
     </template>
 
    <!-- ==========================================
@@ -505,6 +594,8 @@
     <script src="js/router.js"></script>
     <script src="js/userController.js"></script>
     <script src="js/imageEditor.js"></script>
+    <!-- NUEVO: GESTOR DE ADMIN Y RESPALDOS -->
+    <script src="js/adminDb.js"></script>
     <script src="js/utils.js"></script>
 </body>
 </html>

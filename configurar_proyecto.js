@@ -1,7 +1,7 @@
 // ==============================================================================
 // ARCHIVO: configurar_proyecto.js
 // RESPONSABILIDAD: Asistente de terminal (Node.js) para inicializar nuevas apps.
-//                  Crea configuraciones locales y DB SQLite (Modo 100% Local).
+//                  Crea configuraciones locales, DB SQLite y Encriptación SQLCipher.
 // ==============================================================================
 
 const fs = require('fs');
@@ -125,30 +125,59 @@ async function configurar() {
     }
 
     // ==============================================================================
-    // 4. GESTIÓN DE BASE DE DATOS LOCAL (SQLITE) COMBINADA CON SUPERUSUARIOS
+    // 4. CONFIGURACIÓN DE BASE DE DATOS LOCAL Y SQLCIPHER
     // ==============================================================================
-    console.log("\n 🗄️  5. Verificación de Base de Datos Local");
-    const dbFileName = `${appSlug}.db`;
+    console.log("\n======================================================");
+    console.log("🗄️  CONFIGURACIÓN DE LA BASE DE DATOS (SQLITE)");
+    console.log("======================================================");
+
+    const defaultDbName = `${appSlug}.db`;
+    const customDbName = await ask(`   Nombre del archivo de Base de Datos (Enter para usar: '${defaultDbName}'): `);
+    let dbFileName = customDbName.trim() || defaultDbName;
+    if (!dbFileName.endsWith('.db')) dbFileName += '.db'; // Asegurar extensión
+
+    // Encriptación SQLCipher
+    const askEncryption = await ask(`   ¿Desea proteger la base de datos con encriptación SQLCipher? (S/N): `);
+    let useEncryption = false;
+    let dbPassword = "";
+
+    if (askEncryption.trim().toUpperCase() === 'S' || askEncryption.trim().toUpperCase() === 'SI') {
+        useEncryption = true;
+        let passMatch = false;
+        while(!passMatch) {
+            const p1 = await ask(`      Escriba la clave maestra de SQLCipher: `);
+            const p2 = await ask(`      Confirmar clave maestra: `);
+            
+            if (p1 === p2 && p1.length >= 4) {
+                dbPassword = p1;
+                passMatch = true;
+                console.log(`      [✔] Motor de encriptación asegurado.`);
+            } else {
+                console.log(`      [!] Las claves no coinciden o son muy cortas.\n`);
+            }
+        }
+    } else {
+        console.log(`      [i] La base de datos se creará sin encriptación nativa.`);
+    }
+
+    console.log("\n 🔍 Verificando estado del archivo...");
     const dbFilePath = path.join(__dirname, dbFileName);
     let dbAction = 'create';
 
     if (fs.existsSync(dbFilePath)) {
-        console.log(`   [!] Se detectó la base de datos: ${dbFileName}`);
-        const action = await ask(`   ¿Deseas (C)ombinarla [Conservar datos y agregar los ${superusuarios.length} usuarios asignados] o (S)obreescribirla [Borrar todo]? (C/S): `);
+        console.log(`   [!] Se detectó la base de datos existente: ${dbFileName}`);
+        const action = await ask(`   ¿Deseas (C)ombinarla [Conservar datos y agregar superusuarios] o (S)obreescribirla [Borrar todo]? (C/S): `);
 
         if (action.trim().toUpperCase() === 'S') {
             console.log(`\n   [⚠️] INICIANDO PROTOCOLO DE BORRADO SEGURO...`);
             
             const conf1 = await ask(`   1/3: ¿Estás seguro de borrar la base de datos actual? (SI/NO): `);
-            const conf1Val = conf1.trim().toUpperCase();
-            
-            // Aceptamos "S" o "SI" para que sea más amigable
-            if (conf1Val === 'SI' || conf1Val === 'S') {
+            if (conf1.trim().toUpperCase() === 'SI' || conf1.trim().toUpperCase() === 'S') {
                 
                 const conf2 = await ask(`   2/3: ¡ATENCIÓN! Se perderán TODOS los datos. Escribe 'BORRAR' para continuar: `);
                 if (conf2.trim() === 'BORRAR') {
                     
-                    const conf3 = await ask(`   3/3: Última advertencia. Escribe 'ESTOY SEGURO' para eliminarla definitivamente: `);
+                    const conf3 = await ask(`   3/3: Última advertencia. Escribe 'ESTOY SEGURO' para eliminarla: `);
                     if (conf3.trim() === 'ESTOY SEGURO') {
                         fs.unlinkSync(dbFilePath);
                         console.log(`   [✔] Base de datos anterior eliminada permanentemente.`);
@@ -156,24 +185,23 @@ async function configurar() {
                         console.log(`   [✔] Nueva base de datos en blanco creada: ${dbFileName}`);
                         dbAction = 'overwrite';
                     } else {
-                        console.log(`   [✖] Seguridad activada (Paso 3 fallido). Operación cancelada.`);
+                        console.log(`   [✖] Operación cancelada.`);
                         process.exit(0);
                     }
                 } else {
-                    console.log(`   [✖] Seguridad activada (Paso 2 fallido). Operación cancelada.`);
+                    console.log(`   [✖] Operación cancelada.`);
                     process.exit(0);
                 }
             } else {
-                console.log(`   [✖] Operación cancelada por el usuario.`);
+                console.log(`   [✖] Operación cancelada.`);
                 process.exit(0);
             }
         } else {
-            // Combinar: Mantenemos la original y hacemos una copia de seguridad por si acaso
             const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-            const backupName = `${appSlug}_backup_${timestamp}.db`;
+            const backupName = `backup_${timestamp}_${dbFileName}`;
             fs.copyFileSync(dbFilePath, path.join(__dirname, backupName));
             console.log(`   [✔] Respaldo de seguridad creado: ${backupName}`);
-            console.log(`   [✔] La DB se mantendrá. Se inyectarán los ${superusuarios.length} superusuarios a la información existente.`);
+            console.log(`   [✔] La DB se mantendrá.`);
             dbAction = 'combine';
         }
     } else {
@@ -218,20 +246,21 @@ async function configurar() {
 
         if (fs.existsSync(apiDbFile)) {
             let apiDbContent = fs.readFileSync(apiDbFile, 'utf8');
-            // Solo actualizamos el APP_SLUG para modo local, eliminamos la reescritura de API_URL hacia PythonAnywhere
             apiDbContent = apiDbContent.replace(/const APP_SLUG\s*=\s*['"].*?['"];?/, `const APP_SLUG = "${appSlug}";`);
             fs.writeFileSync(apiDbFile, apiDbContent, 'utf8');
             console.log(`  [✔] api_db.js             -> Variable APP_SLUG actualizada`);
         }
 
-        // --- CREACIÓN DE init_data.json CON BANDERA DE ACCIÓN ---
+        // --- CREACIÓN DE init_data.json CON CONFIGURACIONES DE SEGURIDAD ---
         const initDataPath = path.join(__dirname, 'www', 'init_data.json');
         fs.writeFileSync(initDataPath, JSON.stringify({ 
             superusers: superusuarios, 
             dbName: dbFileName,
-            dbAction: dbAction // 'create', 'overwrite' o 'combine'
+            useEncryption: useEncryption, // Bandera para decirle al motor si debe encriptar
+            dbPassword: dbPassword,       // Clave maestra para Capacitor SQLite
+            dbAction: dbAction
         }, null, 2));
-        console.log(`  [✔] init_data.json        -> Generado con acción '${dbAction}' y ${superusuarios.length} superusuarios.`);
+        console.log(`  [✔] init_data.json        -> Generado con reglas de seguridad y superusuarios.`);
 
     } catch (e) {
         console.log("  [ADVERTENCIA] No se pudieron actualizar todos los archivos locales: " + e.message);

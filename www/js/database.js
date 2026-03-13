@@ -14,13 +14,20 @@ const sqliteService = {
         
         try {
             let superusers = [];
+            // NUEVAS VARIABLES PARA CAPTURAR LA SEGURIDAD DEL ASISTENTE
+            let useEncryption = false;
+            let dbPassword = "";
+
             try {
-                if(logElement) logElement.innerText = "Verificando superusuarios...";
+                if(logElement) logElement.innerText = "Verificando superusuarios y seguridad...";
                 const response = await fetch('init_data.json?t=' + new Date().getTime(), { cache: "no-store" });
                 if (response.ok) {
                     const data = await response.json();
                     if (data.dbName) this.dbName = data.dbName.replace('.db', ''); 
                     if (data.superusers) superusers = data.superusers;
+                    // ATRAPAMOS LA CONFIGURACIÓN DE SQLCIPHER
+                    if (data.useEncryption) useEncryption = data.useEncryption;
+                    if (data.dbPassword) dbPassword = data.dbPassword;
                 }
             } catch (e) {
                 console.log("[SQLite] init_data.json no encontrado o inaccesible.");
@@ -31,9 +38,22 @@ const sqliteService = {
                 const { CapacitorSQLite, SQLiteConnection } = capacitorExports;
                 const sqlite = new SQLiteConnection(CapacitorSQLite);
                 
-                const USE_ENCRYPTION = false; 
-                const ENCRYPTION_MODE = USE_ENCRYPTION ? "encryption" : "no-encryption";
+                // APLICAMOS LA CONFIGURACIÓN DE SEGURIDAD NATIVA
+                const USE_ENCRYPTION = useEncryption; 
+                // Si requiere encriptación y dio un password, usamos modo 'secret' para SQLCipher.
+                const ENCRYPTION_MODE = USE_ENCRYPTION ? (dbPassword ? "secret" : "encryption") : "no-encryption";
 
+                // REGISTRAMOS LA CLAVE MAESTRA ANTES DE CREAR LA CONEXIÓN
+                if (USE_ENCRYPTION && dbPassword) {
+                    console.log("[SQLite] Registrando clave maestra SQLCipher...");
+                    try {
+                        await sqlite.setEncryptionSecret(dbPassword);
+                    } catch(err) {
+                        console.log("[SQLite] Error al asignar secreto (o plugin no lo requiere explícitamente):", err);
+                    }
+                }
+
+                // AQUÍ ES DONDE VERDADERAMENTE NACE LA BASE DE DATOS FÍSICA EN EL CELULAR
                 this.db = await sqlite.createConnection(this.dbName, USE_ENCRYPTION, ENCRYPTION_MODE, 1, false);
                 await this.db.open();
                 
@@ -55,13 +75,14 @@ const sqliteService = {
                 console.log(`[SQLite] NATIVO ACTIVADO. Operando en Android/iOS.`);
             } else {
                 console.log("⚠️ [MODO WEB] SQLite nativo NO existe en navegadores de PC. Simulando entorno...");
-                await this.simularBDWeb(superusers);
+                await this.simularBDWeb(superusers, useEncryption);
             }
             
             return true;
         } catch (e) {
             console.error("[SQLite] Error Crítico al inicializar:", e);
-            if(logElement) logElement.innerText = "Error: " + e.message;
+            // Mensaje de error personalizado por si la clave de SQLCipher es incorrecta
+            if(logElement) logElement.innerText = "Error de Encriptación: Es posible que la clave sea incorrecta o la DB ya exista con otra clave.";
             return false;
         }
     },
@@ -145,7 +166,7 @@ const sqliteService = {
         }
     },
 
-    simularBDWeb: async function(superusersFromJSON) {
+    simularBDWeb: async function(superusersFromJSON, useEncryption) {
         let users = JSON.parse(localStorage.getItem("mock_db_usuarios") || "[]");
         if (users.length === 0) {
             if (superusersFromJSON && superusersFromJSON.length > 0) {

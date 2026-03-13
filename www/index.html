@@ -6,101 +6,13 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#0d6efd">
     
-    <!-- CSP CRÍTICO: Permite conexión local y al Gateway de PythonAnywhere -->
+    <!-- CSP CRÍTICO -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self' capacitor://localhost http://localhost data: gap: https://kenth1977.pythonanywhere.com http://127.0.0.1:5000; style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; connect-src 'self' https://kenth1977.pythonanywhere.com capacitor://localhost http://localhost http://127.0.0.1:5000; font-src 'self' https://cdn.jsdelivr.net data:;">
     
     <title>Motor Universal App</title>
     
-    <!-- FRAMEWORK PRINCIPAL -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    
-    <style>
-        /* Estilos base para simular comportamiento nativo */
-        body { 
-            background-color: #f8f9fa; 
-            -webkit-tap-highlight-color: transparent; 
-            user-select: none; 
-            overflow-x: hidden;
-        }
-        
-        /* Padding seguro del contenedor principal para respetar las barras fijas */
-        .pt-safe { 
-            /* 70px fijos para despejar la barra azul superior + el safe area del notch si lo hay */
-            padding-top: calc(70px + env(safe-area-inset-top, 0px)); 
-            /* 80px fijos para que el contenido no se oculte detrás del menú inferior */
-            padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px));
-            min-height: 100vh;
-        }
-
-        /* Barra superior azul */
-        .top-navbar {
-            position: fixed;
-            top: 0;
-            width: 100%;
-            z-index: 1030;
-            padding-top: env(safe-area-inset-top, 0px);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            min-height: 60px;
-        }
-
-        /* Barra de navegación inferior nativa (Limpiada de márgenes forzados) */
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            width: 100%;
-            background: #ffffff;
-            border-top: 1px solid #e9ecef;
-            z-index: 1030;
-            /* Padding base delgado. El SO agregará espacio solo si el teléfono lo necesita */
-            padding-top: 0.5rem;
-            padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
-        }
-        
-        .nav-item {
-            cursor: pointer;
-            padding: 0.5rem 0;
-            flex: 1;
-            transition: color 0.15s ease;
-        }
-        
-        .nav-item i {
-            display: block;
-            margin-bottom: 2px;
-        }
-        
-        .nav-item span {
-            font-size: 0.75rem;
-            display: block;
-            font-weight: 500;
-        }
-
-        .nav-item.text-secondary:hover { color: #495057 !important; }
-        .nav-item.active {
-            color: #0d6efd !important;
-        }
-
-        /* Animación de carga de fragmentos */
-        .fade-in {
-            animation: fadeIn 0.25s ease-out forwards;
-        }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translate3d(0, 10px, 0); }
-            to { opacity: 1; transform: translate3d(0, 0, 0); }
-        }
-
-        /* Tarjetas de menú */
-        .app-card {
-            border: none;
-            border-radius: 1rem;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.04);
-            transition: transform 0.1s;
-        }
-        .app-card:active {
-            transform: scale(0.98);
-        }
-    </style>
+    <!-- FRAMEWORK PRINCIPAL Y ESTILOS SEPARADOS -->
+    <link href="css/main.css" rel="stylesheet">
 </head>
 <body>
 
@@ -108,16 +20,15 @@
          CASCARÓN DE LA APP (SHELL)
     =========================================== -->
 
-    <!-- BARRA SUPERIOR (Se oculta en Login/Registro) -->
+    <!-- BARRA SUPERIOR -->
     <nav class="navbar navbar-dark bg-primary top-navbar d-none" id="app-header">
         <div class="container-fluid d-flex justify-content-between align-items-center">
             <span class="navbar-brand mb-0 h1 fw-bold" id="view-title">Inicio</span>
         </div>
     </nav>
 
-    <!-- CONTENEDOR DINÁMICO: Aquí se cargan los templates de forma fluida -->
+    <!-- CONTENEDOR DINÁMICO -->
     <div id="app-root" class="container-fluid pt-safe fade-in">
-        <!-- Spinner de carga inicial (Se muestra de inmediato sin bloquear) -->
         <div class="d-flex flex-column justify-content-center align-items-center h-100" style="min-height: 80vh;">
             <div class="spinner-border text-primary" role="status"></div>
             <p class="mt-3 text-muted fw-bold small" id="loading-text">Conectando Motor SQLite...</p>
@@ -189,7 +100,6 @@
                                     <input type="password" id="login-pass" class="form-control border-start-0 ps-0" placeholder="••••••••" required>
                                 </div>
                             </div>
-                            <!-- Error UI -->
                             <div id="login-error" class="alert alert-danger d-none py-2 small fw-bold" role="alert"></div>
 
                             <button type="submit" id="btn-login-submit" class="btn btn-primary w-100 py-2 fw-bold rounded-pill shadow-sm mb-3">
@@ -408,370 +318,13 @@
     </template>
 
     <!-- ==========================================
-         SCRIPTS Y LÓGICA CORE
+         SCRIPTS SEPARADOS
     =========================================== -->
+    <!-- Dependencias de UI -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Lógica Principal Separada -->
+    <script src="js/index.js"></script>
 
-    <script>
-        // ---------------------------------------------------------
-        // 1. MOTOR AVANZADO SQLITE (Conectado a toda la app)
-        // ---------------------------------------------------------
-        const sqliteService = {
-            db: null,
-            dbName: "motor_db",
-            isWeb: !window.Capacitor || !window.Capacitor.isNativePlatform(),
-            
-            init: async function() {
-                const logElement = document.getElementById('loading-text');
-                if(logElement) logElement.innerText = "Iniciando Motor de Base de Datos...";
-                console.log("[SQLite] Iniciando Motor de Base de Datos...");
-                
-                try {
-                    let superusers = [];
-                    try {
-                        if(logElement) logElement.innerText = "Verificando superusuarios...";
-                        const response = await fetch('init_data.json?t=' + new Date().getTime(), { cache: "no-store" });
-                        if (response.ok) {
-                            const data = await response.json();
-                            if (data.dbName) this.dbName = data.dbName.replace('.db', ''); 
-                            if (data.superusers) superusers = data.superusers;
-                        }
-                    } catch (e) {
-                        console.log("[SQLite] init_data.json no encontrado o inaccesible (CORS).");
-                    }
-
-                    if (!this.isWeb && window.capacitorExports) {
-                        if(logElement) logElement.innerText = "Optimizando Motor SQLite...";
-                        const { CapacitorSQLite, SQLiteConnection } = capacitorExports;
-                        const sqlite = new SQLiteConnection(CapacitorSQLite);
-                        
-                        const USE_ENCRYPTION = false; 
-                        const ENCRYPTION_MODE = USE_ENCRYPTION ? "encryption" : "no-encryption";
-
-                        this.db = await sqlite.createConnection(this.dbName, USE_ENCRYPTION, ENCRYPTION_MODE, 1, false);
-                        await this.db.open();
-                        
-                        // Optimizaciones de rendimiento (Pragmas)
-                        await this.db.execute("PRAGMA journal_mode = WAL;");
-                        await this.db.execute("PRAGMA synchronous = NORMAL;");
-                        await this.db.execute("PRAGMA cache_size = -10000;");
-                        await this.db.execute("PRAGMA temp_store = MEMORY;");
-
-                        console.log(`[SQLite] Optimizaciones Empresariales Aplicadas a: ${this.dbName}`);
-                        
-                        if(logElement) logElement.innerText = "Verificando estructura...";
-                        await this.crearTablas();
-                        await this.cargarSuperusuariosIniciales(superusers);
-                        console.log(`[SQLite] Base de datos NATIVA lista: ${this.dbName}`);
-                    } else {
-                        console.log(`[SQLite] Ejecutando en Web. Simulando SQLite: ${this.dbName}`);
-                        await this.simularBDWeb(superusers);
-                    }
-                    
-                    return true;
-                } catch (e) {
-                    console.error("[SQLite] Error Crítico al inicializar:", e);
-                    if(logElement) logElement.innerText = "Error: " + e.message;
-                    return false;
-                }
-            },
-
-            crearTablas: async function() {
-                const query = `
-                    CREATE TABLE IF NOT EXISTS usuarios (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        email TEXT UNIQUE NOT NULL,
-                        password TEXT NOT NULL,
-                        pin TEXT,
-                        rol TEXT DEFAULT 'admin',
-                        estado TEXT DEFAULT 'activo'
-                    );
-                    CREATE INDEX IF NOT EXISTS idx_usuarios_auth ON usuarios(email, password);
-                `;
-                await this.db.execute(query);
-            },
-
-            cargarSuperusuariosIniciales: async function(superusersFromJSON) {
-                const res = await this.db.query("SELECT COUNT(*) AS total FROM usuarios");
-                if (res.values[0].total === 0 && superusersFromJSON && superusersFromJSON.length > 0) {
-                    for (const user of superusersFromJSON) {
-                        await this.db.run(
-                            "INSERT INTO usuarios (email, password, pin, rol) VALUES (?, ?, ?, ?)",
-                            [user.email, user.password, user.pin, 'superusuario']
-                        );
-                    }
-                    console.log(`[SQLite] Ingresados ${superusersFromJSON.length} superusuarios a la DB nativa.`);
-                }
-            },
-
-            simularBDWeb: async function(superusersFromJSON) {
-                if (superusersFromJSON && superusersFromJSON.length > 0) {
-                    const adaptado = superusersFromJSON.map(u => ({...u, rol: 'superusuario', estado: 'activo'}));
-                    localStorage.setItem("mock_db_usuarios", JSON.stringify(adaptado));
-                    console.log("[SQLite] DB Web (localStorage) actualizada con usuarios frescos.");
-                } 
-                else if (!localStorage.getItem("mock_db_usuarios")) {
-                    localStorage.setItem("mock_db_usuarios", JSON.stringify([{email: "admin@app.com", password: "admin", pin: "00000000", rol: "superusuario", estado: "activo"}]));
-                }
-            },
-
-            login: async function(email, password) {
-                if (!this.isWeb && this.db) {
-                    const res = await this.db.query("SELECT * FROM usuarios WHERE email = ? AND password = ?", [email, password]);
-                    return (res.values && res.values.length > 0) ? res.values[0] : null;
-                } else {
-                    const users = JSON.parse(localStorage.getItem("mock_db_usuarios") || "[]");
-                    return users.find(u => u.email === email && u.password === password) || null;
-                }
-            },
-
-            getUsuarios: async function() {
-                if (!this.isWeb && this.db) {
-                    const res = await this.db.query("SELECT * FROM usuarios");
-                    return res.values || [];
-                } else {
-                    return JSON.parse(localStorage.getItem("mock_db_usuarios") || "[]");
-                }
-            },
-
-            testConnection: async function() {
-                const inicio = performance.now();
-                const users = await this.getUsuarios();
-                const fin = performance.now();
-                mostrarNotificacion(`Conexión OK. DB: ${users.length} usuarios. Tiempo: ${(fin - inicio).toFixed(2)} ms`, "success");
-            },
-
-            limpiarBD: function() {
-                localStorage.removeItem("mock_db_usuarios");
-                localStorage.removeItem("usuario_activo");
-                mostrarNotificacion("Base de datos local formateada.", "danger");
-                setTimeout(() => window.location.reload(), 1000);
-            }
-        };
-
-        // ---------------------------------------------------------
-        // 2. SISTEMA DE AUTENTICACIÓN
-        // ---------------------------------------------------------
-        async function iniciarSesionApp() {
-            const btnSubmit = document.getElementById('btn-login-submit');
-            const emailInput = document.getElementById('login-email').value;
-            const passInput = document.getElementById('login-pass').value;
-            const errorDiv = document.getElementById('login-error');
-
-            if(btnSubmit) {
-                btnSubmit.disabled = true;
-                btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>INGRESANDO...';
-            }
-            
-            errorDiv.classList.add('d-none');
-
-            try {
-                const user = await sqliteService.login(emailInput, passInput);
-
-                if (user) {
-                    mostrarNotificacion("¡Acceso concedido!", "success");
-                    localStorage.setItem('usuario_activo', JSON.stringify(user));
-                    
-                    requestAnimationFrame(() => {
-                        cargarVista('inicio', 'Inicio');
-                    });
-                } else {
-                    errorDiv.textContent = "Credenciales incorrectas o usuario inexistente en DB.";
-                    errorDiv.classList.remove('d-none');
-                    if(btnSubmit) {
-                        btnSubmit.disabled = false;
-                        btnSubmit.innerHTML = 'INGRESAR';
-                    }
-                }
-            } catch(e) {
-                errorDiv.textContent = "Error interno de base de datos.";
-                errorDiv.classList.remove('d-none');
-                console.error(e);
-                if(btnSubmit) {
-                    btnSubmit.disabled = false;
-                    btnSubmit.innerHTML = 'INGRESAR';
-                }
-            }
-        }
-
-        function cerrarSesion() {
-            localStorage.removeItem('usuario_activo');
-            mostrarNotificacion('Sesión cerrada correctamente', 'success');
-            cargarVista('login', 'Login');
-        }
-
-        // ---------------------------------------------------------
-        // 3. ENRUTAMIENTO Y POBLACIÓN DE VISTAS DESDE SQLITE
-        // ---------------------------------------------------------
-        const root = document.getElementById('app-root');
-        const header = document.getElementById('app-header');
-        const bottomNav = document.getElementById('app-bottom-nav');
-        const titleEl = document.getElementById('view-title');
-
-        function cargarVista(vistaId, titulo) {
-            if(root.dataset.vistaActual === vistaId) return;
-            root.dataset.vistaActual = vistaId;
-            
-            root.style.display = 'none';
-            root.classList.remove('fade-in');
-            
-            const template = document.getElementById('tpl-' + vistaId);
-            
-            if (template) {
-                requestAnimationFrame(() => {
-                    root.innerHTML = '';
-                    root.appendChild(template.content.cloneNode(true));
-                    
-                    root.style.display = 'block';
-                    root.classList.add('fade-in');
-                    
-                    if (titleEl && titulo) titleEl.innerText = titulo;
-
-                    const esAuth = vistaId === 'login' || vistaId === 'registro';
-                    
-                    if (esAuth) {
-                        header.classList.add('d-none');
-                        bottomNav.classList.add('d-none');
-                        bottomNav.classList.remove('d-flex');
-                    } else {
-                        header.classList.remove('d-none');
-                        bottomNav.classList.remove('d-none');
-                        bottomNav.classList.add('d-flex');
-                        
-                        document.querySelectorAll('.bottom-nav .nav-item').forEach(btn => {
-                            btn.classList.remove('active', 'text-primary');
-                            btn.classList.add('text-secondary');
-                        });
-                        
-                        const activeBtn = document.getElementById('nav-' + vistaId); 
-                        if(activeBtn) {
-                            activeBtn.classList.add('active', 'text-primary');
-                            activeBtn.classList.remove('text-secondary');
-                        }
-                    }
-
-                    ejecutarLogicaVista(vistaId);
-                });
-            }
-        }
-
-        async function ejecutarLogicaVista(vistaId) {
-            const usuarioActivo = JSON.parse(localStorage.getItem('usuario_activo') || 'null');
-
-            if (vistaId === 'inicio' && usuarioActivo) {
-                const nombre = usuarioActivo.email.split('@')[0];
-                const el = document.getElementById('inicio-nombre');
-                if (el) el.innerText = `Hola, ${nombre.charAt(0).toUpperCase() + nombre.slice(1)}`;
-            }
-            
-            if (vistaId === 'perfil' && usuarioActivo) {
-                const elEmail = document.getElementById('perfil-email');
-                const elRol = document.getElementById('perfil-rol');
-                const elNombre = document.getElementById('perfil-nombre');
-                
-                const nombre = usuarioActivo.email.split('@')[0];
-                if (elNombre) elNombre.innerText = nombre.charAt(0).toUpperCase() + nombre.slice(1);
-                if (elEmail) elEmail.innerText = usuarioActivo.email;
-                if (elRol) elRol.innerText = usuarioActivo.rol ? usuarioActivo.rol.toUpperCase() : 'USUARIO';
-            }
-
-            if (vistaId === 'admin_usuarios') {
-                const tbody = document.getElementById('lista-usuarios-admin');
-                if (tbody) {
-                    tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-4"><div class="spinner-border spinner-border-sm me-2"></div>Consultando...</td></tr>';
-                    
-                    try {
-                        const usuarios = await sqliteService.getUsuarios();
-                        tbody.innerHTML = '';
-                        
-                        if(usuarios.length === 0) {
-                            tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-4">No hay usuarios registrados</td></tr>';
-                            return;
-                        }
-
-                        let htmlBuffer = '';
-                        
-                        usuarios.forEach(u => {
-                            const nombre = u.email.split('@')[0];
-                            const iniciales = nombre.substring(0,2).toUpperCase();
-                            const estadoClase = u.estado === 'activo' ? 'success' : 'secondary';
-                            const estadoTexto = u.estado ? u.estado.charAt(0).toUpperCase() + u.estado.slice(1) : 'Activo';
-                            
-                            htmlBuffer += `
-                                <tr>
-                                    <td class="ps-3">
-                                        <div class="d-flex align-items-center">
-                                            <div class="bg-primary text-white rounded-circle d-flex justify-content-center align-items-center me-2 shadow-sm" style="width:36px; height:36px; font-size:12px; font-weight:bold;">${iniciales}</div>
-                                            <div>
-                                                <div class="fw-bold text-dark" style="font-size: 0.9rem;">${nombre.charAt(0).toUpperCase() + nombre.slice(1)}</div>
-                                                <div class="text-muted" style="font-size: 0.75rem;">${u.email}</div>
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td class="text-center"><span class="badge bg-${estadoClase} bg-opacity-10 text-${estadoClase} border border-${estadoClase} border-opacity-25 rounded-pill">${estadoTexto}</span></td>
-                                    <td class="text-end pe-3">
-                                        <button class="btn btn-sm btn-light text-primary shadow-sm"><i class="bi bi-pencil"></i></button>
-                                    </td>
-                                </tr>
-                            `;
-                        });
-                        
-                        requestAnimationFrame(() => {
-                            tbody.innerHTML = htmlBuffer;
-                        });
-                        
-                    } catch(e) {
-                        tbody.innerHTML = '<tr><td colspan="3" class="text-center text-danger py-4">Error al consultar DB local</td></tr>';
-                    }
-                }
-            }
-        }
-
-        // Sistema nativo de Notificaciones Toast de Bootstrap
-        let appToast;
-        function mostrarNotificacion(mensaje, tipo = 'primary') {
-            const toastEl = document.getElementById('appToast');
-            const toastHeader = document.getElementById('toast-header');
-            const toastBody = document.getElementById('toast-message');
-            
-            toastHeader.className = `toast-header text-white bg-${tipo}`;
-            toastBody.innerText = mensaje;
-            
-            if (!appToast) appToast = new bootstrap.Toast(toastEl, { delay: 2500 });
-            appToast.show();
-        }
-
-        // ---------------------------------------------------------
-        // 4. INICIALIZACIÓN GLOBAL OPTIMIZADA Y DETECTOR ANDROID
-        // ---------------------------------------------------------
-        
-        async function bootApp() {
-            if (window.Capacitor && window.Capacitor.getPlatform() === 'android') {                
-                try {
-                    const { StatusBar, Style } = capacitorExports;
-                    StatusBar.setOverlaysWebView({ overlay: false }).catch(e => console.log(e));
-                    StatusBar.setBackgroundColor({ color: '#0d6efd' }).catch(e => console.log(e));
-                    StatusBar.setStyle({ style: Style.Dark }).catch(e => console.log(e));
-                } catch (e) {
-                    console.log("[App] No se pudo configurar StatusBar", e);
-                }
-            }
-
-            const dbReady = await sqliteService.init();
-            const usuarioActivo = JSON.parse(localStorage.getItem('usuario_activo'));
-            
-            requestAnimationFrame(() => {
-                if (usuarioActivo && dbReady) {
-                    cargarVista('inicio', 'Inicio');
-                } else {
-                    cargarVista('login', 'Login');
-                }
-            });
-        }
-
-        window.addEventListener('DOMContentLoaded', () => {
-            setTimeout(bootApp, 10);
-        });
-    </script>
 </body>
 </html>

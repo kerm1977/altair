@@ -1,6 +1,6 @@
 {
-  "appId": "com.titan.app",
-  "appName": "Titan",
+  "appId": "com.osprey.app",
+  "appName": "Osprey",
   "webDir": "www",
   "bundledWebRuntime": false,
   "plugins": {

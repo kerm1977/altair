@@ -1,3 +1,3 @@
 @echo off
-set "CUSTOM_NAME=Titan"
-set "ICON_PATH="
+set "CUSTOM_NAME=Osprey"
+set "ICON_PATH=C:\Users\MINIOS\Desktop\iconos.PNG"

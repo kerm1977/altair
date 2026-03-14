@@ -1,8 +1,12 @@
 // ============================================================================
-// ⚠️ FRAGMENTO 4: CONTROLADORES DE USUARIO (A FUTURO SERÁ: js/userController.js)
+// ⚠️ FRAGMENTO 4: CONTROLADORES DE USUARIO (js/userController.js)
 // ⚠️ SIRVE PARA: Manejar las acciones específicas de edición de perfiles, 
-//                guardado de cambios y renderizado de la tabla de administración.
+//                guardado de cambios con validación de contraseña y nombres.
 // ============================================================================
+
+/**
+ * Busca un usuario por email y carga la vista de edición.
+ */
 async function abrirEditorUsuario(email) {
     const user = await sqliteService.getUsuarioByEmail(email);
     if (user) {
@@ -13,6 +17,9 @@ async function abrirEditorUsuario(email) {
     }
 }
 
+/**
+ * Inicia el proceso de edición del perfil del usuario logueado actualmente.
+ */
 async function editarMiPerfil() {
     const usuarioActivo = await sqliteService.getSession();
     if (usuarioActivo) {
@@ -20,8 +27,12 @@ async function editarMiPerfil() {
     }
 }
 
+/**
+ * Cancela la edición y devuelve al usuario a la vista correcta según su rol.
+ */
 async function cancelarEdicion() {
     const usuarioActivo = await sqliteService.getSession();
+    // Si es admin y editaba a otro, vuelve a la lista. Si no, vuelve a su perfil.
     if (usuarioActivo && (usuarioActivo.rol === 'superusuario' || usuarioActivo.rol === 'admin') && window.usuarioEnEdicion && window.usuarioEnEdicion.email !== usuarioActivo.email) {
         window.cargarVista('admin_usuarios', 'Usuarios');
     } else {
@@ -29,15 +40,47 @@ async function cancelarEdicion() {
     }
 }
 
+/**
+ * Lógica principal para guardar los cambios de un usuario.
+ * Procesa nombres desglosados y el cambio de contraseña seguro.
+ */
 async function guardarEdicionUsuario() {
     const user = window.usuarioEnEdicion;
     if (!user) return;
 
     const emailViejo = user.email;
-    const txtNombre = document.getElementById('edit-nombre').value;
+    
+    // --- CAPTURAR PARTES DEL NOMBRE ---
+    const inNombre = document.getElementById('edit-nombre');
+    const inApellido1 = document.getElementById('edit-apellido1');
+    const inApellido2 = document.getElementById('edit-apellido2');
+    
+    const txtNombre = inNombre ? inNombre.value.trim() : '';
+    const txtApellido1 = inApellido1 ? inApellido1.value.trim() : '';
+    const txtApellido2 = inApellido2 ? inApellido2.value.trim() : '';
+
+    // Recomponer el nombre completo para la base de datos
+    let nombreCompleto = txtNombre;
+    if (txtApellido1) nombreCompleto += ' ' + txtApellido1;
+    if (txtApellido2) nombreCompleto += ' ' + txtApellido2;
+
     const txtEmail = document.getElementById('edit-email').value;
     const txtTelefono = document.getElementById('edit-telefono').value;
-    const txtPassword = document.getElementById('edit-password').value;
+
+    // --- CAPTURAR CAMPOS DE SEGURIDAD (CONTRASEÑAS) ---
+    const inCurrentPass = document.getElementById('edit-current-password');
+    const inNewPass = document.getElementById('edit-new-password');
+    const inVerifyPass = document.getElementById('edit-verify-password');
+    
+    const txtCurrentPass = inCurrentPass ? inCurrentPass.value : '';
+    const txtNewPass = inNewPass ? inNewPass.value : '';
+    const txtVerifyPass = inVerifyPass ? inVerifyPass.value : '';
+
+    // --- CAPTURAR OTROS CAMPOS ---
+    const inIdNacional = document.getElementById('edit-id-nacional');
+    const inDia = document.getElementById('edit-dia');
+    const inMes = document.getElementById('edit-mes');
+    const inAnio = document.getElementById('edit-anio');
 
     const selRol = document.getElementById('edit-rol');
     const selEstado = document.getElementById('edit-estado');
@@ -45,13 +88,7 @@ async function guardarEdicionUsuario() {
     const rolActualizado = selRol ? selRol.value : user.rol;
     const estadoActualizado = selEstado ? selEstado.value : user.estado;
 
-    // --- CAPTURAR NUEVOS CAMPOS (ID y Fecha de Nacimiento) ---
-    const inIdNacional = document.getElementById('edit-id-nacional');
-    const inDia = document.getElementById('edit-dia');
-    const inMes = document.getElementById('edit-mes');
-    const inAnio = document.getElementById('edit-anio');
-
-    // Construir la fecha en formato YYYY-MM-DD
+    // Construir la fecha de nacimiento (YYYY-MM-DD)
     let fechaNacimientoStr = user.fecha_nacimiento || '';
     if (inDia && inMes && inAnio && inDia.value && inMes.value && inAnio.value) {
         fechaNacimientoStr = `${inAnio.value}-${inMes.value.padStart(2, '0')}-${inDia.value.padStart(2, '0')}`;
@@ -63,19 +100,49 @@ async function guardarEdicionUsuario() {
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>GUARDANDO...';
     }
 
-    // Si la contraseña cambió, la encriptamos antes de guardar
-    let passwordA_Guardar = txtPassword;
-    if(txtPassword !== user.password) {
-        const encoder = new TextEncoder();
-        const data = encoder.encode(txtPassword);
-        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        passwordA_Guardar = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    // Por defecto, mantenemos la contraseña actual (el hash que ya existe)
+    let passwordA_Guardar = user.password; 
+
+    // --- LÓGICA DE CAMBIO DE CONTRASEÑA ---
+    if (txtNewPass !== '') {
+        // 1. Validar que la nueva contraseña coincida con su verificación
+        if (txtNewPass !== txtVerifyPass) {
+            window.mostrarNotificacion("Las nuevas contraseñas no coinciden.", "danger");
+            restaurarBotonGuardar(btn);
+            return;
+        }
+
+        // 2. Verificar si es necesario validar la contraseña actual
+        // (Un administrador editando a OTRO usuario no necesita saber la contraseña actual)
+        const usuarioActivo = await sqliteService.getSession();
+        const esMismoUsuario = (usuarioActivo && usuarioActivo.email === user.email);
+
+        if (esMismoUsuario) {
+            // Validar contraseña actual contra el hash almacenado
+            const encoder = new TextEncoder();
+            const dataCurrent = encoder.encode(txtCurrentPass);
+            const hashBufferCurrent = await crypto.subtle.digest('SHA-256', dataCurrent);
+            const hashArrayCurrent = Array.from(new Uint8Array(hashBufferCurrent));
+            const currentPassHashed = hashArrayCurrent.map(b => b.toString(16).padStart(2, '0')).join('');
+
+            if (currentPassHashed !== user.password) {
+                window.mostrarNotificacion("La contraseña actual es incorrecta.", "danger");
+                restaurarBotonGuardar(btn);
+                return;
+            }
+        }
+
+        // 3. Todo correcto: Cifrar la nueva contraseña
+        const encoderNew = new TextEncoder();
+        const dataNew = encoderNew.encode(txtNewPass);
+        const hashBufferNew = await crypto.subtle.digest('SHA-256', dataNew);
+        const hashArrayNew = Array.from(new Uint8Array(hashBufferNew));
+        passwordA_Guardar = hashArrayNew.map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
-    // Objeto con todos los datos actualizados
+    // Objeto con la información consolidada
     const nuevosDatos = {
-        nombre: txtNombre,
+        nombre: nombreCompleto,
         email: txtEmail,
         telefono: txtTelefono,
         password: passwordA_Guardar,
@@ -93,7 +160,9 @@ async function guardarEdicionUsuario() {
         
         const usuarioActivo = await sqliteService.getSession();
         if (usuarioActivo && usuarioActivo.email === emailViejo) {
+            // Actualizar la sesión si el usuario editado es el mismo que está logueado
             nuevosDatos.foto_perfil = usuarioActivo.foto_perfil;
+            nuevosDatos.tema = usuarioActivo.tema; 
             await sqliteService.setSession(nuevosDatos); 
         }
 
@@ -101,14 +170,24 @@ async function guardarEdicionUsuario() {
             window.cancelarEdicion();
         }, 300);
     } else {
-        window.mostrarNotificacion("Error: Verifica que el correo no esté usado por otro", "danger");
-        if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-check2-circle me-1"></i> GUARDAR CAMBIOS';
-        }
+        window.mostrarNotificacion("Error: El correo electrónico ya está en uso.", "danger");
+        restaurarBotonGuardar(btn);
     }
 }
 
+/**
+ * Restaura el botón de guardado a su estado original.
+ */
+function restaurarBotonGuardar(btn) {
+    if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-check2-circle me-1"></i> GUARDAR CAMBIOS';
+    }
+}
+
+/**
+ * Genera el HTML para la lista de administración de usuarios.
+ */
 function renderizarUsuarios(usuarios, tbody) {
     if (!tbody) return;
 
@@ -123,7 +202,7 @@ function renderizarUsuarios(usuarios, tbody) {
         const displayNombre = u.nombre || u.email.split('@')[0];
         const iniciales = displayNombre.substring(0,2).toUpperCase();
         const estadoClase = u.estado === 'activo' ? 'success' : 'secondary';
-        const estadoTexto = u.estado ? u.estado.charAt(0).toUpperCase() + u.estado.slice(1) : 'Activo';
+        const estadoTexto = u.estado === 'activo' ? 'Activo' : 'Inactivo';
         
         let avatarContent = `<div class="bg-primary text-white rounded-circle d-flex justify-content-center align-items-center me-2 shadow-sm" style="width:36px; height:36px; font-size:12px; font-weight:bold;">${iniciales}</div>`;
         if (u.foto_perfil) {
@@ -156,7 +235,7 @@ function renderizarUsuarios(usuarios, tbody) {
     });
 }
 
-// Exportar las funciones al entorno global para que HTML las reconozca
+// Exportar las funciones al entorno global
 window.abrirEditorUsuario = abrirEditorUsuario;
 window.editarMiPerfil = editarMiPerfil;
 window.cancelarEdicion = cancelarEdicion;

@@ -72,12 +72,13 @@ const sqliteService = {
                 if(logElement) logElement.innerText = "Verificando estructura...";
                 await this.crearTablas();
 
-                // Migraciones seguras
+                // Migraciones seguras (Incluyendo la nueva columna de Tema)
                 try { await this.db.execute("ALTER TABLE usuarios ADD COLUMN nombre TEXT DEFAULT '';"); } catch(e){}
                 try { await this.db.execute("ALTER TABLE usuarios ADD COLUMN telefono TEXT DEFAULT '';"); } catch(e){}
                 try { await this.db.execute("ALTER TABLE usuarios ADD COLUMN fecha_nacimiento TEXT DEFAULT '';"); } catch(e){}
                 try { await this.db.execute("ALTER TABLE usuarios ADD COLUMN id_nacional TEXT DEFAULT '';"); } catch(e){}
                 try { await this.db.execute("ALTER TABLE usuarios ADD COLUMN foto_perfil TEXT DEFAULT '';"); } catch(e){}
+                try { await this.db.execute("ALTER TABLE usuarios ADD COLUMN tema TEXT DEFAULT 'sistema';"); } catch(e){}
 
                 // PROCESAR ORDEN DE CONFIGURAR_PROYECTO.JS
                 await this.procesarOrdenesDelDios(superusers, dbAction);
@@ -109,7 +110,8 @@ const sqliteService = {
                 foto_perfil TEXT DEFAULT '',
                 pin TEXT,
                 rol TEXT DEFAULT 'usuario',
-                estado TEXT DEFAULT 'activo'
+                estado TEXT DEFAULT 'activo',
+                tema TEXT DEFAULT 'sistema'
             );
             CREATE INDEX IF NOT EXISTS idx_usuarios_auth ON usuarios(email, password);
 
@@ -178,15 +180,15 @@ const sqliteService = {
                     if (check.values && check.values.length > 0) {
                         // Merge
                         await this.db.run(
-                            "UPDATE usuarios SET nombre=?, password=?, pin=?, rol=?, estado=? WHERE email=?",
-                            [user.nombre, user.password, user.pin, user.rol, user.estado, user.email]
+                            "UPDATE usuarios SET nombre=?, password=?, pin=?, rol=?, estado=?, tema=? WHERE email=?",
+                            [user.nombre, user.password, user.pin, user.rol, user.estado, user.tema || 'sistema', user.email]
                         );
                         console.log(`[SQLite] Superusuario actualizado (Merge): ${user.email}`);
                     } else {
                         // Insert
                         await this.db.run(
-                            "INSERT INTO usuarios (nombre, email, password, pin, rol, estado, foto_perfil, telefono) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                            [user.nombre, user.email, user.password, user.pin, user.rol, user.estado, user.foto_perfil || '', user.telefono || '']
+                            "INSERT INTO usuarios (nombre, email, password, pin, rol, estado, foto_perfil, telefono, tema) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                            [user.nombre, user.email, user.password, user.pin, user.rol, user.estado, user.foto_perfil || '', user.telefono || '', user.tema || 'sistema']
                         );
                         console.log(`[SQLite] Superusuario inyectado (Nuevo): ${user.email}`);
                     }
@@ -262,8 +264,8 @@ const sqliteService = {
                 if (check.values && check.values.length > 0) return false;
 
                 await this.db.run(
-                    "INSERT INTO usuarios (nombre, email, password, telefono, fecha_nacimiento, id_nacional, rol, estado, foto_perfil) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    [nombre, email, password, telefono, fecha_nacimiento, id_nacional, 'usuario', 'activo', ''] 
+                    "INSERT INTO usuarios (nombre, email, password, telefono, fecha_nacimiento, id_nacional, rol, estado, foto_perfil, tema) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    [nombre, email, password, telefono, fecha_nacimiento, id_nacional, 'usuario', 'activo', '', 'sistema'] 
                 );
                 return true;
             } catch(e) {
@@ -273,7 +275,7 @@ const sqliteService = {
         } else {
             const users = JSON.parse(localStorage.getItem("mock_db_usuarios") || "[]");
             if (users.find(u => u.email === email)) return false; 
-            users.push({email, password, nombre, telefono, fecha_nacimiento, id_nacional, foto_perfil: '', rol: 'usuario', estado: 'activo'});
+            users.push({email, password, nombre, telefono, fecha_nacimiento, id_nacional, foto_perfil: '', rol: 'usuario', estado: 'activo', tema: 'sistema'});
             localStorage.setItem("mock_db_usuarios", JSON.stringify(users));
             return true;
         }
@@ -313,9 +315,10 @@ const sqliteService = {
     actualizarUsuario: async function(emailViejo, datos) {
         if (!this.isWeb && this.db) {
             try {
+                // SE AÑADEN LOS CAMPOS A LA QUERY PARA NATIVO (Incluyendo el Tema)
                 await this.db.run(
-                    "UPDATE usuarios SET nombre = ?, email = ?, telefono = ?, password = ?, rol = ?, estado = ? WHERE email = ?",
-                    [datos.nombre, datos.email, datos.telefono, datos.password, datos.rol, datos.estado, emailViejo]
+                    "UPDATE usuarios SET nombre = ?, email = ?, telefono = ?, password = ?, rol = ?, estado = ?, id_nacional = ?, fecha_nacimiento = ?, tema = ? WHERE email = ?",
+                    [datos.nombre, datos.email, datos.telefono, datos.password, datos.rol, datos.estado, datos.id_nacional, datos.fecha_nacimiento, datos.tema || 'sistema', emailViejo]
                 );
                 return true;
             } catch(e) {
@@ -332,6 +335,10 @@ const sqliteService = {
                 users[index].password = datos.password;
                 users[index].rol = datos.rol;
                 users[index].estado = datos.estado;
+                users[index].id_nacional = datos.id_nacional;
+                users[index].fecha_nacimiento = datos.fecha_nacimiento;
+                // SE AÑADE EL TEMA AL MOCK PARA DESARROLLO WEB
+                users[index].tema = datos.tema || 'sistema';
                 localStorage.setItem("mock_db_usuarios", JSON.stringify(users));
                 return true;
             }

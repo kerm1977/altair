@@ -36,6 +36,13 @@ const ImageEditorManager = {
     procesarArchivo: function(e) {
         const file = e.target.files[0];
         if (!file) return;
+        
+        // Validar que sea una imagen
+        if (!file.type.startsWith('image/')) {
+            window.mostrarNotificacion("Por favor, selecciona una imagen válida.", "danger");
+            return;
+        }
+
         const reader = new FileReader();
         reader.onload = (event) => {
             // Cuando la imagen termine de cargar en memoria, abrimos el modal
@@ -72,7 +79,7 @@ const ImageEditorManager = {
                     <div class="d-flex mt-4 gap-3 w-100 px-4" style="max-width:350px;">
                         <!-- Botones de acción -->
                         <button class="btn btn-outline-light flex-fill rounded-pill py-2" onclick="window.ImageEditorManager.cerrarModal()">Cancelar</button>
-                        <button class="btn btn-primary flex-fill rounded-pill fw-bold py-2" onclick="window.ImageEditorManager.guardarImagen()">Guardar Foto</button>
+                        <button class="btn btn-primary flex-fill rounded-pill fw-bold py-2" id="btn-modal-guardar-foto" onclick="window.ImageEditorManager.guardarImagen()">Guardar Foto</button>
                     </div>
                 </div>
             `;
@@ -188,19 +195,23 @@ const ImageEditorManager = {
 
     // Extrae el círculo visible, lo comprime y lo guarda en SQLite
     guardarImagen: async function() {
-        const btn = document.querySelector('#modal-cropper .btn-primary');
+        const btn = document.getElementById('btn-modal-guardar-foto');
         if(btn) {
             btn.disabled = true;
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>...';
         }
 
-        // Crear un canvas secundario INVISIBLE solo para procesar el recorte circular perfecto
+        // Crear un canvas secundario INVISIBLE para procesar el recorte limpio
         const outCanvas = document.createElement('canvas');
         const size = 400; // Resolución final de la foto de perfil (400x400 px)
         outCanvas.width = size;
         outCanvas.height = size;
         const outCtx = outCanvas.getContext('2d');
         
+        // Fondo blanco (necesario para el formato JPEG)
+        outCtx.fillStyle = '#ffffff';
+        outCtx.fillRect(0, 0, size, size);
+
         // Hacer un clip (recorte) circular nativo
         outCtx.beginPath();
         outCtx.arc(size/2, size/2, size/2, 0, Math.PI*2);
@@ -208,55 +219,92 @@ const ImageEditorManager = {
         
         const w = this.canvas.width;
         const h = this.canvas.height;
-        const cx = w/2;
-        const cy = h/2;
-        const radius = 140; // El radio interno de la zona visible que definimos en dibujar()
+        const radius = 140; // El radio interno de la zona visible definido en dibujar()
         
-        // Extraer la zona exacta iluminada del canvas principal al canvas de exportación
-        outCtx.drawImage(
-            this.canvas, 
-            cx - radius, cy - radius, radius*2, radius*2,
-            0, 0, size, size
-        );
+        // 🛠️ MEJORA: Replicamos las transformaciones exactamente en lugar de capturar la pantalla.
+        // Esto evita que las líneas azules de la interfaz se guarden en la foto final.
+        const exportScale = size / (radius * 2);
+
+        outCtx.save();
+        outCtx.translate(size/2, size/2); // Mover al centro del lienzo de salida
+        outCtx.scale(exportScale, exportScale); // Escalar al tamaño final
+
+        // Aplicar los mismos desplazamientos del usuario
+        outCtx.translate(this.offsetX, this.offsetY);
+        outCtx.scale(this.scale, this.scale);
+
+        const iw = this.img.width;
+        const ih = this.img.height;
+        const baseScale = Math.max(w / iw, h / ih);
+        outCtx.scale(baseScale, baseScale);
+
+        outCtx.drawImage(this.img, -iw/2, -ih/2, iw, ih);
+        outCtx.restore();
         
-        // Exportar a JPEG comprimido (80% calidad) para no sobrecargar la base de datos
+        // Exportar a JPEG comprimido (80% calidad) para optimizar la base de datos
         const base64Img = outCanvas.toDataURL('image/jpeg', 0.80); 
         
-        const usuarioActivo = await sqliteService.getSession();
-        if (usuarioActivo) {
-            // Guardado en Base de Datos (Distinción entre Nativo y Web Simulada)
-            if (!sqliteService.isWeb && sqliteService.db) {
-                await sqliteService.db.run(
-                    "UPDATE usuarios SET foto_perfil = ? WHERE email = ?",
-                    [base64Img, usuarioActivo.email]
-                );
-            } else {
-                let users = JSON.parse(localStorage.getItem("mock_db_usuarios") || "[]");
-                let index = users.findIndex(u => u.email === usuarioActivo.email);
-                if (index !== -1) {
-                    users[index].foto_perfil = base64Img;
-                    localStorage.setItem("mock_db_usuarios", JSON.stringify(users));
+        try {
+            const usuarioActivo = await sqliteService.getSession();
+            if (usuarioActivo) {
+                // Guardado en Base de Datos
+                if (!sqliteService.isWeb && sqliteService.db) {
+                    await sqliteService.db.run(
+                        "UPDATE usuarios SET foto_perfil = ? WHERE email = ?",
+                        [base64Img, usuarioActivo.email]
+                    );
+                } else {
+                    let users = JSON.parse(localStorage.getItem("mock_db_usuarios") || "[]");
+                    let index = users.findIndex(u => u.email === usuarioActivo.email);
+                    if (index !== -1) {
+                        users[index].foto_perfil = base64Img;
+                        localStorage.setItem("mock_db_usuarios", JSON.stringify(users));
+                    }
+                }
+                
+                // Actualizar la sesión actual con la nueva foto
+                usuarioActivo.foto_perfil = base64Img;
+                await sqliteService.setSession(usuarioActivo);
+                
+                window.mostrarNotificacion("Foto de perfil actualizada", "success");
+                this.cerrarModal();
+                
+                if(btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = 'Guardar Foto';
+                }
+                
+                // ====================================================================
+                // 🛠️ FIX MAGIA VISUAL: Reflejo instantáneo en el DOM
+                // ====================================================================
+                const avataresVisibles = document.querySelectorAll('.img-avatar-dinamico, #nav-profile-img, #perfil-avatar img');
+                avataresVisibles.forEach(imgEl => {
+                    imgEl.src = base64Img;
+                });
+                
+                // Reconstruir el contenedor por si era un círculo con iniciales
+                const contenedorAvatar = document.getElementById('perfil-avatar');
+                if (contenedorAvatar) {
+                    contenedorAvatar.innerHTML = `<img src="${base64Img}" class="img-avatar-dinamico shadow-sm" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`;
+                }
+
+                // Recargar la vista actual silenciosamente
+                const root = document.getElementById('app-root');
+                if (root && root.dataset.vistaActual) {
+                    const titleEl = document.getElementById('view-title');
+                    window.cargarVista(root.dataset.vistaActual, titleEl ? titleEl.innerText : 'Perfil');
                 }
             }
-            
-            // Actualizar la sesión actual con la nueva foto en memoria RAM
-            usuarioActivo.foto_perfil = base64Img;
-            await sqliteService.setSession(usuarioActivo);
-            
-            window.mostrarNotificacion("Foto de perfil actualizada", "success");
-            this.cerrarModal();
+        } catch (error) {
+            console.error("[ImageEditor] Error guardando la foto:", error);
+            window.mostrarNotificacion("Error al guardar la foto en la base de datos.", "danger");
             if(btn) {
                 btn.disabled = false;
                 btn.innerHTML = 'Guardar Foto';
             }
-            
-            // Recargar la vista actual para que la foto aparezca de inmediato
-            const root = document.getElementById('app-root');
-            window.cargarVista(root.dataset.vistaActual, document.getElementById('view-title').innerText);
         }
     }
 };
 
 // --- EXPORTAR AL ENTORNO GLOBAL ---
-// Esto permite que el HTML lance la función al hacer clic en el avatar (onclick="window.ImageEditorManager.abrirSelectorImagen()")
 window.ImageEditorManager = ImageEditorManager;

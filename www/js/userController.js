@@ -45,6 +45,18 @@ async function guardarEdicionUsuario() {
     const rolActualizado = selRol ? selRol.value : user.rol;
     const estadoActualizado = selEstado ? selEstado.value : user.estado;
 
+    // --- CAPTURAR NUEVOS CAMPOS (ID y Fecha de Nacimiento) ---
+    const inIdNacional = document.getElementById('edit-id-nacional');
+    const inDia = document.getElementById('edit-dia');
+    const inMes = document.getElementById('edit-mes');
+    const inAnio = document.getElementById('edit-anio');
+
+    // Construir la fecha en formato YYYY-MM-DD
+    let fechaNacimientoStr = user.fecha_nacimiento || '';
+    if (inDia && inMes && inAnio && inDia.value && inMes.value && inAnio.value) {
+        fechaNacimientoStr = `${inAnio.value}-${inMes.value.padStart(2, '0')}-${inDia.value.padStart(2, '0')}`;
+    }
+
     const btn = document.getElementById('btn-save-edit');
     if (btn) {
         btn.disabled = true;
@@ -61,13 +73,17 @@ async function guardarEdicionUsuario() {
         passwordA_Guardar = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
+    // Objeto con todos los datos actualizados
     const nuevosDatos = {
         nombre: txtNombre,
         email: txtEmail,
         telefono: txtTelefono,
         password: passwordA_Guardar,
         rol: rolActualizado,
-        estado: estadoActualizado
+        estado: estadoActualizado,
+        id_nacional: inIdNacional ? inIdNacional.value : user.id_nacional,
+        fecha_nacimiento: fechaNacimientoStr,
+        foto_perfil: user.foto_perfil
     };
 
     const exito = await sqliteService.actualizarUsuario(emailViejo, nuevosDatos);
@@ -140,7 +156,7 @@ function renderizarUsuarios(usuarios, tbody) {
     });
 }
 
-// I-export dagiti function iti global environment tapno makita ti HTML
+// Exportar las funciones al entorno global para que HTML las reconozca
 window.abrirEditorUsuario = abrirEditorUsuario;
 window.editarMiPerfil = editarMiPerfil;
 window.cancelarEdicion = cancelarEdicion;

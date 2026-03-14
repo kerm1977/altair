@@ -35,7 +35,7 @@
         </div>
     </div>
 
-    <!-- BARRA DE NAVEGACIÓN INFERIOR -->
+    <!-- BARRA DE NAVEGACIÓN INFERIOR (Ajustes eliminado) -->
     <nav class="bottom-nav d-none justify-content-around" id="app-bottom-nav">
         <div class="nav-item text-center active" id="nav-inicio" onclick="window.cargarVista('inicio', 'Inicio')">
             <i class="bi bi-house-fill fs-4"></i>
@@ -48,10 +48,6 @@
         <div class="nav-item text-center text-secondary" id="nav-perfil" onclick="window.cargarVista('perfil', 'Mi Perfil')">
             <i class="bi bi-person-circle fs-4"></i>
             <span>Perfil</span>
-        </div>
-        <div class="nav-item text-center text-secondary" id="nav-ajustes" onclick="window.cargarVista('ajustes', 'Ajustes')">
-            <i class="bi bi-gear-fill fs-4"></i>
-            <span>Ajustes</span>
         </div>
     </nav>
 
@@ -133,7 +129,6 @@
                 <div class="mt-4 pt-3 border-top">
                     <p class="text-muted small mb-1">¿Aún no eres parte de la plataforma?</p>
                     <button class="btn btn-link text-primary fw-bold text-decoration-none p-0" onclick="window.cargarVista('registro', 'Registro')">Crear una cuenta nueva</button>
-                    <!-- EL BOTON DE FORMATEAR FUE ELIMINADO DE AQUI POR SEGURIDAD -->
                 </div>
             </div>
         </div>
@@ -306,13 +301,6 @@
                         </div>
                         <i class="bi bi-chevron-right text-muted"></i>
                     </button>
-                    <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3" onclick="window.cargarVista('ajustes', 'Ajustes')">
-                        <div class="d-flex align-items-center">
-                            <div class="bg-light rounded p-2 me-3 text-secondary"><i class="bi bi-sliders"></i></div>
-                            <span class="fw-medium">Configuración del Sistema</span>
-                        </div>
-                        <i class="bi bi-chevron-right text-muted"></i>
-                    </button>
                 </div>
             </div>
         </div>
@@ -332,7 +320,7 @@
             <span class="badge bg-primary" id="perfil-rol">Cargando...</span>
         </div>
 
-        <div class="card app-card border-0">
+        <div class="card app-card border-0 mb-3">
             <div class="card-body p-0">
                 <div class="list-group list-group-flush rounded-3">
                     <div class="list-group-item py-3">
@@ -346,9 +334,86 @@
                 </div>
             </div>
         </div>
-        <button class="btn btn-outline-primary w-100 mt-4 rounded-pill fw-bold shadow-sm" onclick="window.editarMiPerfil()"><i class="bi bi-sliders me-1"></i> Editar Información</button>
+
+        <!-- TEMA VISIBLE PARA TODOS LOS USUARIOS -->
+        <div class="card mb-3 shadow-sm border-0">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="bi bi-moon-stars-fill me-2 text-primary"></i> 
+                    <span class="fw-bold">Apariencia</span>
+                </div>
+                <select id="selector-tema-usuario" class="form-select form-select-sm w-auto border-0 bg-light rounded-pill px-3" onchange="window.ThemeManager.guardarPreferenciaTema(this.value)">
+                    <option value="sistema">Sistema</option>
+                    <option value="claro">Claro</option>
+                    <option value="oscuro">Oscuro</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- BOTÓN HACIA AJUSTES (SE OCULTARÁ SI NO ERES SUPERUSUARIO - Ver router.js) -->
+        <button id="btn-ir-ajustes" class="btn btn-light w-100 text-start shadow-sm mb-3 d-none" onclick="window.cargarVista('ajustes', 'Ajustes del Sistema')">
+            <i class="bi bi-gear-fill me-2 text-secondary"></i> Configuración Avanzada del Sistema
+        </button>
+
+        <button class="btn btn-outline-primary w-100 mt-2 rounded-pill fw-bold shadow-sm" onclick="window.editarMiPerfil()"><i class="bi bi-person-lines-fill me-1"></i> Editar Información</button>
         
-        <!-- FIX: Espaciador invisible para que la barra inferior no tape el botón -->
+        <button class="btn btn-outline-danger w-100 py-3 mt-3 fw-bold rounded-pill mb-4 shadow-sm" onclick="window.cerrarSesion()">
+            <i class="bi bi-box-arrow-right me-2"></i> CERRAR SESIÓN
+        </button>
+
+        <div style="height: 100px; width: 100%;"></div>
+    </template>
+
+    <!-- VISTA: AJUSTES (SOLO PARA SUPERUSUARIOS) -->
+    <template id="tpl-ajustes">
+        <!-- BOTÓN DE RETROCESO PARA VOLVER AL PERFIL -->
+        <button class="btn btn-link text-decoration-none p-0 mb-3 fw-bold mt-2 text-primary" onclick="window.cargarVista('perfil', 'Mi Perfil')">
+            <i class="bi bi-arrow-left me-1"></i> Volver a mi perfil
+        </button>
+
+        <h6 class="fw-bold text-muted mb-3 px-1 small">SISTEMA Y RENDIMIENTO</h6>
+        <div class="card app-card mb-4 border-0">
+            <div class="list-group list-group-flush rounded-3">
+                <button class="list-group-item list-group-item-action py-3 text-primary d-flex align-items-center" onclick="window.sqliteService.testConnection()">
+                    <i class="bi bi-speedometer2 fs-5 me-3"></i> 
+                    <span class="fw-medium">Test de Rendimiento SQLite</span>
+                </button>
+            </div>
+        </div>
+
+        <div id="admin-db-controls" class="mb-4">
+            <h6 class="fw-bold text-danger mb-3 px-1 small"><i class="bi bi-shield-lock-fill me-1"></i> ZONA ADMINISTRATIVA DE DATOS</h6>
+            <div class="card app-card border-0 border border-danger border-opacity-25">
+                <div class="list-group list-group-flush rounded-3">
+                    
+                    <button class="list-group-item list-group-item-action py-3 text-primary d-flex align-items-center" onclick="window.AdminDBManager.respaldarBD()">
+                        <i class="bi bi-filetype-json fs-5 me-3"></i> 
+                        <span class="fw-medium">Exportar Usuarios (JSON)</span>
+                    </button>
+                    <label class="list-group-item list-group-item-action py-3 text-success d-flex align-items-center mb-0 cursor-pointer" style="margin: 0; border-bottom: 1px solid rgba(0,0,0,0.125);">
+                        <i class="bi bi-file-earmark-arrow-up fs-5 me-3"></i> 
+                        <span class="fw-medium">Importar Usuarios (JSON)</span>
+                        <input type="file" accept=".json" class="d-none" onchange="window.AdminDBManager.cargarBD(event)">
+                    </label>
+
+                    <button class="list-group-item list-group-item-action py-3 text-primary fw-bold d-flex align-items-center bg-light" onclick="window.AdminDBManager.respaldarBDCompleta()">
+                        <i class="bi bi-database-down fs-5 me-3"></i> 
+                        <span class="fw-medium">Respaldo Completo (.db)</span>
+                    </button>
+                    <label class="list-group-item list-group-item-action py-3 text-success fw-bold d-flex align-items-center mb-0 cursor-pointer bg-light" style="margin: 0; border-bottom: 1px solid rgba(0,0,0,0.125);">
+                        <i class="bi bi-database-up fs-5 me-3"></i> 
+                        <span class="fw-medium">Restaurar Completo (.db)</span>
+                        <input type="file" accept=".db" class="d-none" onchange="window.AdminDBManager.cargarBDCompleta(event)">
+                    </label>
+
+                    <button class="list-group-item list-group-item-action py-3 text-danger d-flex align-items-center" onclick="window.AdminDBManager.iniciarReseteo()">
+                        <i class="bi bi-exclamation-triangle fs-5 me-3"></i> 
+                        <span class="fw-medium fw-bold">Resetear Base de Datos</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
         <div style="height: 100px; width: 100%;"></div>
     </template>
 
@@ -379,7 +444,6 @@
             </div>
         </div>
         
-        <!-- FIX: Espaciador invisible para la tabla -->
         <div style="height: 100px; width: 100%;"></div>
     </template>
 
@@ -440,7 +504,7 @@
                     <div class="row g-2 mb-3">
                         <div class="col-5">
                             <label class="form-label text-muted small fw-bold">ID Nacional</label>
-                            <input type="text" id="edit-id_nacional" class="form-control bg-light" placeholder="Opcional">
+                            <input type="text" id="edit-id-nacional" class="form-control bg-light" placeholder="Opcional">
                         </div>
                         <div class="col-7">
                             <label class="form-label text-muted small fw-bold">Teléfono</label>
@@ -495,86 +559,6 @@
                 </form>
             </div>
         </div>
-    </template>
-
-    <!-- VISTA: AJUSTES -->
-    <template id="tpl-ajustes">
-        <h6 class="fw-bold text-muted mb-3 px-1 mt-2 small">PREFERENCIAS DE LA APP</h6>
-        <div class="card app-card mb-4 border-0">
-            <div class="list-group list-group-flush rounded-3">
-                <div class="list-group-item d-flex justify-content-between align-items-center py-3">
-                    <div class="d-flex align-items-center">
-                        <i class="bi bi-moon fs-5 me-3 text-muted"></i>
-                        <span class="fw-medium">Modo Oscuro</span>
-                    </div>
-                    <div class="form-check form-switch m-0">
-                        <input class="form-check-input fs-5" type="checkbox" role="switch" id="switch-modo-oscuro">
-                    </div>
-                </div>
-                <div class="list-group-item d-flex justify-content-between align-items-center py-3">
-                    <div class="d-flex align-items-center">
-                        <i class="bi bi-bell fs-5 me-3 text-muted"></i>
-                        <span class="fw-medium">Notificaciones Push</span>
-                    </div>
-                    <div class="form-check form-switch m-0">
-                        <input class="form-check-input fs-5" type="checkbox" role="switch" checked>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <h6 class="fw-bold text-muted mb-3 px-1 small">SISTEMA Y RENDIMIENTO</h6>
-        <div class="card app-card mb-4 border-0">
-            <div class="list-group list-group-flush rounded-3">
-                <button class="list-group-item list-group-item-action py-3 text-primary d-flex align-items-center" onclick="window.sqliteService.testConnection()">
-                    <i class="bi bi-speedometer2 fs-5 me-3"></i> 
-                    <span class="fw-medium">Test de Rendimiento SQLite</span>
-                </button>
-            </div>
-        </div>
-
-        <!-- ZONA ADMINISTRATIVA DE DATOS (Solo visible para Superusuarios a través del script adminDb.js) -->
-        <div id="admin-db-controls" class="d-none mb-4">
-            <h6 class="fw-bold text-danger mb-3 px-1 small"><i class="bi bi-shield-lock-fill me-1"></i> ZONA ADMINISTRATIVA DE DATOS</h6>
-            <div class="card app-card border-0 border border-danger border-opacity-25">
-                <div class="list-group list-group-flush rounded-3">
-                    
-                    <!-- EXPORTACIONES SIMPLES (JSON) -->
-                    <button class="list-group-item list-group-item-action py-3 text-primary d-flex align-items-center" onclick="window.AdminDBManager.respaldarBD()">
-                        <i class="bi bi-filetype-json fs-5 me-3"></i> 
-                        <span class="fw-medium">Exportar Usuarios (JSON)</span>
-                    </button>
-                    <label class="list-group-item list-group-item-action py-3 text-success d-flex align-items-center mb-0 cursor-pointer" style="margin: 0; border-bottom: 1px solid rgba(0,0,0,0.125);">
-                        <i class="bi bi-file-earmark-arrow-up fs-5 me-3"></i> 
-                        <span class="fw-medium">Importar Usuarios (JSON)</span>
-                        <input type="file" accept=".json" class="d-none" onchange="window.AdminDBManager.cargarBD(event)">
-                    </label>
-
-                    <!-- EXPORTACIONES COMPLETAS (.DB OFUSCADO) -->
-                    <button class="list-group-item list-group-item-action py-3 text-primary fw-bold d-flex align-items-center bg-light" onclick="window.AdminDBManager.respaldarBDCompleta()">
-                        <i class="bi bi-database-down fs-5 me-3"></i> 
-                        <span class="fw-medium">Respaldo Completo (.db)</span>
-                    </button>
-                    <label class="list-group-item list-group-item-action py-3 text-success fw-bold d-flex align-items-center mb-0 cursor-pointer bg-light" style="margin: 0; border-bottom: 1px solid rgba(0,0,0,0.125);">
-                        <i class="bi bi-database-up fs-5 me-3"></i> 
-                        <span class="fw-medium">Restaurar Completo (.db)</span>
-                        <input type="file" accept=".db" class="d-none" onchange="window.AdminDBManager.cargarBDCompleta(event)">
-                    </label>
-
-                    <!-- RESETEO FATAL -->
-                    <button class="list-group-item list-group-item-action py-3 text-danger d-flex align-items-center" onclick="window.AdminDBManager.iniciarReseteo()">
-                        <i class="bi bi-exclamation-triangle fs-5 me-3"></i> 
-                        <span class="fw-medium fw-bold">Resetear Base de Datos</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <button class="btn btn-outline-danger w-100 py-3 fw-bold rounded-pill mb-4 shadow-sm" onclick="window.cerrarSesion()">
-            <i class="bi bi-box-arrow-right me-2"></i> CERRAR SESIÓN
-        </button>
-        
-        <div style="height: 100px; width: 100%;"></div>
     </template>
 
    <!-- ==========================================

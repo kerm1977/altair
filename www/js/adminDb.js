@@ -3,7 +3,8 @@
 // ⚠️ SIRVE PARA: Validar al superusuario, crear respaldos automáticos, 
 //                cargar bases de datos (.json y .db) y ejecutar el reseteo en 3 pasos.
 // ============================================================================
-const AdminDBManager = {
+
+window.AdminDBManager = {
     pasoActual: 0,
 
     init: function() {
@@ -270,9 +271,11 @@ const AdminDBManager = {
 };
 
 // --- EXPORTAR AL ENTORNO GLOBAL E INICIAR ---
-window.AdminDBManager = AdminDBManager;
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => AdminDBManager.init());
-} else {
-    AdminDBManager.init();
+if (!window.adminDbInicializado) {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => window.AdminDBManager.init());
+    } else {
+        window.AdminDBManager.init();
+    }
+    window.adminDbInicializado = true;
 }

@@ -7,12 +7,10 @@
     <meta name="theme-color" content="#0d6efd">
     
     <!-- CSP CRÍTICO 100% LOCAL (0% CDNs) -->
-    <!-- Define estrictamente de dónde se pueden cargar los recursos para máxima seguridad -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self' capacitor://localhost http://localhost data: gap: https://kenth1977.pythonanywhere.com http://127.0.0.1:5000; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'self' https://kenth1977.pythonanywhere.com capacitor://localhost http://localhost http://127.0.0.1:5000; font-src 'self' data:;">
     
     <title>Motor Universal App</title>
     
-    <!-- ESTILOS SEPARADOS LOCALES -->
     <link href="css/main.css" rel="stylesheet">
 </head>
 <body>
@@ -21,11 +19,18 @@
          CASCARÓN DE LA APP (SHELL)
     =========================================== -->
 
-    <!-- BARRA SUPERIOR (Corregida: Espaciado natural respetando el notch de la cámara/hora) -->
     <nav class="navbar navbar-dark bg-primary top-navbar d-none position-fixed w-100 top-0 z-3" id="app-header" style="padding-top: calc(0.5rem + env(safe-area-inset-top, 0px)); padding-bottom: 0.5rem;">
         <div class="container-fluid d-flex justify-content-between align-items-center">
-            <span class="navbar-brand mb-0 h1 fw-bold" id="view-title">Inicio</span>
-            <!-- BOTÓN DE TEMA (SOL/LUNA) DIRECTO EN LA BARRA -->
+            
+            <div class="d-flex align-items-center">
+                <button class="btn btn-link text-white p-0 text-decoration-none me-3 d-none" id="btn-global-back" onclick="window.irAtrasGlobal()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="currentColor" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
+                    </svg>
+                </button>
+                <span class="navbar-brand mb-0 h1 fw-bold" id="view-title">Inicio</span>
+            </div>
+
             <button class="btn btn-link text-white p-0 text-decoration-none" id="btn-theme-toggle" onclick="
                 const current = document.documentElement.getAttribute('data-bs-theme');
                 const nextTheme = current === 'dark' ? 'claro' : 'oscuro';
@@ -56,7 +61,6 @@
         </div>
     </nav>
 
-    <!-- CONTENEDOR DINÁMICO (Corregido: padding-top ajustado para no dejar espacio muerto. El margen lo da el margen superior del primer elemento o este padding ajustado a la barra) -->
     <div id="app-root" class="container-fluid fade-in" style="padding-top: calc(56px + env(safe-area-inset-top, 0px)); padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px));">
         <div class="d-flex flex-column justify-content-center align-items-center h-100" style="min-height: 80vh;">
             <div class="spinner-border text-primary" role="status"></div>
@@ -64,7 +68,6 @@
         </div>
     </div>
 
-    <!-- BARRA DE NAVEGACIÓN INFERIOR (Ajustada para gestos de Android) -->
     <nav class="bottom-nav d-none justify-content-around position-fixed w-100 bottom-0 z-3 bg-white border-top" id="app-bottom-nav" style="padding-bottom: max(env(safe-area-inset-bottom), 10px); padding-top: 10px;">
         <div class="nav-item text-center active" id="nav-inicio" onclick="window.cargarVista('inicio', 'Inicio')">
             <i class="bi bi-house-fill fs-4"></i>
@@ -76,7 +79,6 @@
         </div>
     </nav>
 
-    <!-- TOAST DE NOTIFICACIONES NATIVAS -->
     <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1050; margin-top: 60px;">
         <div id="appToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
             <div class="toast-header text-white" id="toast-header">
@@ -88,15 +90,12 @@
         </div>
     </div>
 
-    <!-- MODAL DE RESETEO PROFUNDO (3 PASOS) -->
     <div class="modal fade" id="modalResetDB" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content border-0 shadow-lg rounded-4">
                 <div class="modal-body text-center p-4 pb-2" id="reset-db-body">
-                    <!-- JS inyecta dinámicamente -->
                 </div>
                 <div class="modal-footer d-flex justify-content-center border-0 pt-0 pb-4 gap-2" id="reset-db-footer">
-                    <!-- JS inyecta dinámicamente -->
                 </div>
             </div>
         </div>
@@ -120,6 +119,7 @@
 
                 <div class="card app-card text-start border-0 shadow-sm">
                     <div class="card-body p-4">
+                        <!-- IMPORTANTE: EL FORMULARIO AHORA DELEGA LA ACCIÓN DE LOGIN EN iniciarSesionApp(event) DE auth.js -->
                         <form id="form-login" onsubmit="window.iniciarSesionApp(event);">
                             <div class="mb-3">
                                 <label class="form-label text-muted small fw-bold">Correo Electrónico</label>
@@ -128,20 +128,29 @@
                                     <input type="email" id="login-email" class="form-control border-start-0 ps-0 bg-light" placeholder="tu@correo.com" required>
                                 </div>
                             </div>
-                            <div class="mb-4">
+                            <div class="mb-3">
                                 <label class="form-label text-muted small fw-bold">Contraseña</label>
                                 <div class="input-group">
                                     <span class="input-group-text bg-light border-end-0"><i class="bi bi-lock text-muted"></i></span>
-                                    <input type="password" id="login-pass" class="form-control border-start-0 border-end-0 ps-0 bg-light" placeholder="••••••••" required>
-                                    <span class="input-group-text bg-light border-start-0 cursor-pointer btn-toggle-password" onclick="window.togglePassword()">
-                                        <i class="bi bi-eye-slash text-muted" id="icono-ojo"></i>
+                                    <!-- IMPORTANTE: EL ID CAMBIÓ DE login-pass A login-password PARA COINCIDIR CON TOGGLEPASSWORD -->
+                                    <input type="password" id="login-password" class="form-control border-start-0 border-end-0 ps-0 bg-light" placeholder="••••••••" required>
+                                    <span class="input-group-text bg-light border-start-0 cursor-pointer btn-toggle-password" onclick="window.togglePassword('login-password', 'icono-ojo-login')">
+                                        <i class="bi bi-eye-slash text-muted" id="icono-ojo-login"></i>
                                     </span>
                                 </div>
                             </div>
                             
+                            <!-- CHECKBOX PARA RECORDAR CONTRASEÑA -->
+                            <div class="mb-4 form-check">
+                                <input type="checkbox" class="form-check-input cursor-pointer" id="login-recordar">
+                                <label class="form-check-label text-muted small" for="login-recordar" style="cursor: pointer;">Recordar mis credenciales para el próximo ingreso</label>
+                            </div>
+                            
                             <div id="login-error" class="alert alert-danger d-none py-2 small fw-bold" role="alert"></div>
 
-                            <button type="submit" id="btn-login-submit" class="btn btn-primary w-100 py-3 fw-bold rounded-pill shadow-sm mb-3 mt-2">
+                            <button type="submit" id="btn-login-submit" class="btn btn-primary w-100 py-3 fw-bold rounded-pill shadow-sm mb-3 mt-2 d-flex justify-content-center align-items-center">
+                                <!-- EL SPINNER SE OCULTA INICIALMENTE -->
+                                <span class="spinner-border spinner-border-sm me-2 d-none" role="status" aria-hidden="true" id="login-spinner"></span>
                                 INGRESAR AL SISTEMA
                             </button>
                             
@@ -157,6 +166,8 @@
                     <button class="btn btn-link text-primary fw-bold text-decoration-none p-0" onclick="window.cargarVista('registro', 'Registro')">Crear una cuenta nueva</button>
                 </div>
             </div>
+            <!-- Llamada silenciosa a la carga de credenciales (Opcional, si no funciona, usar DOMContentLoaded) -->
+            <img src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" onload="if(window.cargarCredencialesGuardadas) window.cargarCredencialesGuardadas();" style="display:none;">
         </div>
     </template>
 
@@ -248,8 +259,8 @@
                                 <label class="form-label text-muted small fw-bold">Crear Contraseña <span class="text-danger">*</span></label>
                                 <div class="input-group">
                                     <input type="password" id="reg-pass" class="form-control border-end-0 bg-light" placeholder="Mínimo 6 caracteres" required>
-                                    <span class="input-group-text bg-light cursor-pointer btn-toggle-password">
-                                        <i class="bi bi-eye-slash text-muted"></i>
+                                    <span class="input-group-text bg-light cursor-pointer btn-toggle-password" onclick="window.togglePassword('reg-pass', 'icono-ojo-reg-pass')">
+                                        <i class="bi bi-eye-slash text-muted" id="icono-ojo-reg-pass"></i>
                                     </span>
                                 </div>
                             </div>
@@ -258,8 +269,8 @@
                                 <label class="form-label text-muted small fw-bold">Verificar Contraseña <span class="text-danger">*</span></label>
                                 <div class="input-group">
                                     <input type="password" id="reg-pass-verify" class="form-control border-end-0 bg-light" placeholder="Repite la contraseña" required>
-                                    <span class="input-group-text bg-light cursor-pointer btn-toggle-password">
-                                        <i class="bi bi-eye-slash text-muted"></i>
+                                    <span class="input-group-text bg-light cursor-pointer btn-toggle-password" onclick="window.togglePassword('reg-pass-verify', 'icono-ojo-reg-verify')">
+                                        <i class="bi bi-eye-slash text-muted" id="icono-ojo-reg-verify"></i>
                                     </span>
                                 </div>
                                 <div class="invalid-feedback" id="err-pass">Las contraseñas no coinciden.</div>
@@ -297,18 +308,56 @@
                 </div>
             </div>
             
-            <!-- EL RESTO DE MÓDULOS FUERON MOVIDOS A LA VISTA "AJUSTES" -->
+            <div class="col-6">
+                <div class="card app-card h-100 cursor-pointer border-0 shadow-sm" onclick="window.location.href='pagos.html'">
+                    <div class="card-body text-center d-flex flex-column align-items-center justify-content-center py-4">
+                        <div class="text-primary mb-2"><i class="bi bi-credit-card fs-1"></i></div>
+                        <h6 class="fw-bold mb-0">Pagos</h6>
+                        <small class="text-muted" style="font-size: 0.70rem;">Gestión web</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-6">
+                <div class="card app-card h-100 cursor-pointer border-0 shadow-sm" onclick="window.location.href='instrucciones.html'">
+                    <div class="card-body text-center d-flex flex-column align-items-center justify-content-center py-4">
+                        <div class="text-info mb-2"><i class="bi bi-journal-text fs-1"></i></div>
+                        <h6 class="fw-bold mb-0">Instrucciones</h6>
+                        <small class="text-muted" style="font-size: 0.70rem;">Manual PDF</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-6">
+                <div class="card app-card h-100 cursor-pointer border-0 shadow-sm" onclick="window.location.href='factura.html'">
+                    <div class="card-body text-center d-flex flex-column align-items-center justify-content-center py-4">
+                        <div class="text-success mb-2"><i class="bi bi-receipt fs-1"></i></div>
+                        <h6 class="fw-bold mb-0">Factura</h6>
+                        <small class="text-muted" style="font-size: 0.70rem;">Historial</small>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-6">
+                <div class="card app-card h-100 cursor-pointer border-0 shadow-sm" onclick="window.location.href='calendario.html'">
+                    <div class="card-body text-center d-flex flex-column align-items-center justify-content-center py-4">
+                        <div class="text-warning mb-2"><i class="bi bi-calendar-date fs-1"></i></div>
+                        <h6 class="fw-bold mb-0">Calendario</h6>
+                        <small class="text-muted" style="font-size: 0.70rem;">Agenda</small>
+                    </div>
+                </div>
+            </div>
         </div>
+        
+        <div style="height: 100px; width: 100%;"></div>
     </template>
 
     <!-- VISTA: PERFIL -->
     <template id="tpl-perfil">
-        <!-- CONTENEDOR DEL FLYER / PORTADA EN EL PERFIL (Ajustado para tocar el borde superior) -->
         <div id="perfil-flyer" class="bg-primary mx-n3 mt-n3" style="height: 160px; background-size: cover; background-position: center; border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"></div>
 
         <div class="text-center mb-4" style="margin-top: -60px;">
             <div class="position-relative d-inline-block">
-                <!-- Avatar con borde blanco para destacar sobre el flyer -->
                 <div class="bg-primary text-white rounded-circle shadow-sm mb-3 d-flex align-items-center justify-content-center fw-bold overflow-hidden" style="width:120px; height:120px; font-size: 3rem; cursor: pointer; border: 4px solid white;" id="perfil-avatar" onclick="if(window.ImageEditorManager) window.ImageEditorManager.abrirSelectorImagen()">U</div>
                 <button class="btn btn-sm btn-primary rounded-circle position-absolute bottom-0 end-0 mb-3 me-2 shadow" onclick="if(window.editarMiPerfil) window.editarMiPerfil()">
                     <i class="bi bi-pencil"></i>
@@ -335,7 +384,6 @@
         </div>
 
         <div class="row g-3 mt-2">
-            <!-- BOTÓN EDITAR INFORMACIÓN -->
             <div class="col-6">
                 <div class="card app-card h-100 cursor-pointer border border-primary border-opacity-25 shadow-sm" onclick="if(window.editarMiPerfil) window.editarMiPerfil()">
                     <div class="card-body text-center d-flex flex-column align-items-center justify-content-center py-4">
@@ -346,7 +394,6 @@
                 </div>
             </div>
 
-            <!-- BOTÓN AJUSTES AVANZADOS (SOLO SUPERUSUARIO) -->
             <div class="col-6" id="btn-ir-ajustes-container">
                 <div class="card app-card h-100 cursor-pointer border border-secondary border-opacity-25 bg-light shadow-sm" id="btn-ir-ajustes" onclick="window.cargarVista('ajustes', 'Ajustes del Sistema')">
                     <div class="card-body text-center d-flex flex-column align-items-center justify-content-center py-4">
@@ -367,11 +414,7 @@
 
     <!-- VISTA: AJUSTES (SOLO PARA SUPERUSUARIOS) -->
     <template id="tpl-ajustes">
-        <button class="btn btn-link text-decoration-none p-0 mb-3 fw-bold mt-2 text-primary" onclick="window.cargarVista('perfil', 'Mi Perfil')">
-            <i class="bi bi-arrow-left me-1"></i> Volver a mi perfil
-        </button>
-
-        <h6 class="fw-bold text-muted mb-3 px-1 small">SISTEMA Y RENDIMIENTO</h6>
+        <h6 class="fw-bold text-muted mb-3 px-1 small mt-2">SISTEMA Y RENDIMIENTO</h6>
         <div class="row g-3 mb-4">
             
             <div class="col-12">
@@ -389,7 +432,6 @@
                 </div>
             </div>
 
-            <!-- TARJETA: VISIBILIDAD DE BIOMETRÍA -->
             <div class="col-12">
                  <div class="card app-card h-100 cursor-pointer border-0 shadow-sm" id="btn-toggle-biometria-ajustes" onclick="window.toggleBiometriaUI()">
                     <div class="card-body d-flex align-items-center p-3">
@@ -400,10 +442,11 @@
                             <h6 class="fw-bold mb-1 text-dark">Biometría en Login</h6>
                             <small class="text-success fw-bold">Visible (Toque para ocultar)</small>
                         </div>
-                        <i class="bi bi-toggle-on text-success ms-auto fs-3"></i>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="text-success ms-auto" viewBox="0 0 16 16">
+                            <path d="M5 3a5 5 0 0 0 0 10h6a5 5 0 0 0 0-10H5zm6 9a4 4 0 1 1 0-8 4 4 0 0 1 0 8z"/>
+                        </svg>
                     </div>
                 </div>
-                <!-- Inicializador automático cuando se abre la vista -->
                 <img src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" onload="if(window.actualizarTextoBotonBiometria) window.actualizarTextoBotonBiometria();" style="display:none;">
             </div>
 
@@ -481,12 +524,7 @@
 
     <!-- VISTA: ADMIN USUARIOS -->
     <template id="tpl-admin_usuarios">
-        <!-- BOTÓN DE RETROCESO -->
-        <button class="btn btn-link text-decoration-none p-0 mb-3 fw-bold mt-2 text-primary" onclick="window.cargarVista('ajustes', 'Ajustes del Sistema')">
-            <i class="bi bi-arrow-left me-1"></i> Volver a Ajustes
-        </button>
-
-        <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="d-flex justify-content-between align-items-center mb-3 mt-2">
             <div class="input-group">
                 <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
                 <input type="text" id="buscador-usuarios" class="form-control border-start-0 ps-0" placeholder="Buscar usuario en DB...">
@@ -518,15 +556,12 @@
     <template id="tpl-editar_usuario">
         <div class="card app-card border-0 mt-2 mb-4 shadow-sm overflow-hidden">
             
-            <!-- CONTENEDOR DEL FLYER EN EL EDITOR (Solo visualización estática) -->
             <div id="editor-flyer" class="bg-primary w-100" style="height: 120px; background-size: cover; background-position: center;">
             </div>
 
-            <!-- MARGEN NEGATIVO PARA QUE EL AVATAR SUBA SOBRE EL FLYER -->
             <div class="card-body p-4 pt-0" style="margin-top: -50px;">
                 <div class="text-center mb-4 pb-3 border-bottom">
                     <div class="position-relative d-inline-block">
-                        <!-- AVATAR CON BORDE BLANCO PARA SEPARARLO DEL FLYER -->
                         <div class="bg-primary text-white rounded-circle shadow-sm mb-2 d-flex align-items-center justify-content-center fw-bold overflow-hidden" style="width:100px; height:100px; font-size: 2.5rem; cursor: pointer; margin: 0 auto; border: 4px solid white;" id="edit-avatar" onclick="if(window.ImageEditorManager) window.ImageEditorManager.abrirSelectorImagen('avatar')">U</div>
                         <button class="btn btn-sm btn-primary rounded-circle position-absolute bottom-0 end-0 mb-2 shadow" style="transform: translate(25%, 25%);" onclick="if(window.ImageEditorManager) window.ImageEditorManager.abrirSelectorImagen('avatar')">
                             <i class="bi bi-camera-fill"></i>
@@ -536,7 +571,6 @@
                     <small class="text-muted">Editor de Perfil Completo</small>
                 </div>
 
-                <!-- IMPORTANTE: ID AÑADIDO AL FORMULARIO PARA QUE userController.js PUEDA LEERLO -->
                 <form id="form-editar-usuario" onsubmit="event.preventDefault(); if(window.guardarEdicionUsuario) window.guardarEdicionUsuario();">
                     
                     <h6 class="fw-bold text-primary mb-3 small border-bottom pb-2"><i class="bi bi-person-lines-fill me-2"></i>DATOS PERSONALES</h6>
@@ -616,8 +650,8 @@
                                 <label class="form-label text-muted small fw-bold">Contraseña Actual</label>
                                 <div class="input-group">
                                     <input type="password" id="edit-current-password" class="form-control border-end-0" placeholder="••••••••">
-                                    <span class="input-group-text bg-white cursor-pointer border-start-0 btn-toggle-password">
-                                        <i class="bi bi-eye-slash text-muted"></i>
+                                    <span class="input-group-text bg-white cursor-pointer border-start-0 btn-toggle-password" onclick="window.togglePassword('edit-current-password', 'icono-ojo-edit-curr')">
+                                        <i class="bi bi-eye-slash text-muted" id="icono-ojo-edit-curr"></i>
                                     </span>
                                 </div>
                             </div>
@@ -626,8 +660,8 @@
                                 <label class="form-label text-muted small fw-bold">Nueva Contraseña</label>
                                 <div class="input-group">
                                     <input type="password" id="edit-new-password" class="form-control border-end-0" placeholder="Mínimo 6 caracteres">
-                                    <span class="input-group-text bg-white cursor-pointer border-start-0 btn-toggle-password">
-                                        <i class="bi bi-eye-slash text-muted"></i>
+                                    <span class="input-group-text bg-white cursor-pointer border-start-0 btn-toggle-password" onclick="window.togglePassword('edit-new-password', 'icono-ojo-edit-new')">
+                                        <i class="bi bi-eye-slash text-muted" id="icono-ojo-edit-new"></i>
                                     </span>
                                 </div>
                             </div>
@@ -636,8 +670,8 @@
                                 <label class="form-label text-muted small fw-bold">Verificar Nueva Contraseña</label>
                                 <div class="input-group">
                                     <input type="password" id="edit-verify-password" class="form-control border-end-0" placeholder="Repite la contraseña">
-                                    <span class="input-group-text bg-white cursor-pointer border-start-0 btn-toggle-password">
-                                        <i class="bi bi-eye-slash text-muted"></i>
+                                    <span class="input-group-text bg-white cursor-pointer border-start-0 btn-toggle-password" onclick="window.togglePassword('edit-verify-password', 'icono-ojo-edit-ver')">
+                                        <i class="bi bi-eye-slash text-muted" id="icono-ojo-edit-ver"></i>
                                     </span>
                                 </div>
                                 <div class="invalid-feedback" id="edit-err-pass">Las contraseñas nuevas no coinciden.</div>
@@ -702,7 +736,7 @@
     <script src="js/api_db.js"></script>
     
     <!-- Inicializador principal de la App -->
-    <script src="js/index.js"></script>
+    <!-- <script src="js/index.js"></script> -->
     <script>
         // Envoltura explícita para la biometría para asegurar que no se pierda al cargar dinámicamente las vistas
         window.ejecutarLoginBiometrico = function() {
@@ -712,6 +746,43 @@
                  window.mostrarNotificacion('Biometría no disponible o en carga', 'warning');
             }
         };
+
+        // Lógica de "Volver Atrás" Global Segura
+        window.irAtrasGlobal = function() {
+            const title = document.getElementById('view-title')?.innerText.toLowerCase() || '';
+            // Si el usuario está editando perfil, vuelve al Perfil
+            if (title.includes('edit')) {
+                window.cargarVista('perfil', 'Mi Perfil');
+            } 
+            // Si el usuario estaba viendo la tabla de usuarios, vuelve a Ajustes
+            else if (title.includes('usuarios')) {
+                window.cargarVista('ajustes', 'Ajustes del Sistema');
+            } 
+            // Por defecto, cualquier otra vista interna (Pagos, Factura, etc.) vuelve a Inicio
+            else {
+                window.cargarVista('inicio', 'Inicio');
+            }
+        };
+
+        // Observador para mostrar u ocultar el botón "Atrás" automáticamente
+        document.addEventListener('DOMContentLoaded', () => {
+            const titleNode = document.getElementById('view-title');
+            const backBtn = document.getElementById('btn-global-back');
+            
+            if (titleNode && backBtn) {
+                const observer = new MutationObserver(() => {
+                    const title = titleNode.innerText.toLowerCase();
+                    // Ocultar botón en las pantallas raíz (Inicio, Login, Registro, Mi Perfil)
+                    if (title === 'inicio' || title === 'login' || title === 'mi perfil' || title === 'registro') {
+                        backBtn.classList.add('d-none');
+                    } else {
+                        backBtn.classList.remove('d-none');
+                    }
+                });
+                // Iniciar la observación de los cambios en el título
+                observer.observe(titleNode, { childList: true, characterData: true, subtree: true });
+            }
+        });
     </script>
 </body>
 </html>

@@ -14,12 +14,14 @@ async function iniciarSesionApp(e) {
 
     const btnSubmit = document.getElementById('btn-login-submit');
     const emailInput = document.getElementById('login-email')?.value.trim();
-    const rawPass = document.getElementById('login-pass')?.value;
+    
+    // CORRECCIÓN CRÍTICA: Buscar el ID correcto (login-password) o el viejo por retrocompatibilidad
+    const rawPass = document.getElementById('login-password')?.value || document.getElementById('login-pass')?.value;
     const errorDiv = document.getElementById('login-error');
 
     if (!emailInput || !rawPass) {
         if (errorDiv) {
-            errorDiv.textContent = "Por favor, completa todos los campos.";
+            errorDiv.textContent = "por favor completar todos los campos";
             errorDiv.classList.remove('d-none');
         }
         return;

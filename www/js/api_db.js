@@ -6,7 +6,7 @@
 console.log("🚀 Iniciando api_db.js...");
 
 // 1. CONFIGURACIÓN BASE
-const APP_SLUG = "Osprey"; 
+const APP_SLUG = "Altair"; 
 
 // --- INTERRUPTOR DE ENTORNO ---
 const ESTOY_EN_LOCAL = true; // true = Local, false = PythonAnywhere
@@ -19,7 +19,7 @@ console.log(`🌍 Entorno configurado apuntando a: ${API_URL}`);
 
 const apiDb = {
     // ==========================================
-    // GESTIÓN DE SESIONES (JWT)
+    // GESTIÓN DE SESIONES (JWT / LOCAL)
     // ==========================================
     
     guardarSesion: function(token, usuario) {
@@ -39,15 +39,15 @@ const apiDb = {
     cerrarSesion: function() {
         localStorage.removeItem('jwt_token');
         localStorage.removeItem('usuario');
-        if (typeof cargarVista === 'function') {
-            cargarVista('login', document.getElementById('btn-nav-inicio'), 'bi-house');
+        if (typeof window.cargarVista === 'function') {
+            window.cargarVista('login', 'Login');
         } else {
             window.location.reload();
         }
     },
 
     estaAutenticado: function() {
-        return this.obtenerToken() !== null;
+        return this.obtenerToken() !== null || localStorage.getItem('usuario') !== null;
     },
 
     // ==========================================
@@ -85,7 +85,7 @@ const apiDb = {
     },
 
     // ==========================================
-    // FUNCIONES DE AUTENTICACIÓN
+    // FUNCIONES DE AUTENTICACIÓN (API)
     // ==========================================
 
     login: async function(email, password) {
@@ -125,49 +125,6 @@ const apiDb = {
     },
 
     // ==========================================
-    // FUNCIONES DE PERFIL Y RUTAS (ALTAIR)
-    // ==========================================
-
-    cambiarPassword: async function(password_actual, nueva_password) {
-        try {
-            const data = await this.fetchProtegido('/perfil/password', {
-                method: 'PUT',
-                body: JSON.stringify({ password_actual, nueva_password })
-            });
-            return { exito: data.status === 'ok', error: data.error, mensaje: data.message };
-        } catch (error) {
-            return { exito: false, error: "Error de conexión con el servidor local." };
-        }
-    },
-
-    obtenerMisRutas: async function() {
-        try {
-            return await this.fetchProtegido('/mis_rutas', { method: 'GET' });
-        } catch (error) {
-            return { status: 'error', error: "Error de conexión." };
-        }
-    },
-
-    crearRuta: async function(nombre_ruta, distancia_km) {
-        try {
-            return await this.fetchProtegido('/mis_rutas', {
-                method: 'POST',
-                body: JSON.stringify({ nombre_ruta, distancia_km })
-            });
-        } catch (error) {
-            return { status: 'error', error: "Error de conexión." };
-        }
-    },
-
-    eliminarRuta: async function(ruta_id) {
-        try {
-            return await this.fetchProtegido(`/mis_rutas/${ruta_id}`, { method: 'DELETE' });
-        } catch (error) {
-            return { status: 'error', error: "Error de conexión." };
-        }
-    },
-
-    // ==========================================
     // MAGIA NATIVA: BIOMETRÍA (Huella / FaceID)
     // ==========================================
     
@@ -189,7 +146,7 @@ const apiDb = {
                 await window.Capacitor.Plugins.NativeBiometric.setCredentials({
                     username: email,
                     password: password,
-                    server: 'com.titan.app' // Debe coincidir con tu appId en capacitor.config.json
+                    server: 'com.titan.app' // Identificador del llavero
                 });
                 console.log("Credenciales aseguradas en el llavero nativo (Keychain/Keystore).");
             } catch (e) {
@@ -216,7 +173,7 @@ const apiDb = {
                 }
                 
                 // Abre el lector nativo de huella del teléfono
-                // IMPORTANTE: Para sensores en pantalla (Under-display), reason y title son obligatorios
+                // Textos requeridos para que funcione en pantallas Under-Display de Android
                 const credentials = await window.Capacitor.Plugins.NativeBiometric.getCredentials({
                     server: 'com.titan.app',
                     reason: 'Usa tu huella dactilar para acceder de forma segura',
@@ -225,7 +182,28 @@ const apiDb = {
                 });
 
                 if (credentials && credentials.username && credentials.password) {
-                    // Login automático usando la contraseña rescatada de la huella
+                    // CORRECCIÓN APK: Intenta iniciar sesión primero con la base de datos local SQLite
+                    if (window.sqliteService) {
+                        try {
+                            const encoder = new TextEncoder();
+                            const data = encoder.encode(credentials.password);
+                            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+                            const hashArray = Array.from(new Uint8Array(hashBuffer));
+                            const passHashed = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+                            
+                            const user = await window.sqliteService.login(credentials.username, passHashed);
+                            
+                            if (user) {
+                                if (user.estado === 'inactivo') return { exito: false, error: "Cuenta inactiva o bloqueada." };
+                                await window.sqliteService.setSession(user);
+                                return { exito: true, usuario: user };
+                            }
+                        } catch (err) {
+                            console.error("Error validando localmente:", err);
+                        }
+                    }
+                    
+                    // Si SQLite falla o no está, intenta con la API externa (fallback)
                     return await apiDb.login(credentials.username, credentials.password);
                 }
                 return { exito: false, error: "No se encontraron credenciales previas guardadas." };
@@ -238,19 +216,23 @@ const apiDb = {
 };
 
 // ==========================================
-// CONTROLADOR DE UI GLOBAL PARA LOGIN Y PREFERENCIAS
+// CONTROLADOR DE UI GLOBAL PARA LOGIN
 // ==========================================
 
-window.togglePassword = function() {
-    const passwordInput = document.getElementById('login-password');
-    const icon = document.getElementById('icono-ojo');
+// CORRECCIÓN OJO: Ahora acepta parámetros para funcionar en cualquier formulario
+window.togglePassword = function(inputId = 'login-password', iconId = 'icono-ojo-login') {
+    const passwordInput = document.getElementById(inputId);
+    const icon = document.getElementById(iconId);
+    
     if (passwordInput && icon) {
         if (passwordInput.type === 'password') {
             passwordInput.type = 'text';
-            icon.classList.replace('bi-eye', 'bi-eye-slash');
+            icon.classList.remove('bi-eye-slash');
+            icon.classList.add('bi-eye');
         } else {
             passwordInput.type = 'password';
-            icon.classList.replace('bi-eye-slash', 'bi-eye');
+            icon.classList.remove('bi-eye');
+            icon.classList.add('bi-eye-slash');
         }
     }
 };
@@ -280,9 +262,9 @@ window.procesarLoginUI = async function(event) {
     const password = document.getElementById('login-password')?.value;
     const recordarCheckbox = document.getElementById('login-recordar'); 
     const errorDiv = document.getElementById('login-error');
-    const btnText = document.getElementById('login-text');
+    const btnText = document.getElementById('login-text') || document.getElementById('btn-login-submit');
     const btnSpinner = document.getElementById('login-spinner');
-    const btnLogin = document.getElementById('btn-login');
+    const btnLogin = document.getElementById('btn-login') || document.getElementById('btn-login-submit');
 
     if (!email || !password) {
         if (errorDiv) {
@@ -293,37 +275,60 @@ window.procesarLoginUI = async function(event) {
     }
 
     if (errorDiv) errorDiv.classList.add('d-none');
-    if (btnText) btnText.classList.add('d-none');
+    if (btnLogin) btnLogin.disabled = true;
     if (btnSpinner) btnSpinner.classList.remove('d-none');
-    if (btnLogin) {
-        btnLogin.disabled = true;
-        btnLogin.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>INGRESANDO...';
+    if (btnText && btnText.tagName === 'SPAN') btnText.innerText = "INGRESANDO...";
+
+    let resultado = { exito: false, error: "Servicio no disponible" };
+
+    // CORRECCIÓN APK: Inicio de sesión offline vía SQLite primero
+    if (window.sqliteService) {
+        try {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(password);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const passHashed = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            
+            const user = await window.sqliteService.login(email, passHashed);
+            
+            if (user) {
+                if (user.estado === 'inactivo') {
+                    resultado = { exito: false, error: "Tu cuenta está inactiva o bloqueada." };
+                } else {
+                    await window.sqliteService.setSession(user);
+                    resultado = { exito: true, usuario: user };
+                }
+            } else {
+                resultado = { exito: false, error: "Credenciales incorrectas o usuario inexistente." };
+            }
+        } catch (err) {
+            console.error("Error en BD Local:", err);
+            resultado = { exito: false, error: "Error interno al consultar la base de datos." };
+        }
+    } else {
+        // Fallback: Si no hay SQLite, intenta con el servidor (Solo web/online)
+        resultado = await apiDb.login(email, password);
     }
 
-    // Llama al backend (vía fetch)
-    const resultado = await apiDb.login(email, password);
-
-    if (btnText) btnText.classList.remove('d-none');
+    if (btnLogin) btnLogin.disabled = false;
     if (btnSpinner) btnSpinner.classList.add('d-none');
-    if (btnLogin) {
-        btnLogin.disabled = false;
-        btnLogin.innerHTML = 'INGRESAR AL SISTEMA';
-    }
+    if (btnText && btnText.tagName === 'SPAN') btnText.innerText = "INGRESAR AL SISTEMA";
 
     if (resultado.exito) {
         if (recordarCheckbox && recordarCheckbox.checked) {
             localStorage.setItem('credenciales_guardadas', JSON.stringify({ email, password }));
-            // Guardamos la contraseña cifrada en el llavero biométrico
+            // Guardamos la contraseña en el llavero biométrico del celular
             await apiDb.biometria.guardarCredenciales(email, password);
         } else {
             localStorage.removeItem('credenciales_guardadas');
-            // Eliminamos la huella si el usuario desmarca
             await apiDb.biometria.eliminarCredenciales();
         }
 
-        const btnInicioMenu = document.getElementById('btn-nav-inicio');
-        if (typeof cargarVista === 'function') {
-            cargarVista('inicio', btnInicioMenu, 'bi-house');
+        if (window.mostrarNotificacion) window.mostrarNotificacion(`¡Bienvenido, ${resultado.usuario.nombre || 'Usuario'}!`, "success");
+
+        if (typeof window.cargarVista === 'function') {
+            window.cargarVista('inicio', 'Inicio');
         } else {
             window.location.reload();
         }
@@ -335,27 +340,24 @@ window.procesarLoginUI = async function(event) {
     }
 };
 
-// Función Global para procesar Login Biométrico desde la UI
 window.procesarLoginBiometrico = async function() {
     const errorDiv = document.getElementById('login-error');
     if (errorDiv) errorDiv.classList.add('d-none');
     
-    // Abre el lector de huellas nativo
+    // Abre el lector de huellas
     const resultado = await apiDb.biometria.iniciarSesion();
     
     if (resultado.exito) {
-        // Redirigir si la huella es correcta
-        if (window.mostrarNotificacion) window.mostrarNotificacion("¡Identidad verificada!", "success");
+        if (window.mostrarNotificacion) window.mostrarNotificacion(`¡Identidad verificada, bienvenido!`, "success");
         
-        const btnInicioMenu = document.getElementById('btn-nav-inicio');
-        if (typeof cargarVista === 'function') {
-            cargarVista('inicio', btnInicioMenu, 'bi-house');
+        if (typeof window.cargarVista === 'function') {
+            window.cargarVista('inicio', 'Inicio');
         } else {
             window.location.reload();
         }
     } else {
         if (errorDiv) {
-            errorDiv.textContent = resultado.error || "Error biométrico.";
+            errorDiv.textContent = resultado.error || "Lector cancelado o error biométrico.";
             errorDiv.classList.remove('d-none');
         }
     }
@@ -365,15 +367,14 @@ window.procesarLoginBiometrico = async function() {
 // CONFIGURACIÓN DE VISIBILIDAD DE BIOMETRÍA
 // ==========================================
 
-// 1. Inyectamos un CSS dinámico para ocultar el botón si la preferencia lo marca
+// CSS dinámico para ocultar el botón si la preferencia lo marca
 document.head.insertAdjacentHTML('beforeend', '<style>body.ocultar-biometria #btn-bio-login { display: none !important; }</style>');
 
-// 2. Aplicamos la preferencia guardada de inmediato al iniciar
+// Aplica la preferencia al cargar
 if (localStorage.getItem('mostrar_biometria') === 'false') {
     document.body.classList.add('ocultar-biometria');
 }
 
-// 3. Función para cambiar el estado (Se llamará desde Ajustes Avanzados)
 window.toggleBiometriaUI = function() {
     const estadoActual = localStorage.getItem('mostrar_biometria') !== 'false';
     const nuevoEstado = !estadoActual;
@@ -387,11 +388,9 @@ window.toggleBiometriaUI = function() {
         if (window.mostrarNotificacion) window.mostrarNotificacion("Botón de biometría oculto", "info");
     }
     
-    // Actualizamos visualmente el botón en Ajustes si estamos en esa vista
     window.actualizarTextoBotonBiometria();
 };
 
-// 4. Función para actualizar la interfaz del botón en la página de Ajustes
 window.actualizarTextoBotonBiometria = function() {
     const btn = document.getElementById('btn-toggle-biometria-ajustes');
     if (btn) {
@@ -406,7 +405,9 @@ window.actualizarTextoBotonBiometria = function() {
                         <h6 class="fw-bold mb-1 text-dark">Biometría en Login</h6>
                         <small class="text-success fw-bold">Visible (Toque para ocultar)</small>
                     </div>
-                    <i class="bi bi-toggle-on text-success ms-auto fs-3"></i>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="text-success ms-auto" viewBox="0 0 16 16">
+                        <path d="M5 3a5 5 0 0 0 0 10h6a5 5 0 0 0 0-10H5zm6 9a4 4 0 1 1 0-8 4 4 0 0 1 0 8z"/>
+                    </svg>
                 </div>
             `;
         } else {
@@ -419,7 +420,9 @@ window.actualizarTextoBotonBiometria = function() {
                         <h6 class="fw-bold mb-1 text-dark">Biometría en Login</h6>
                         <small class="text-muted fw-bold">Oculta (Toque para mostrar)</small>
                     </div>
-                    <i class="bi bi-toggle-off text-secondary ms-auto fs-3"></i>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="text-secondary ms-auto" viewBox="0 0 16 16">
+                        <path d="M11 3a5 5 0 0 0 0 10h-6a5 5 0 0 0 0-10h6zm-6 9a4 4 0 1 1 0-8 4 4 0 0 1 0 8z"/>
+                    </svg>
                 </div>
             `;
         }

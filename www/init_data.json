@@ -1,32 +1,21 @@
 {
   "_metadata": "ESTE ARCHIVO ES CONTROLADO POR CONFIGURAR_PROYECTO.JS (MODO DIOS)",
-  "timestamp_ejecucion": 1773460062519,
+  "timestamp_ejecucion": 1773498558272,
   "dbAction": "overwrite",
-  "dbName": "Osprey.db",
+  "dbName": "Altair.db",
   "useEncryption": true,
   "dbPassword": "ligaliga",
   "superusers": [
     {
       "nombre": "Administrador Supremo 1",
-      "email": "kenth1977@gmail.com",
+      "email": "admin@gmail.com",
       "password": "a54178fa969ccb39e6c64425ef2b4fac0ae573e16ce9174576aee80105d35392",
       "telefono": "00000000",
       "rol": "superusuario",
       "estado": "activo",
       "foto_perfil": "",
       "pin": "00000000",
-      "_timestamp_inyeccion": 1773460028327
-    },
-    {
-      "nombre": "Administrador Supremo 2",
-      "email": "lthikingcr@gmail.com",
-      "password": "a54178fa969ccb39e6c64425ef2b4fac0ae573e16ce9174576aee80105d35392",
-      "telefono": "00000000",
-      "rol": "superusuario",
-      "estado": "activo",
-      "foto_perfil": "",
-      "pin": "11111111",
-      "_timestamp_inyeccion": 1773460047842
+      "_timestamp_inyeccion": 1773498539708
     }
   ]
 }

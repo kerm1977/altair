@@ -2,7 +2,7 @@
 // REGISTRO.JS - CONTROLADOR DE VALIDACIÓN Y SEGURIDAD
 // =========================================================
 
-const RegistroManager = {
+window.RegistroManager = {
     init: function() {
         // Escuchar eventos en el contenedor principal ya que las vistas son dinámicas
         document.addEventListener('input', this.handleInput.bind(this));
@@ -169,6 +169,8 @@ const RegistroManager = {
         const btnSubmit = document.getElementById('btn-reg-submit');
         const errorDiv = document.getElementById('reg-error');
         
+        errorDiv.classList.add('d-none');
+
         const inNombre = document.getElementById('reg-nombre').value.trim();
         const inApe1 = document.getElementById('reg-apellido1').value.trim();
         const inApe2 = document.getElementById('reg-apellido2').value.trim();
@@ -184,8 +186,6 @@ const RegistroManager = {
         const pass = document.getElementById('reg-pass').value;
         const passVerify = document.getElementById('reg-pass-verify').value;
 
-        errorDiv.classList.add('d-none');
-
         // Validar contraseñas
         if (pass !== passVerify) {
             document.getElementById('err-pass').style.display = 'block';
@@ -198,6 +198,13 @@ const RegistroManager = {
 
         if (pass.length < 6) {
             errorDiv.innerText = "La contraseña debe tener al menos 6 caracteres.";
+            errorDiv.classList.remove('d-none');
+            return;
+        }
+
+        const inputsAValidar = document.querySelectorAll('#form-registro .is-invalid');
+        if (inputsAValidar.length > 0) {
+            errorDiv.innerText = "Por favor corrige los campos marcados en rojo.";
             errorDiv.classList.remove('d-none');
             return;
         }
@@ -220,9 +227,16 @@ const RegistroManager = {
             
             // Llamamos a la función global en index.js
             if(window.sqliteService) {
-                // Modificamos temporalmente el nombre para incluir todo como string si SQLite no tiene columnas extra
-                // Esto es un parche seguro, aunque lo ideal es que sqliteService acepte un objeto JSON completo.
-                const exito = await window.sqliteService.registrarUsuario(inEmail, hashedPassword, nombreCompleto);
+                // Ya que nuestra DB local SQLite ha sido actualizada para soportar todos estos campos
+                // enviamos directamente todos los parámetros a registrarUsuario.
+                const exito = await window.sqliteService.registrarUsuario(
+                    inEmail, 
+                    hashedPassword, 
+                    nombreCompleto, 
+                    inTelefono, 
+                    fechaNacimiento, 
+                    inId
+                );
 
                 if (exito) {
                     window.mostrarNotificacion("¡Cuenta segura creada! Inicia sesión.", "success");
@@ -244,10 +258,12 @@ const RegistroManager = {
     }
 };
 
-// Auto-Iniciar
-window.RegistroManager = RegistroManager;
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => RegistroManager.init());
-} else {
-    RegistroManager.init();
+// Auto-Iniciar (Asegurándonos de no usar 'const' para evitar redeclaración si el archivo se lee dos veces)
+if (!window.registroInicializado) {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => window.RegistroManager.init());
+    } else {
+        window.RegistroManager.init();
+    }
+    window.registroInicializado = true;
 }

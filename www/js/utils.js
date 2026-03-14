@@ -5,6 +5,29 @@
 //                *INCLUYE DELEGACIÓN DE EVENTOS PARA EL OJO DEL LOGIN*
 // ============================================================================
 
+// --- PARCHE CSS MÓVIL (Adiós al parpadeo/hover global) ---
+// Inyectamos CSS para curar el WebView sin tocar tus archivos de estilos
+(function aplicarParcheVisual() {
+    const estilosGlobales = document.createElement('style');
+    estilosGlobales.innerHTML = `
+        /* Elimina la molesta sombra gris/azul que hace Android/iOS al hacer tap en cualquier lado */
+        * {
+            -webkit-tap-highlight-color: transparent !important;
+        }
+        /* Le da a las tarjetas un efecto físico de presionado profesional */
+        .app-card {
+            transition: transform 0.15s ease-in-out !important;
+        }
+        .app-card:active {
+            transform: scale(0.97) !important;
+        }
+        .cursor-pointer {
+            cursor: pointer;
+        }
+    `;
+    document.head.appendChild(estilosGlobales);
+})();
+
 // CORRECCIÓN VITAL: Usamos el objeto global 'window' en lugar de 'let' 
 // para evitar el error fatal de "redeclaration of let appToast" si la página se recarga.
 window.appToastInstance = null;
@@ -78,6 +101,10 @@ async function bootApp() {
 // ============================================================================
 // 🛠️ DELEGACIÓN DE EVENTOS GLOBAL (Blindado contra cambios de vista)
 // ============================================================================
+
+// Anulamos la función inline del HTML para que no choque con la delegación de eventos global
+window.togglePassword = function() {}; 
+
 document.addEventListener('click', (e) => {
     // 1. Lógica del "Ojito" para ver contraseñas
     // Buscamos si el clic fue en un botón con la clase de toggle o el icono dentro de él
@@ -85,6 +112,9 @@ document.addEventListener('click', (e) => {
                       (e.target.classList.contains('bi-eye') || e.target.classList.contains('bi-eye-slash') ? e.target.parentElement : null);
 
     if (btnToggle) {
+        e.preventDefault();
+        e.stopPropagation(); // Evita que el evento se propague y cause conflictos
+
         // Buscamos el input de contraseña que está dentro del mismo grupo (Input Group de Bootstrap)
         const parent = btnToggle.closest('.input-group') || btnToggle.parentElement;
         const input = parent.querySelector('input');
@@ -93,14 +123,16 @@ document.addEventListener('click', (e) => {
         if (input && icon) {
             if (input.type === 'password') {
                 input.type = 'text';
-                icon.classList.replace('bi-eye', 'bi-eye-slash');
+                icon.classList.remove('bi-eye-slash');
+                icon.classList.add('bi-eye');
             } else {
                 input.type = 'password';
-                icon.classList.replace('bi-eye-slash', 'bi-eye');
+                icon.classList.remove('bi-eye');
+                icon.classList.add('bi-eye-slash');
             }
         }
     }
-});
+}, true); // Usamos fase de captura (true) para interceptarlo antes que cualquier otro script
 
 // INICIO DE LA APLICACIÓN: Espera a que el HTML cargue para ejecutar el boot
 window.addEventListener('DOMContentLoaded', () => {

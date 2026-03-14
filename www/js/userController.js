@@ -5,13 +5,74 @@
 // ============================================================================
 
 /**
- * Busca un usuario por email y carga la vista de edición.
+ * Busca un usuario por email, carga la vista de edición e INYECTA LOS DATOS Y FOTOS.
  */
 async function abrirEditorUsuario(email) {
     const user = await sqliteService.getUsuarioByEmail(email);
     if (user) {
         window.usuarioEnEdicion = user;
+        
+        // 1. Cargamos la vista del editor en la pantalla
         window.cargarVista('editar_usuario', 'Editar Información');
+        
+        // 2. Damos un pequeño respiro (50ms) para que el HTML se dibuje antes de rellenarlo
+        setTimeout(() => {
+            // --- CARGAR EL FLYER (PORTADA) SÍ O SÍ ---
+            const flyerEl = document.getElementById('editor-flyer');
+            if (flyerEl) {
+                if (user.flyer && user.flyer !== '') {
+                    flyerEl.style.backgroundImage = `url('${user.flyer}')`;
+                    flyerEl.classList.remove('bg-primary');
+                } else {
+                    flyerEl.style.backgroundImage = 'none';
+                    flyerEl.classList.add('bg-primary');
+                }
+            }
+
+            // --- CARGAR EL AVATAR (FOTO DE PERFIL) ---
+            const avatarEl = document.getElementById('edit-avatar');
+            if (avatarEl) {
+                if (user.foto_perfil && user.foto_perfil !== '') {
+                    avatarEl.innerHTML = '';
+                    avatarEl.style.backgroundImage = `url('${user.foto_perfil}')`;
+                    avatarEl.style.backgroundSize = 'cover';
+                    avatarEl.style.backgroundPosition = 'center';
+                } else {
+                    avatarEl.innerHTML = user.nombre ? user.nombre.charAt(0).toUpperCase() : 'U';
+                    avatarEl.style.backgroundImage = 'none';
+                }
+            }
+
+            // --- CARGAR CORREO VISUAL ---
+            const emailDisplay = document.getElementById('edit-email-display');
+            if (emailDisplay) emailDisplay.innerText = user.email;
+
+            // --- RELLENAR LOS INPUTS DEL FORMULARIO ---
+            const setVal = (id, val) => { const el = document.getElementById(id); if(el) el.value = val || ''; };
+            
+            // Dividir el nombre completo en partes para los inputs
+            const partesNombre = user.nombre ? user.nombre.split(' ') : [''];
+            setVal('edit-nombre', partesNombre[0] || '');
+            setVal('edit-apellido1', partesNombre[1] || '');
+            setVal('edit-apellido2', partesNombre.slice(2).join(' ') || ''); // Si tiene más de 2 palabras
+
+            setVal('edit-email', user.email);
+            setVal('edit-telefono', user.telefono);
+            setVal('edit-id-nacional', user.id_nacional);
+            setVal('edit-rol', user.rol);
+            setVal('edit-estado', user.estado);
+
+            // Separar la fecha de nacimiento (YYYY-MM-DD)
+            if (user.fecha_nacimiento) {
+                const partesFecha = user.fecha_nacimiento.split('-'); 
+                if (partesFecha.length === 3) {
+                    setVal('edit-anio', partesFecha[0]);
+                    setVal('edit-mes', partesFecha[1]);
+                    setVal('edit-dia', partesFecha[2]);
+                }
+            }
+        }, 50);
+
     } else {
         window.mostrarNotificacion("Error: Usuario no encontrado", "danger");
     }
@@ -113,7 +174,6 @@ async function guardarEdicionUsuario() {
         }
 
         // 2. Verificar si es necesario validar la contraseña actual
-        // (Un administrador editando a OTRO usuario no necesita saber la contraseña actual)
         const usuarioActivo = await sqliteService.getSession();
         const esMismoUsuario = (usuarioActivo && usuarioActivo.email === user.email);
 
@@ -140,7 +200,7 @@ async function guardarEdicionUsuario() {
         passwordA_Guardar = hashArrayNew.map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
-    // Objeto con la información consolidada
+    // Objeto con la información consolidada (Mantenemos el flyer y la foto intactos)
     const nuevosDatos = {
         nombre: nombreCompleto,
         email: txtEmail,
@@ -150,7 +210,8 @@ async function guardarEdicionUsuario() {
         estado: estadoActualizado,
         id_nacional: inIdNacional ? inIdNacional.value : user.id_nacional,
         fecha_nacimiento: fechaNacimientoStr,
-        foto_perfil: user.foto_perfil
+        foto_perfil: user.foto_perfil,
+        flyer: user.flyer // Aseguramos que no se borre al editar
     };
 
     const exito = await sqliteService.actualizarUsuario(emailViejo, nuevosDatos);
@@ -162,6 +223,7 @@ async function guardarEdicionUsuario() {
         if (usuarioActivo && usuarioActivo.email === emailViejo) {
             // Actualizar la sesión si el usuario editado es el mismo que está logueado
             nuevosDatos.foto_perfil = usuarioActivo.foto_perfil;
+            nuevosDatos.flyer = usuarioActivo.flyer;
             nuevosDatos.tema = usuarioActivo.tema; 
             await sqliteService.setSession(nuevosDatos); 
         }

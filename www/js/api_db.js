@@ -1,25 +1,25 @@
 // ==============================================================================
-// ARCHIVO: www/js/api_db.js
-// ROL: Controlador de API y Sesiones (Frontend)
+// TEPY: www/js/api_db.js
+// TEMBIAPO: API ha Sesión Rerekua (Frontend)
 // ==============================================================================
 
-console.log("🚀 Iniciando api_db.js...");
+console.log("🚀 Ñepyrũ api_db.js...");
 
-// 1. CONFIGURACIÓN BASE
+// 1. ÑEMBOHEKO YPY
 const APP_SLUG = "Titan"; 
 
-// --- INTERRUPTOR DE ENTORNO ---
+// --- TENDA MOAMBUEHA ---
 const ESTOY_EN_LOCAL = true; // true = Local, false = PythonAnywhere
 
 const API_URL = ESTOY_EN_LOCAL 
     ? `http://127.0.0.1:5000/api/${APP_SLUG}` 
     : `https://kenth1977.pythonanywhere.com/api/${APP_SLUG}`;
 
-console.log(`🌍 Entorno configurado apuntando a: ${API_URL}`);
+console.log(`🌍 Tenda oñemboheko ohechauka hag̃ua: ${API_URL}`);
 
 const apiDb = {
     // ==========================================
-    // GESTIÓN DE SESIONES (JWT)
+    // SESIÓN ÑANGAREKO (JWT)
     // ==========================================
     
     guardarSesion: function(token, usuario) {
@@ -72,14 +72,14 @@ const apiDb = {
             const respuesta = await fetch(`${API_URL}${endpoint}`, config);
             
             if (respuesta.status === 401) {
-                console.warn("Sesión expirada o token inválido.");
+                console.warn("Ñembyaty opa térã token ndoikói.");
                 this.cerrarSesion();
-                return { status: 'error', error: 'Sesión expirada. Por favor, inicia sesión nuevamente.' };
+                return { status: 'error', error: 'Ñembyaty opa. Eike jey, ndeporãramo.' };
             }
 
             return await respuesta.json();
         } catch (error) {
-            console.error(`Error en la petición a ${endpoint}:`, error);
+            console.error(`Apañuãi ojejerurévo ${endpoint}:`, error);
             throw error;
         }
     },
@@ -102,7 +102,7 @@ const apiDb = {
                 return { exito: false, error: data.error };
             }
         } catch (error) {
-            return { exito: false, error: "Error de conexión con el servidor local." };
+            return { exito: false, error: "Apañuãi ñembojoajúpe servidor ndive." };
         }
     },
 
@@ -120,7 +120,7 @@ const apiDb = {
                 return { exito: false, error: data.error };
             }
         } catch (error) {
-            return { exito: false, error: "Error de conexión con el servidor local." };
+            return { exito: false, error: "Apañuãi ñembojoajúpe servidor ndive." };
         }
     },
 
@@ -136,7 +136,7 @@ const apiDb = {
             });
             return { exito: data.status === 'ok', error: data.error, mensaje: data.message };
         } catch (error) {
-            return { exito: false, error: "Error de conexión con el servidor." };
+            return { exito: false, error: "Apañuãi ñembojoajúpe servidor ndive." };
         }
     },
 
@@ -144,7 +144,7 @@ const apiDb = {
         try {
             return await this.fetchProtegido('/mis_rutas', { method: 'GET' });
         } catch (error) {
-            return { status: 'error', error: "Error de conexión." };
+            return { status: 'error', error: "Apañuãi ñembojoajúpe." };
         }
     },
 
@@ -155,7 +155,7 @@ const apiDb = {
                 body: JSON.stringify({ nombre_ruta, distancia_km })
             });
         } catch (error) {
-            return { status: 'error', error: "Error de conexión." };
+            return { status: 'error', error: "Apañuãi ñembojoajúpe." };
         }
     },
 
@@ -163,12 +163,12 @@ const apiDb = {
         try {
             return await this.fetchProtegido(`/mis_rutas/${ruta_id}`, { method: 'DELETE' });
         } catch (error) {
-            return { status: 'error', error: "Error de conexión." };
+            return { status: 'error', error: "Apañuãi ñembojoajúpe." };
         }
     },
 
     // ==========================================
-    // MAGIA NATIVA: BIOMETRÍA (Huella / FaceID)
+    // MAGIA NATIVA: BIOMETRÍA (Kuã rapykuere / Tova)
     // ==========================================
     
     biometria: {
@@ -178,7 +178,7 @@ const apiDb = {
                 const result = await window.Capacitor.Plugins.NativeBiometric.isAvailable();
                 return result.isAvailable;
             } catch (e) {
-                console.warn("Biometría no soportada en este entorno.", e);
+                console.warn("Ko tendápe ndojapói biometría.", e);
                 return false;
             }
         },
@@ -189,11 +189,11 @@ const apiDb = {
                 await window.Capacitor.Plugins.NativeBiometric.setCredentials({
                     username: email,
                     password: password,
-                    server: 'com.pepino.app' // Debe coincidir con tu capacitor.config.json
+                    server: 'com.titan.app' // Ñembojoaju capacitor.config.json ndive
                 });
-                console.log("Credenciales aseguradas en el llavero nativo.");
+                console.log("Ñe'ẽñemi oñongatu porãma native keychain-pe.");
             } catch (e) {
-                console.error("Error al guardar biometría", e);
+                console.error("Apañuãi biometría ñongatúpe", e);
             }
         },
 
@@ -201,33 +201,37 @@ const apiDb = {
             try {
                 if (!window.Capacitor || !window.Capacitor.Plugins.NativeBiometric) return;
                 await window.Capacitor.Plugins.NativeBiometric.deleteCredentials({
-                    server: 'com.pepino.app'
+                    server: 'com.titan.app'
                 });
-                console.log("Credenciales biométricas eliminadas.");
+                console.log("Marandu biometría oñembogue.");
             } catch (e) {
-                console.error("Error al eliminar biometría", e);
+                console.error("Apañuãi biometría ñemboguépe", e);
             }
         },
 
         iniciarSesion: async function() {
             try {
                 if (!window.Capacitor || !window.Capacitor.Plugins.NativeBiometric) {
-                    return { exito: false, error: "Biometría no soportada aquí." };
+                    return { exito: false, error: "Ko'ápe ndojapói biometría." };
                 }
                 
-                // Abre el lector nativo de huella del teléfono
+                // Oipe'a moñe'ẽhára kuã rapykuere rehegua (Under-display fix)
+                // Ñe'ẽ ha myesakãha ha'e hína mba'e guasu Android-pe g̃uarã
                 const credentials = await window.Capacitor.Plugins.NativeBiometric.getCredentials({
-                    server: 'com.pepino.app'
+                    server: 'com.titan.app',
+                    reason: 'Eipuru ne kuã rapykuere eike hag̃ua ko\'ápe',
+                    title: 'Biometría Ñepyrũ',
+                    subtitle: 'Ehechauka mávapa nde'
                 });
 
                 if (credentials && credentials.username && credentials.password) {
-                    // Login automático usando la contraseña rescatada de la huella
+                    // Eike ijeheguiete ñe'ẽñemi oñenohẽva kuã rapykuerégui rupive
                     return await apiDb.login(credentials.username, credentials.password);
                 }
-                return { exito: false, error: "No se encontraron credenciales previas." };
+                return { exito: false, error: "Ndjejuhúi marandu ymave guare." };
             } catch (e) {
-                console.error("Autenticación biométrica cancelada/fallida", e);
-                return { exito: false, error: "Lector cancelado o error al leer." };
+                console.error("Apañuãi biometría rupive", e);
+                return { exito: false, error: "Moñe'ẽhára oñemboty térã kuã rapykuere ndojeikuaái." };
             }
         }
     }
@@ -282,7 +286,7 @@ window.procesarLoginUI = async function(event) {
 
     if (!email || !password) {
         if (errorDiv) {
-            errorDiv.textContent = "Por favor ingresa correo y contraseña.";
+            errorDiv.textContent = "Ehai ne ñe'ẽveve ha ne ñe'ẽñemi.";
             errorDiv.classList.remove('d-none');
         }
         return;
@@ -291,19 +295,31 @@ window.procesarLoginUI = async function(event) {
     if (errorDiv) errorDiv.classList.add('d-none');
     if (btnText) btnText.classList.add('d-none');
     if (btnSpinner) btnSpinner.classList.remove('d-none');
-    if (btnLogin) btnLogin.disabled = true;
+    if (btnLogin) {
+        btnLogin.disabled = true;
+        // Text changes to 'Eike hína...' during loading
+        btnLogin.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Eike hína...';
+    }
 
+    // Llama al backend (vía fetch)
     const resultado = await apiDb.login(email, password);
 
     if (btnText) btnText.classList.remove('d-none');
     if (btnSpinner) btnSpinner.classList.add('d-none');
-    if (btnLogin) btnLogin.disabled = false;
+    if (btnLogin) {
+        btnLogin.disabled = false;
+        btnLogin.innerHTML = 'EIKE SISTEMA-PE'; // Restored text in Guarani
+    }
 
     if (resultado.exito) {
         if (recordarCheckbox && recordarCheckbox.checked) {
             localStorage.setItem('credenciales_guardadas', JSON.stringify({ email, password }));
+            // Guardamos la contraseña cifrada en el llavero biométrico
+            await apiDb.biometria.guardarCredenciales(email, password);
         } else {
             localStorage.removeItem('credenciales_guardadas');
+            // Eliminamos la huella si el usuario desmarca
+            await apiDb.biometria.eliminarCredenciales();
         }
 
         const btnInicioMenu = document.getElementById('btn-nav-inicio');
@@ -314,7 +330,7 @@ window.procesarLoginUI = async function(event) {
         }
     } else {
         if (errorDiv) {
-            errorDiv.textContent = resultado.error || "Error al iniciar sesión.";
+            errorDiv.textContent = resultado.error || "Apañuãi eike hag̃ua.";
             errorDiv.classList.remove('d-none');
         }
     }
@@ -322,16 +338,16 @@ window.procesarLoginUI = async function(event) {
 
 // Nueva función Global para procesar Login Biométrico desde la UI
 window.procesarLoginBiometrico = async function() {
-    const btnBio = document.getElementById('btn-bio-login');
     const errorDiv = document.getElementById('login-error');
-    
     if (errorDiv) errorDiv.classList.add('d-none');
     
-    // Abre el lector de huellas
+    // Abre el lector de huellas nativo
     const resultado = await apiDb.biometria.iniciarSesion();
     
     if (resultado.exito) {
-        // Redirigir si la huella es correcta y el login fue exitoso
+        // Redirigir si la huella es correcta
+        if (window.mostrarNotificacion) window.mostrarNotificacion("¡Nde ha'e hína! Eike porã.", "success");
+        
         const btnInicioMenu = document.getElementById('btn-nav-inicio');
         if (typeof cargarVista === 'function') {
             cargarVista('inicio', btnInicioMenu, 'bi-house');
@@ -340,8 +356,10 @@ window.procesarLoginBiometrico = async function() {
         }
     } else {
         if (errorDiv) {
-            errorDiv.textContent = resultado.error || "Error biométrico.";
+            errorDiv.textContent = resultado.error || "Apañuãi biometría-pe.";
             errorDiv.classList.remove('d-none');
         }
     }
 };
+
+window.apiDb = apiDb;

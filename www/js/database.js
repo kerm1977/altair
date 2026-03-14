@@ -1,5 +1,5 @@
 // ============================================================================
-// ⚠️ FRAGMENTO 1: BASE DE DATOS (A FUTURO SERÁ: js/database.js)
+// ⚠️ FRAGMENTO 1: BASE DE DATOS (js/database.js)
 // ⚠️ SIRVE PARA: Toda la interacción con el motor nativo SQLite, creación de
 //                tablas, migraciones, persistencia de sesiones y consultas CRUD.
 //                *AHORA OBEDECE ÓRDENES DEL SCRIPT "MODO DIOS" (FIXED)*
@@ -7,6 +7,7 @@
 const sqliteService = {
     db: null,
     dbName: "motor_db",
+    // Detecta si estamos en la web o en la app instalada (Android/iOS)
     isWeb: !window.Capacitor || !window.Capacitor.isNativePlatform(),
     
     init: async function() {
@@ -64,6 +65,7 @@ const sqliteService = {
                 this.db = await sqlite.createConnection(this.dbName, USE_ENCRYPTION, ENCRYPTION_MODE, 1, false);
                 await this.db.open();
                 
+                // Optimizaciones de rendimiento para SQLite (Modo WAL)
                 await this.db.execute("PRAGMA journal_mode = WAL;");
                 await this.db.execute("PRAGMA synchronous = NORMAL;");
                 await this.db.execute("PRAGMA cache_size = -10000;");
@@ -72,7 +74,7 @@ const sqliteService = {
                 if(logElement) logElement.innerText = "Verificando estructura...";
                 await this.crearTablas();
 
-                // Migraciones seguras (Incluyendo la nueva columna de Tema)
+                // Migraciones seguras (Incluyendo la nueva columna de Tema por si la DB ya existía)
                 try { await this.db.execute("ALTER TABLE usuarios ADD COLUMN nombre TEXT DEFAULT '';"); } catch(e){}
                 try { await this.db.execute("ALTER TABLE usuarios ADD COLUMN telefono TEXT DEFAULT '';"); } catch(e){}
                 try { await this.db.execute("ALTER TABLE usuarios ADD COLUMN fecha_nacimiento TEXT DEFAULT '';"); } catch(e){}
@@ -85,7 +87,7 @@ const sqliteService = {
 
                 console.log(`[SQLite] NATIVO ACTIVADO. Operando en Android/iOS.`);
             } else {
-                console.log("⚠️ [MODO WEB] Simulando entorno en el navegador...");
+                console.log("⚠️ [MODO WEB] Simulando entorno de base de datos en el navegador...");
                 await this.procesarOrdenesDelDios(superusers, dbAction);
             }
             
@@ -178,14 +180,14 @@ const sqliteService = {
                     const check = await this.db.query("SELECT id FROM usuarios WHERE email = ?", [user.email]);
                     
                     if (check.values && check.values.length > 0) {
-                        // Merge
+                        // Merge (Actualización)
                         await this.db.run(
                             "UPDATE usuarios SET nombre=?, password=?, pin=?, rol=?, estado=?, tema=? WHERE email=?",
                             [user.nombre, user.password, user.pin, user.rol, user.estado, user.tema || 'sistema', user.email]
                         );
                         console.log(`[SQLite] Superusuario actualizado (Merge): ${user.email}`);
                     } else {
-                        // Insert
+                        // Insert (Nuevo)
                         await this.db.run(
                             "INSERT INTO usuarios (nombre, email, password, pin, rol, estado, foto_perfil, telefono, tema) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
                             [user.nombre, user.email, user.password, user.pin, user.rol, user.estado, user.foto_perfil || '', user.telefono || '', user.tema || 'sistema']
@@ -197,7 +199,7 @@ const sqliteService = {
                 }
             }
         } else {
-            // ---> ENTORNO WEB (MOCK)
+            // ---> ENTORNO WEB (SIMULACIÓN)
             if (action === 'overwrite') {
                 localStorage.removeItem("mock_db_usuarios");
                 localStorage.removeItem("usuario_activo");
@@ -216,7 +218,7 @@ const sqliteService = {
             localStorage.setItem("mock_db_usuarios", JSON.stringify(usersMock));
         }
 
-        // 2. Guardamos la "Firma" de la orden para sellar el trabajo
+        // 2. Guardamos la "Firma" de la orden para sellar el trabajo y no repetirlo
         await this.setConfig('firma_dios', firmaActual);
         console.log("[SQLite] ✔️ Órdenes procesadas y memorizadas con éxito.");
     },
@@ -354,11 +356,24 @@ const sqliteService = {
     },
 
     limpiarBD: async function() {
-        localStorage.removeItem("mock_db_usuarios");
+        if (!this.isWeb && this.db) {
+            try {
+                await this.db.execute("DELETE FROM usuarios;");
+                await this.db.execute("DELETE FROM app_config;");
+            } catch (e) {
+                console.error("[SQLite] Error limpiando la base de datos nativa:", e);
+            }
+        } else {
+            localStorage.removeItem("mock_db_usuarios");
+        }
+        
         await this.clearSession();
         window.mostrarNotificacion("Base de datos formateada.", "danger");
+        
+        // Carga la app nuevamente después de 1 segundo
         setTimeout(() => window.location.reload(), 1000);
     }
 };
 
+// Exposición Global (Obligatoria para la integración de la app)
 window.sqliteService = sqliteService;

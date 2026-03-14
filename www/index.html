@@ -7,6 +7,7 @@
     <meta name="theme-color" content="#0d6efd">
     
     <!-- CSP CRÍTICO 100% LOCAL (0% CDNs) -->
+    <!-- Define estrictamente de dónde se pueden cargar los recursos para máxima seguridad -->
     <meta http-equiv="Content-Security-Policy" content="default-src 'self' capacitor://localhost http://localhost data: gap: https://kenth1977.pythonanywhere.com http://127.0.0.1:5000; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'self' https://kenth1977.pythonanywhere.com capacitor://localhost http://localhost http://127.0.0.1:5000; font-src 'self' data:;">
     
     <title>Motor Universal App</title>
@@ -20,21 +21,35 @@
          CASCARÓN DE LA APP (SHELL)
     =========================================== -->
 
-    <!-- BARRA SUPERIOR -->
-    <nav class="navbar navbar-dark bg-primary top-navbar d-none" id="app-header">
+    <!-- BARRA SUPERIOR (Corregida para Android Edge-to-Edge y Notch de iOS) -->
+    <!-- Se usa max() para asegurar que incluso si el sistema reporta 0, haya un espacio de 40px para la hora y batería -->
+    <nav class="navbar navbar-dark bg-primary top-navbar d-none" id="app-header" style="padding-top: max(env(safe-area-inset-top), 40px) !important; padding-bottom: 10px !important;">
         <div class="container-fluid d-flex justify-content-between align-items-center">
             <span class="navbar-brand mb-0 h1 fw-bold" id="view-title">Inicio</span>
-            <!-- NUEVO: BOTÓN DE TEMA (SOL/LUNA) DIRECTO EN LA BARRA -->
+            <!-- BOTÓN DE TEMA (SOL/LUNA) DIRECTO EN LA BARRA (Corregido y blindado) -->
             <button class="btn btn-link text-white p-0 text-decoration-none" id="btn-theme-toggle" onclick="
                 const current = document.documentElement.getAttribute('data-bs-theme');
-                const isDark = current === 'dark';
-                const nextTheme = isDark ? 'claro' : 'oscuro';
-                if (window.ThemeManager) window.ThemeManager.guardarPreferenciaTema(nextTheme);
-                const icon = this.querySelector('i');
-                if (nextTheme === 'oscuro') { 
-                    icon.classList.replace('bi-moon-stars-fill', 'bi-sun-fill'); 
-                } else { 
-                    icon.classList.replace('bi-sun-fill', 'bi-moon-stars-fill'); 
+                const nextTheme = current === 'dark' ? 'claro' : 'oscuro';
+                
+                if (window.ThemeManager) {
+                    if (window.ThemeManager.guardarPreferenciaTema) {
+                        window.ThemeManager.guardarPreferenciaTema(nextTheme);
+                    } else if (window.ThemeManager.cambiarTema) {
+                        window.ThemeManager.cambiarTema(nextTheme);
+                    } else if (window.ThemeManager.aplicarTema) {
+                        window.ThemeManager.aplicarTema(nextTheme);
+                    }
+                }
+                
+                const icon = document.getElementById('header-theme-icon');
+                if (icon) {
+                    if (nextTheme === 'oscuro') { 
+                        icon.classList.remove('bi-moon-stars-fill');
+                        icon.classList.add('bi-sun-fill'); 
+                    } else { 
+                        icon.classList.remove('bi-sun-fill');
+                        icon.classList.add('bi-moon-stars-fill'); 
+                    }
                 }
             ">
                 <i class="bi bi-moon-stars-fill fs-5" id="header-theme-icon"></i>
@@ -42,16 +57,17 @@
         </div>
     </nav>
 
-    <!-- CONTENEDOR DINÁMICO -->
-    <div id="app-root" class="container-fluid pt-safe fade-in">
+    <!-- CONTENEDOR DINÁMICO (Aquí se inyectan las vistas) -->
+    <!-- Se añade un padding superior de respaldo por la ampliación de la barra -->
+    <div id="app-root" class="container-fluid pt-safe fade-in" style="padding-top: calc(90px + env(safe-area-inset-top, 0px));">
         <div class="d-flex flex-column justify-content-center align-items-center h-100" style="min-height: 80vh;">
             <div class="spinner-border text-primary" role="status"></div>
             <p class="mt-3 text-muted fw-bold small" id="loading-text">Conectando Motor SQLite...</p>
         </div>
     </div>
 
-    <!-- BARRA DE NAVEGACIÓN INFERIOR (Solo 2 Iconos) -->
-    <nav class="bottom-nav d-none justify-content-around" id="app-bottom-nav">
+    <!-- BARRA DE NAVEGACIÓN INFERIOR (Solo 2 Iconos - Ajustada para gestos de Android) -->
+    <nav class="bottom-nav d-none justify-content-around" id="app-bottom-nav" style="padding-bottom: max(env(safe-area-inset-bottom), 20px) !important; padding-top: 10px !important;">
         <div class="nav-item text-center active" id="nav-inicio" onclick="window.cargarVista('inicio', 'Inicio')">
             <i class="bi bi-house-fill fs-4"></i>
             <span>Inicio</span>
@@ -107,7 +123,7 @@
 
                 <div class="card app-card text-start border-0 shadow-sm">
                     <div class="card-body p-4">
-                        <form id="form-login" onsubmit="event.preventDefault(); window.iniciarSesionApp();">
+                        <form id="form-login" onsubmit="window.iniciarSesionApp(event);">
                             <div class="mb-3">
                                 <label class="form-label text-muted small fw-bold">Correo Electrónico</label>
                                 <div class="input-group">
@@ -120,7 +136,7 @@
                                 <div class="input-group">
                                     <span class="input-group-text bg-light border-end-0"><i class="bi bi-lock text-muted"></i></span>
                                     <input type="password" id="login-pass" class="form-control border-start-0 border-end-0 ps-0 bg-light" placeholder="••••••••" required>
-                                    <span class="input-group-text bg-light border-start-0 cursor-pointer" onclick="window.RegistroManager.togglePasswordVisibility('login-pass', this)">
+                                    <span class="input-group-text bg-light border-start-0 cursor-pointer btn-toggle-password">
                                         <i class="bi bi-eye-slash text-muted"></i>
                                     </span>
                                 </div>
@@ -131,7 +147,8 @@
                             <button type="submit" id="btn-login-submit" class="btn btn-primary w-100 py-3 fw-bold rounded-pill shadow-sm mb-3 mt-2">
                                 INGRESAR AL SISTEMA
                             </button>
-                            <button type="button" id="btn-bio-login" class="btn btn-outline-secondary w-100 py-2 fw-bold rounded-pill" onclick="window.mostrarNotificacion('Biometría en desarrollo', 'primary');">
+                            <!-- El botón de biometría usa el envoltorio explícito asegurado al final del documento -->
+                            <button type="button" id="btn-bio-login" class="btn btn-outline-secondary w-100 py-2 fw-bold rounded-pill" onclick="window.ejecutarLoginBiometrico();">
                                 <i class="bi bi-fingerprint fs-5 me-2 align-middle"></i> Acceso Biométrico
                             </button>
                         </form>
@@ -234,7 +251,7 @@
                                 <label class="form-label text-muted small fw-bold">Crear Contraseña <span class="text-danger">*</span></label>
                                 <div class="input-group">
                                     <input type="password" id="reg-pass" class="form-control border-end-0 bg-light" placeholder="Mínimo 6 caracteres" required>
-                                    <span class="input-group-text bg-light cursor-pointer" onclick="window.RegistroManager.togglePasswordVisibility('reg-pass', this)">
+                                    <span class="input-group-text bg-light cursor-pointer btn-toggle-password">
                                         <i class="bi bi-eye-slash text-muted"></i>
                                     </span>
                                 </div>
@@ -244,7 +261,7 @@
                                 <label class="form-label text-muted small fw-bold">Verificar Contraseña <span class="text-danger">*</span></label>
                                 <div class="input-group">
                                     <input type="password" id="reg-pass-verify" class="form-control border-end-0 bg-light" placeholder="Repite la contraseña" required>
-                                    <span class="input-group-text bg-light cursor-pointer" onclick="window.RegistroManager.togglePasswordVisibility('reg-pass-verify', this)">
+                                    <span class="input-group-text bg-light cursor-pointer btn-toggle-password">
                                         <i class="bi bi-eye-slash text-muted"></i>
                                     </span>
                                 </div>
@@ -272,7 +289,7 @@
     <template id="tpl-inicio">
         <div class="row g-3">
             <div class="col-12 mb-2">
-                <div class="card app-card bg-primary text-white">
+                <div class="card app-card bg-primary text-white border-0 shadow-sm">
                     <div class="card-body d-flex justify-content-between align-items-center p-4">
                         <div>
                             <h5 class="card-title fw-bold mb-1" id="inicio-nombre">Hola, Usuario</h5>
@@ -289,10 +306,14 @@
 
     <!-- VISTA: PERFIL -->
     <template id="tpl-perfil">
-        <div class="text-center mb-4 mt-3">
+        <!-- CONTENEDOR DEL FLYER / PORTADA EN EL PERFIL -->
+        <div id="perfil-flyer" class="bg-primary" style="height: 140px; width: 100%; background-size: cover; background-position: center; border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"></div>
+
+        <div class="text-center mb-4" style="margin-top: -60px;">
             <div class="position-relative d-inline-block">
-                <div class="bg-primary text-white rounded-circle shadow-sm mb-3 d-flex align-items-center justify-content-center fw-bold overflow-hidden" style="width:120px; height:120px; font-size: 3rem; cursor: pointer;" id="perfil-avatar" onclick="window.ImageEditorManager.abrirSelectorImagen()">U</div>
-                <button class="btn btn-sm btn-primary rounded-circle position-absolute bottom-0 end-0 mb-3 me-2 shadow" onclick="window.editarMiPerfil()">
+                <!-- Avatar con borde blanco para destacar sobre el flyer -->
+                <div class="bg-primary text-white rounded-circle shadow-sm mb-3 d-flex align-items-center justify-content-center fw-bold overflow-hidden" style="width:120px; height:120px; font-size: 3rem; cursor: pointer; border: 4px solid white;" id="perfil-avatar" onclick="if(window.ImageEditorManager) window.ImageEditorManager.abrirSelectorImagen()">U</div>
+                <button class="btn btn-sm btn-primary rounded-circle position-absolute bottom-0 end-0 mb-3 me-2 shadow" onclick="if(window.editarMiPerfil) window.editarMiPerfil()">
                     <i class="bi bi-pencil"></i>
                 </button>
             </div>
@@ -301,7 +322,7 @@
             <span class="badge bg-primary" id="perfil-rol">Cargando...</span>
         </div>
 
-        <div class="card app-card border-0 mb-3">
+        <div class="card app-card border-0 mb-3 shadow-sm">
             <div class="card-body p-0">
                 <div class="list-group list-group-flush rounded-3">
                     <div class="list-group-item py-3">
@@ -319,7 +340,7 @@
         <div class="row g-3 mt-2">
             <!-- BOTÓN EDITAR INFORMACIÓN (ESTILO TARJETA) -->
             <div class="col-6">
-                <div class="card app-card h-100 cursor-pointer border border-primary border-opacity-25" onclick="window.editarMiPerfil()">
+                <div class="card app-card h-100 cursor-pointer border border-primary border-opacity-25 shadow-sm" onclick="if(window.editarMiPerfil) window.editarMiPerfil()">
                     <div class="card-body text-center d-flex flex-column align-items-center justify-content-center py-4">
                         <div class="text-primary mb-2"><i class="bi bi-person-vcard fs-1"></i></div>
                         <h6 class="fw-bold mb-0">Editar</h6>
@@ -330,7 +351,7 @@
 
             <!-- BOTÓN AJUSTES AVANZADOS (ESTILO TARJETA) - SOLO PARA SUPERUSUARIO -->
             <div class="col-6" id="btn-ir-ajustes-container">
-                <div class="card app-card h-100 cursor-pointer border border-secondary border-opacity-25 bg-light" id="btn-ir-ajustes" onclick="window.cargarVista('ajustes', 'Ajustes del Sistema')">
+                <div class="card app-card h-100 cursor-pointer border border-secondary border-opacity-25 bg-light shadow-sm" id="btn-ir-ajustes" onclick="window.cargarVista('ajustes', 'Ajustes del Sistema')">
                     <div class="card-body text-center d-flex flex-column align-items-center justify-content-center py-4">
                         <div class="text-secondary mb-2"><i class="bi bi-sliders fs-1"></i></div>
                         <h6 class="fw-bold mb-0">Ajustes</h6>
@@ -357,7 +378,7 @@
         <h6 class="fw-bold text-muted mb-3 px-1 small">SISTEMA Y RENDIMIENTO</h6>
         <div class="row g-3 mb-4">
             
-            <!-- NUEVO: TARJETA GESTIÓN DE USUARIOS (MOVIDA DESDE INICIO) -->
+            <!-- TARJETA GESTIÓN DE USUARIOS -->
             <div class="col-12">
                  <div class="card app-card h-100 cursor-pointer border-0 shadow-sm border border-primary border-opacity-50" onclick="window.cargarVista('admin_usuarios', 'Usuarios')">
                     <div class="card-body d-flex align-items-center p-3">
@@ -375,7 +396,7 @@
 
             <!-- TARJETA: TEST RENDIMIENTO -->
             <div class="col-12">
-                 <div class="card app-card h-100 cursor-pointer border-0 shadow-sm" onclick="window.sqliteService.testConnection()">
+                 <div class="card app-card h-100 cursor-pointer border-0 shadow-sm" onclick="if(window.sqliteService && window.sqliteService.testConnection) window.sqliteService.testConnection()">
                     <div class="card-body d-flex align-items-center p-3">
                         <div class="bg-secondary bg-opacity-10 text-secondary rounded-circle p-3 me-3 d-flex align-items-center justify-content-center">
                              <i class="bi bi-speedometer2 fs-4"></i>
@@ -389,7 +410,7 @@
                 </div>
             </div>
             
-            <!-- TARJETA: SINCRONIZAR (MOVIDA DESDE INICIO) -->
+            <!-- TARJETA: SINCRONIZAR -->
             <div class="col-6">
                 <div class="card app-card h-100 cursor-pointer border-0 shadow-sm" onclick="window.mostrarNotificacion('Sincronizando con la nube...', 'info')">
                     <div class="card-body text-center d-flex flex-column align-items-center justify-content-center py-3">
@@ -400,7 +421,7 @@
                 </div>
             </div>
             
-            <!-- TARJETA: ESTADO DB (MOVIDA DESDE INICIO) -->
+            <!-- TARJETA: ESTADO DB -->
             <div class="col-6">
                 <div class="card app-card h-100 border-0 shadow-sm">
                     <div class="card-body text-center d-flex flex-column align-items-center justify-content-center py-3">
@@ -412,33 +433,33 @@
             </div>
         </div>
 
-        <!-- ZONA ADMINISTRATIVA DE DATOS (Mantenida como lista para acciones críticas) -->
+        <!-- ZONA ADMINISTRATIVA DE DATOS -->
         <div id="admin-db-controls" class="mb-4">
             <h6 class="fw-bold text-danger mb-3 px-1 small"><i class="bi bi-shield-lock-fill me-1"></i> ZONA ADMINISTRATIVA DE DATOS</h6>
             <div class="card app-card border-0 border border-danger border-opacity-25 shadow-sm">
                 <div class="list-group list-group-flush rounded-3">
                     
-                    <button class="list-group-item list-group-item-action py-3 text-primary d-flex align-items-center" onclick="window.AdminDBManager.respaldarBD()">
+                    <button class="list-group-item list-group-item-action py-3 text-primary d-flex align-items-center" onclick="if(window.AdminDBManager) window.AdminDBManager.respaldarBD()">
                         <i class="bi bi-filetype-json fs-5 me-3"></i> 
                         <span class="fw-medium">Exportar Usuarios (JSON)</span>
                     </button>
                     <label class="list-group-item list-group-item-action py-3 text-success d-flex align-items-center mb-0 cursor-pointer" style="margin: 0; border-bottom: 1px solid rgba(0,0,0,0.125);">
                         <i class="bi bi-file-earmark-arrow-up fs-5 me-3"></i> 
                         <span class="fw-medium">Importar Usuarios (JSON)</span>
-                        <input type="file" accept=".json" class="d-none" onchange="window.AdminDBManager.cargarBD(event)">
+                        <input type="file" accept=".json" class="d-none" onchange="if(window.AdminDBManager) window.AdminDBManager.cargarBD(event)">
                     </label>
 
-                    <button class="list-group-item list-group-item-action py-3 text-primary fw-bold d-flex align-items-center bg-light" onclick="window.AdminDBManager.respaldarBDCompleta()">
+                    <button class="list-group-item list-group-item-action py-3 text-primary fw-bold d-flex align-items-center bg-light" onclick="if(window.AdminDBManager) window.AdminDBManager.respaldarBDCompleta()">
                         <i class="bi bi-database-down fs-5 me-3"></i> 
                         <span class="fw-medium">Respaldo Completo (.db)</span>
                     </button>
                     <label class="list-group-item list-group-item-action py-3 text-success fw-bold d-flex align-items-center mb-0 cursor-pointer bg-light" style="margin: 0; border-bottom: 1px solid rgba(0,0,0,0.125);">
                         <i class="bi bi-database-up fs-5 me-3"></i> 
                         <span class="fw-medium">Restaurar Completo (.db)</span>
-                        <input type="file" accept=".db" class="d-none" onchange="window.AdminDBManager.cargarBDCompleta(event)">
+                        <input type="file" accept=".db" class="d-none" onchange="if(window.AdminDBManager) window.AdminDBManager.cargarBDCompleta(event)">
                     </label>
 
-                    <button class="list-group-item list-group-item-action py-3 text-danger d-flex align-items-center" onclick="window.AdminDBManager.iniciarReseteo()">
+                    <button class="list-group-item list-group-item-action py-3 text-danger d-flex align-items-center" onclick="if(window.AdminDBManager) window.AdminDBManager.iniciarReseteo()">
                         <i class="bi bi-exclamation-triangle fs-5 me-3"></i> 
                         <span class="fw-medium fw-bold">Resetear Base de Datos</span>
                     </button>
@@ -464,7 +485,7 @@
             <button class="btn btn-primary ms-2 rounded-circle shadow-sm" style="width: 40px; height: 40px; flex-shrink: 0;"><i class="bi bi-plus-lg"></i></button>
         </div>
 
-        <div class="card app-card border-0">
+        <div class="card app-card border-0 shadow-sm">
             <div class="table-responsive">
                 <table class="table table-hover mb-0 align-middle">
                     <thead class="table-light">
@@ -486,12 +507,19 @@
 
     <!-- VISTA: EDITAR USUARIO -->
     <template id="tpl-editar_usuario">
-        <div class="card app-card border-0 mt-2 mb-4">
-            <div class="card-body p-4">
+        <div class="card app-card border-0 mt-2 mb-4 shadow-sm">
+            
+            <!-- CONTENEDOR DEL FLYER EN EL EDITOR (Solo visualización estática) -->
+            <div id="editor-flyer" class="bg-primary" style="height: 120px; width: 100%; background-size: cover; background-position: center; border-top-left-radius: .375rem; border-top-right-radius: .375rem;">
+            </div>
+
+            <!-- MARGEN NEGATIVO PARA QUE EL AVATAR SUBA SOBRE EL FLYER -->
+            <div class="card-body p-4" style="margin-top: -50px;">
                 <div class="text-center mb-4 pb-3 border-bottom">
                     <div class="position-relative d-inline-block">
-                        <div class="bg-primary text-white rounded-circle shadow-sm mb-2 d-flex align-items-center justify-content-center fw-bold overflow-hidden" style="width:100px; height:100px; font-size: 2.5rem; cursor: pointer; margin: 0 auto;" id="edit-avatar" onclick="window.ImageEditorManager.abrirSelectorImagen()">U</div>
-                        <button class="btn btn-sm btn-primary rounded-circle position-absolute bottom-0 end-0 mb-2 shadow" style="transform: translate(25%, 25%);" onclick="window.ImageEditorManager.abrirSelectorImagen()">
+                        <!-- AVATAR CON BORDE BLANCO PARA SEPARARLO DEL FLYER -->
+                        <div class="bg-primary text-white rounded-circle shadow-sm mb-2 d-flex align-items-center justify-content-center fw-bold overflow-hidden" style="width:100px; height:100px; font-size: 2.5rem; cursor: pointer; margin: 0 auto; border: 4px solid white;" id="edit-avatar" onclick="if(window.ImageEditorManager) window.ImageEditorManager.abrirSelectorImagen('avatar')">U</div>
+                        <button class="btn btn-sm btn-primary rounded-circle position-absolute bottom-0 end-0 mb-2 shadow" style="transform: translate(25%, 25%);" onclick="if(window.ImageEditorManager) window.ImageEditorManager.abrirSelectorImagen('avatar')">
                             <i class="bi bi-camera-fill"></i>
                         </button>
                     </div>
@@ -499,7 +527,8 @@
                     <small class="text-muted">Editor de Perfil Completo</small>
                 </div>
 
-                <form onsubmit="event.preventDefault(); window.guardarEdicionUsuario();">
+                <!-- IMPORTANTE: ID AÑADIDO AL FORMULARIO PARA QUE userController.js PUEDA LEERLO -->
+                <form id="form-editar-usuario" onsubmit="event.preventDefault(); if(window.guardarEdicionUsuario) window.guardarEdicionUsuario();">
                     
                     <h6 class="fw-bold text-primary mb-3 small border-bottom pb-2"><i class="bi bi-person-lines-fill me-2"></i>DATOS PERSONALES</h6>
                     
@@ -578,7 +607,7 @@
                                 <label class="form-label text-muted small fw-bold">Contraseña Actual</label>
                                 <div class="input-group">
                                     <input type="password" id="edit-current-password" class="form-control border-end-0" placeholder="••••••••">
-                                    <span class="input-group-text bg-white cursor-pointer border-start-0" onclick="window.RegistroManager.togglePasswordVisibility('edit-current-password', this)">
+                                    <span class="input-group-text bg-white cursor-pointer border-start-0 btn-toggle-password">
                                         <i class="bi bi-eye-slash text-muted"></i>
                                     </span>
                                 </div>
@@ -588,7 +617,7 @@
                                 <label class="form-label text-muted small fw-bold">Nueva Contraseña</label>
                                 <div class="input-group">
                                     <input type="password" id="edit-new-password" class="form-control border-end-0" placeholder="Mínimo 6 caracteres">
-                                    <span class="input-group-text bg-white cursor-pointer border-start-0" onclick="window.RegistroManager.togglePasswordVisibility('edit-new-password', this)">
+                                    <span class="input-group-text bg-white cursor-pointer border-start-0 btn-toggle-password">
                                         <i class="bi bi-eye-slash text-muted"></i>
                                     </span>
                                 </div>
@@ -598,7 +627,7 @@
                                 <label class="form-label text-muted small fw-bold">Verificar Nueva Contraseña</label>
                                 <div class="input-group">
                                     <input type="password" id="edit-verify-password" class="form-control border-end-0" placeholder="Repite la contraseña">
-                                    <span class="input-group-text bg-white cursor-pointer border-start-0" onclick="window.RegistroManager.togglePasswordVisibility('edit-verify-password', this)">
+                                    <span class="input-group-text bg-white cursor-pointer border-start-0 btn-toggle-password">
                                         <i class="bi bi-eye-slash text-muted"></i>
                                     </span>
                                 </div>
@@ -607,11 +636,11 @@
                         </div>
                     </div>
 
-                    <div id="box-privilegios" class="p-3 mb-4 rounded-3 border bg-light">
+                    <div id="box-privilegios" class="p-3 mb-4 rounded-3 border bg-light shadow-sm">
                         <h6 class="fw-bold mb-3 small text-primary"><i class="bi bi-shield-lock me-1"></i> ZONA ADMINISTRATIVA</h6>
                         <div class="mb-3">
                             <label class="form-label text-muted small fw-bold">Rol en el sistema</label>
-                            <select id="edit-rol" class="form-select border-0 py-2">
+                            <select id="edit-rol" class="form-select border-0 py-2 shadow-sm">
                                 <option value="usuario">Usuario Regular</option>
                                 <option value="admin">Administrador</option>
                                 <option value="superusuario">Superusuario</option>
@@ -619,7 +648,7 @@
                         </div>
                         <div>
                             <label class="form-label text-muted small fw-bold">Estado de cuenta</label>
-                            <select id="edit-estado" class="form-select border-0 py-2">
+                            <select id="edit-estado" class="form-select border-0 py-2 shadow-sm">
                                 <option value="activo">Activa (Permitir acceso)</option>
                                 <option value="inactivo">Inactiva (Bloqueado)</option>
                             </select>
@@ -629,7 +658,7 @@
                     <button type="submit" id="btn-save-edit" class="btn btn-primary w-100 py-3 fw-bold rounded-pill shadow-sm mb-3">
                         <i class="bi bi-check2-circle me-1"></i> GUARDAR CAMBIOS
                     </button>
-                    <button type="button" class="btn btn-outline-secondary w-100 py-2 fw-bold rounded-pill" onclick="window.cancelarEdicion()">
+                    <button type="button" class="btn btn-outline-secondary w-100 py-2 fw-bold rounded-pill" onclick="if(window.cancelarEdicion) window.cancelarEdicion()">
                         CANCELAR
                     </button>
                     
@@ -656,8 +685,24 @@
     <script src="js/router.js"></script>
     <script src="js/userController.js"></script>
     <script src="js/imageEditor.js"></script>
-    <!-- NUEVO: GESTOR DE ADMIN Y RESPALDOS -->
+    <!-- GESTOR DE ADMIN Y RESPALDOS -->
     <script src="js/adminDb.js"></script>
+    <!-- GESTOR DE UI Y UTILIDADES GLOBALES -->
     <script src="js/utils.js"></script>
+    <!-- SCRIPT DE BIOMETRÍA -->
+    <script src="js/api_db.js"></script>
+    
+    <!-- Inicializador principal de la App -->
+    <script src="js/index.js"></script>
+    <script>
+        // Envoltura explícita para la biometría para asegurar que no se pierda al cargar dinámicamente las vistas
+        window.ejecutarLoginBiometrico = function() {
+            if (typeof window.procesarLoginBiometrico === 'function') {
+                window.procesarLoginBiometrico();
+            } else {
+                 window.mostrarNotificacion('Biometría no disponible o en carga', 'warning');
+            }
+        };
+    </script>
 </body>
 </html>

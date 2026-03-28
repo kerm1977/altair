@@ -8,11 +8,14 @@ echo ==========================================
 echo    MOTOR COMPILADOR ANDROID (CORE V5 - UI FIX)
 echo ==========================================
 
-:: 2. CARGAR VARIABLES Y RUTAS
-set "CUSTOM_NAME=miapp"
+:: 2. CARGAR VARIABLES DIRECTAMENTE DESDE CAPACITOR (SIN ARCHIVOS PUENTE)
+echo [INFO] Leyendo la configuracion real del proyecto...
+for /f "delims=" %%I in ('node -p "require('../capacitor.config.json').appName"') do set "CUSTOM_NAME=%%I"
+for /f "delims=" %%I in ('node -p "require('../capacitor.config.json').appId"') do set "CUSTOM_APP_ID=%%I"
 set "ICON_PATH="
-if exist "build_config.bat" call build_config.bat
-if not "!ICON_PATH!"=="" set "ICON_PATH=!ICON_PATH:"=!"
+
+if "!CUSTOM_NAME!"=="" set "CUSTOM_NAME=LaTribu"
+if "!CUSTOM_APP_ID!"=="" set "CUSTOM_APP_ID=com.latribu.app"
 
 :: Traductor WSL silencioso
 if not "!ICON_PATH!"=="" (
@@ -33,8 +36,8 @@ if exist "%STRINGS_FILE%" (
         echo ^<resources^>
         echo     ^<string name="app_name"^>!CUSTOM_NAME!^</string^>
         echo     ^<string name="title_activity_main"^>!CUSTOM_NAME!^</string^>
-        echo     ^<string name="package_name"^>com.miapp.local^</string^>
-        echo     ^<string name="custom_url_scheme"^>com.miapp.local^</string^>
+        echo     ^<string name="package_name"^>!CUSTOM_APP_ID!^</string^>
+        echo     ^<string name="custom_url_scheme"^>!CUSTOM_APP_ID!^</string^>
         echo ^</resources^>
     ) > "%STRINGS_FILE%"
 )
@@ -195,21 +198,21 @@ echo.
 echo [4/5] Aplicando reglas de SDK 35 y Java 17...
 (
     echo ext {
-    echo     minSdkVersion = 24
-    echo     compileSdkVersion = 35
-    echo     targetSdkVersion = 35
-    echo     javaVersion = 17
-    echo     androidxActivityVersion = '1.9.0'
-    echo     androidxAppCompatVersion = '1.6.1'
-    echo     androidxCoordinatorLayoutVersion = '1.2.0'
-    echo     androidxCoreVersion = '1.13.1'
-    echo     androidxFragmentVersion = '1.7.1'
-    echo     coreSplashScreenVersion = '1.0.1'
-    echo     androidxWebkitVersion = '1.11.0'
-    echo     junitVersion = '4.13.2'
-    echo     androidxJunitVersion = '1.1.5'
-    echo     androidxEspressoCoreVersion = '3.5.1'
-    echo     cordovaAndroidVersion = '13.0.0'
+        echo     minSdkVersion = 24
+        echo     compileSdkVersion = 35
+        echo     targetSdkVersion = 35
+        echo     javaVersion = 17
+        echo     androidxActivityVersion = '1.9.0'
+        echo     androidxAppCompatVersion = '1.6.1'
+        echo     androidxCoordinatorLayoutVersion = '1.2.0'
+        echo     androidxCoreVersion = '1.13.1'
+        echo     androidxFragmentVersion = '1.7.1'
+        echo     coreSplashScreenVersion = '1.0.1'
+        echo     androidxWebkitVersion = '1.11.0'
+        echo     junitVersion = '4.13.2'
+        echo     androidxJunitVersion = '1.1.5'
+        echo     androidxEspressoCoreVersion = '3.5.1'
+        echo     cordovaAndroidVersion = '13.0.0'
     echo }
 ) > variables.gradle
 

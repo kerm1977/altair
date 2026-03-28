@@ -120,4 +120,4 @@ app/src/main/res/xml/config.xml
 *.msi
 
 # Files for the ART/Dalvik VM
-*.dex
+*.dexpb_data/  echo local_dbs/ 

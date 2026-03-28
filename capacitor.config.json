@@ -1,6 +1,6 @@
 {
-  "appId": "com.pepinocho.app",
-  "appName": "Pepinocho",
+  "appId": "com.altus.app",
+  "appName": "altus",
   "webDir": "www",
   "bundledWebRuntime": false,
   "plugins": {

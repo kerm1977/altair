@@ -1,770 +1,388 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="es" data-bs-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="theme-color" content="#0d6efd">
     
-    <!-- CSP CRÍTICO 100% LOCAL (0% CDNs) -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' capacitor://localhost http://localhost data: gap: https://kenth1977.pythonanywhere.com http://127.0.0.1:5000; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; connect-src 'self' https://kenth1977.pythonanywhere.com capacitor://localhost http://localhost http://127.0.0.1:5000; font-src 'self' data:;">
+    <title>La Tribu - App</title>
     
-    <title>Motor Universal App</title>
-    
-    <link href="css/main.css" rel="stylesheet">
+    <!-- Para esta previsualización usamos CDNs, pero en tu app usarás tus archivos locales (css/main.css) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+    <style>
+        /* =========================================
+           ESTILOS NATIVOS MÓVILES (Tu index.css)
+           ========================================= */
+        body {
+            background-color: #f8f9fa;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            overflow-x: hidden;
+            padding-top: calc(60px + env(safe-area-inset-top, 0px));
+            padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+        }
+
+        /* Barra Superior */
+        .top-navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1030;
+            padding-top: env(safe-area-inset-top, 0px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            min-height: 60px;
+        }
+
+        /* Barra de Navegación Inferior */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: #ffffff;
+            border-top: 1px solid #e9ecef;
+            z-index: 1030;
+            padding-top: 0.5rem;
+            padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
+            display: flex;
+            justify-content: space-around;
+        }
+
+        .nav-item {
+            cursor: pointer;
+            text-align: center;
+            flex: 1;
+            color: #6c757d;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .nav-item.active {
+            color: #0d6efd;
+            font-weight: bold;
+        }
+
+        .nav-item i {
+            display: block;
+            font-size: 1.4rem;
+            margin-bottom: -2px;
+        }
+
+        .nav-item span {
+            font-size: 0.75rem;
+        }
+
+        /* Efecto de presionado físico */
+        .app-card { transition: transform 0.1s ease; }
+        .app-card:active { transform: scale(0.97); }
+        
+        /* Animación SPA */
+        .fade-in { animation: fadeIn 0.3s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
 </head>
 <body>
 
-    <!-- ==========================================
-         CASCARÓN DE LA APP (SHELL)
-    =========================================== -->
-
-    <nav class="navbar navbar-dark bg-primary top-navbar d-none position-fixed w-100 top-0 z-3" id="app-header" style="padding-top: calc(0.5rem + env(safe-area-inset-top, 0px)); padding-bottom: 0.5rem;">
-        <div class="container-fluid d-flex justify-content-between align-items-center">
-            
-            <div class="d-flex align-items-center">
-                <button class="btn btn-link text-white p-0 text-decoration-none me-3 d-none" id="btn-global-back" onclick="window.irAtrasGlobal()">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" fill="currentColor" viewBox="0 0 16 16">
-                        <path fill-rule="evenodd" d="M15 8a.5.5 0 0 0-.5-.5H2.707l3.147-3.146a.5.5 0 1 0-.708-.708l-4 4a.5.5 0 0 0 0 .708l4 4a.5.5 0 0 0 .708-.708L2.707 8.5H14.5A.5.5 0 0 0 15 8z"/>
-                    </svg>
-                </button>
-                <span class="navbar-brand mb-0 h1 fw-bold" id="view-title">Inicio</span>
-            </div>
-
-            <button class="btn btn-link text-white p-0 text-decoration-none" id="btn-theme-toggle" onclick="
-                const current = document.documentElement.getAttribute('data-bs-theme');
-                const nextTheme = current === 'dark' ? 'claro' : 'oscuro';
-                
-                if (window.ThemeManager) {
-                    if (window.ThemeManager.guardarPreferenciaTema) {
-                        window.ThemeManager.guardarPreferenciaTema(nextTheme);
-                    } else if (window.ThemeManager.cambiarTema) {
-                        window.ThemeManager.cambiarTema(nextTheme);
-                    } else if (window.ThemeManager.aplicarTema) {
-                        window.ThemeManager.aplicarTema(nextTheme);
-                    }
-                }
-                
-                const icon = document.getElementById('header-theme-icon');
-                if (icon) {
-                    if (nextTheme === 'oscuro') { 
-                        icon.classList.remove('bi-moon-stars-fill');
-                        icon.classList.add('bi-sun-fill'); 
-                    } else { 
-                        icon.classList.remove('bi-sun-fill');
-                        icon.classList.add('bi-moon-stars-fill'); 
-                    }
-                }
-            ">
-                <i class="bi bi-moon-stars-fill fs-5" id="header-theme-icon"></i>
+    <!-- =========================================
+         1. BARRA SUPERIOR (HEADER)
+    ========================================= -->
+    <nav id="app-header" class="navbar navbar-dark bg-primary top-navbar">
+        <div class="container-fluid px-3 d-flex align-items-center">
+            <!-- Botón Atrás (Se oculta dinámicamente) -->
+            <button id="btn-global-back" class="btn btn-link text-white p-0 me-3 d-none" onclick="window.irAtrasGlobal()">
+                <i class="bi bi-chevron-left fs-4"></i>
             </button>
+            
+            <!-- Título Dinámico -->
+            <h5 id="view-title" class="text-white mb-0 fw-bold text-truncate" style="max-width: 70%;">Inicio</h5>
+            
+            <!-- Acciones extra (Ej: Notificaciones) -->
+            <div class="ms-auto text-white cursor-pointer">
+                <i class="bi bi-bell fs-5"></i>
+            </div>
         </div>
     </nav>
 
-    <div id="app-root" class="container-fluid fade-in" style="padding-top: calc(56px + env(safe-area-inset-top, 0px)); padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px));">
-        <div class="d-flex flex-column justify-content-center align-items-center h-100" style="min-height: 80vh;">
-            <div class="spinner-border text-primary" role="status"></div>
-            <p class="mt-3 text-muted fw-bold small" id="loading-text">Conectando Motor SQLite...</p>
-        </div>
-    </div>
+    <!-- =========================================
+         2. CONTENEDOR PRINCIPAL (DONDE SE INYECTA TODO)
+    ========================================= -->
+    <main id="app-root" class="container px-3 py-4 fade-in">
+        <!-- El contenido de los <template> se dibuja aquí -->
+    </main>
 
-    <nav class="bottom-nav d-none justify-content-around position-fixed w-100 bottom-0 z-3 bg-white border-top" id="app-bottom-nav" style="padding-bottom: max(env(safe-area-inset-bottom), 10px); padding-top: 10px;">
-        <div class="nav-item text-center active" id="nav-inicio" onclick="window.cargarVista('inicio', 'Inicio')">
-            <i class="bi bi-house-fill fs-4"></i>
+    <!-- =========================================
+         3. BARRA INFERIOR (BOTTOM NAV)
+    ========================================= -->
+    <nav id="app-bottom-nav" class="bottom-nav d-none">
+        <a class="nav-item active" onclick="cargarVista('inicio', 'Inicio', this)">
+            <i class="bi bi-house-door-fill"></i>
             <span>Inicio</span>
-        </div>
-        <div class="nav-item text-center text-secondary" id="nav-perfil" onclick="window.cargarVista('perfil', 'Mi Perfil')">
-            <i class="bi bi-person-circle fs-4"></i>
+        </a>
+        <a class="nav-item" onclick="cargarVista('pagos', 'Gestión de Pagos', this)">
+            <i class="bi bi-wallet2"></i>
+            <span>Pagos</span>
+        </a>
+        <a class="nav-item" onclick="cargarVista('facturas', 'Mis Facturas', this)">
+            <i class="bi bi-receipt"></i>
+            <span>Facturas</span>
+        </a>
+        <a class="nav-item" onclick="cargarVista('perfil', 'Mi Perfil', this)">
+            <i class="bi bi-person-fill"></i>
             <span>Perfil</span>
-        </div>
+        </a>
     </nav>
 
-    <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1050; margin-top: 60px;">
-        <div id="appToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-            <div class="toast-header text-white" id="toast-header">
-                <i class="bi bi-info-circle me-2"></i>
-                <strong class="me-auto" id="toast-title">Notificación</strong>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
-            </div>
-            <div class="toast-body bg-white fw-medium" id="toast-message"></div>
-        </div>
-    </div>
-
-    <div class="modal fade" id="modalResetDB" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content border-0 shadow-lg rounded-4">
-                <div class="modal-body text-center p-4 pb-2" id="reset-db-body">
+    <!-- =========================================
+         4. SISTEMA DE TOAST (NOTIFICACIONES)
+    ========================================= -->
+    <div class="toast-container position-fixed top-0 start-50 translate-middle-x p-3" style="z-index: 2000; margin-top: env(safe-area-inset-top, 0px);">
+        <div id="appToast" class="toast align-items-center text-bg-primary border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body fw-bold" id="toast-message">
+                    Notificación del sistema
                 </div>
-                <div class="modal-footer d-flex justify-content-center border-0 pt-0 pb-4 gap-2" id="reset-db-footer">
-                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
             </div>
         </div>
     </div>
 
-    <!-- ==========================================
-         VISTAS DE LA APP (FRAGMENTOS)
-    =========================================== -->
 
-    <!-- VISTA: LOGIN -->
+    <!-- ================================================================
+         VISTAS (TEMPLATES OCULTOS) - ¡La Magia del Enrutador!
+    ================================================================= -->
+
+    <!-- VISTA 1: LOGIN -->
     <template id="tpl-login">
-        <div class="row justify-content-center align-items-center" style="min-height: 80vh; padding-bottom: 50px;">
-            <div class="col-12 col-md-8 col-lg-6 text-center">
-                <div class="mb-4 mt-4">
-                    <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center shadow" style="width: 80px; height: 80px;">
-                        <i class="bi bi-rocket-takeoff fs-1"></i>
-                    </div>
-                    <h2 class="mt-3 fw-bold text-dark">Bienvenido de nuevo</h2>
-                    <p class="text-muted">Ingresa tus credenciales para acceder</p>
+        <div class="d-flex flex-column justify-content-center align-items-center" style="min-height: 80vh;">
+            <div class="text-center mb-4">
+                <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center mb-3 shadow" style="width: 80px; height: 80px;">
+                    <i class="bi bi-fingerprint fs-1"></i>
                 </div>
-
-                <div class="card app-card text-start border-0 shadow-sm">
-                    <div class="card-body p-4">
-                        <!-- IMPORTANTE: EL FORMULARIO AHORA DELEGA LA ACCIÓN DE LOGIN EN iniciarSesionApp(event) DE auth.js -->
-                        <form id="form-login" onsubmit="window.iniciarSesionApp(event);">
-                            <div class="mb-3">
-                                <label class="form-label text-muted small fw-bold">Correo Electrónico</label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-envelope text-muted"></i></span>
-                                    <input type="email" id="login-email" class="form-control border-start-0 ps-0 bg-light" placeholder="tu@correo.com" required>
-                                </div>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label text-muted small fw-bold">Contraseña</label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-light border-end-0"><i class="bi bi-lock text-muted"></i></span>
-                                    <!-- IMPORTANTE: EL ID CAMBIÓ DE login-pass A login-password PARA COINCIDIR CON TOGGLEPASSWORD -->
-                                    <input type="password" id="login-password" class="form-control border-start-0 border-end-0 ps-0 bg-light" placeholder="••••••••" required>
-                                    <span class="input-group-text bg-light border-start-0 cursor-pointer btn-toggle-password" onclick="window.togglePassword('login-password', 'icono-ojo-login')">
-                                        <i class="bi bi-eye-slash text-muted" id="icono-ojo-login"></i>
-                                    </span>
-                                </div>
-                            </div>
-                            
-                            <!-- CHECKBOX PARA RECORDAR CONTRASEÑA -->
-                            <div class="mb-4 form-check">
-                                <input type="checkbox" class="form-check-input cursor-pointer" id="login-recordar">
-                                <label class="form-check-label text-muted small" for="login-recordar" style="cursor: pointer;">Recordar mis credenciales para el próximo ingreso</label>
-                            </div>
-                            
-                            <div id="login-error" class="alert alert-danger d-none py-2 small fw-bold" role="alert"></div>
-
-                            <button type="submit" id="btn-login-submit" class="btn btn-primary w-100 py-3 fw-bold rounded-pill shadow-sm mb-3 mt-2 d-flex justify-content-center align-items-center">
-                                <!-- EL SPINNER SE OCULTA INICIALMENTE -->
-                                <span class="spinner-border spinner-border-sm me-2 d-none" role="status" aria-hidden="true" id="login-spinner"></span>
-                                INGRESAR AL SISTEMA
-                            </button>
-                            
-                            <button type="button" id="btn-bio-login" class="btn btn-outline-secondary w-100 py-2 fw-bold rounded-pill" onclick="window.ejecutarLoginBiometrico();">
-                                <i class="bi bi-fingerprint fs-5 me-2 align-middle"></i> Acceso Biométrico
-                            </button>
-                        </form>
-                    </div>
-                </div>
-                
-                <div class="mt-4 pt-3 border-top">
-                    <p class="text-muted small mb-1">¿Aún no eres parte de la plataforma?</p>
-                    <button class="btn btn-link text-primary fw-bold text-decoration-none p-0" onclick="window.cargarVista('registro', 'Registro')">Crear una cuenta nueva</button>
-                </div>
-            </div>
-            <!-- Llamada silenciosa a la carga de credenciales (Opcional, si no funciona, usar DOMContentLoaded) -->
-            <img src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" onload="if(window.cargarCredencialesGuardadas) window.cargarCredencialesGuardadas();" style="display:none;">
-        </div>
-    </template>
-
-    <!-- VISTA: REGISTRO -->
-    <template id="tpl-registro">
-        <div class="row justify-content-center align-items-center pb-5">
-            <div class="col-12 col-md-8 col-lg-6 text-center">
-                <div class="mb-4 mt-3">
-                    <h2 class="fw-bold text-dark mb-1">Crear Cuenta</h2>
-                    <p class="text-muted small">Completa tus datos reales para unirte</p>
-                </div>
-
-                <div class="card app-card text-start border-0 shadow-sm mb-4">
-                    <div class="card-body p-4">
-                        <form id="form-registro" onsubmit="event.preventDefault(); window.RegistroManager.procesarRegistro();">
-                            
-                            <h6 class="fw-bold text-primary mb-3 small border-bottom pb-2"><i class="bi bi-person-lines-fill me-2"></i>DATOS PERSONALES</h6>
-                            
-                            <div class="mb-3">
-                                <label class="form-label text-muted small fw-bold">Nombre(s) <span class="text-danger">*</span></label>
-                                <input type="text" id="reg-nombre" class="form-control bg-light" placeholder="Ej: Juan Carlos" required>
-                                <div class="invalid-feedback" id="err-nombre">Solo letras. Máx 1 espacio. Primera letra mayúscula.</div>
-                            </div>
-
-                            <div class="row g-2 mb-3">
-                                <div class="col-6">
-                                    <label class="form-label text-muted small fw-bold">1er Apellido <span class="text-danger">*</span></label>
-                                    <input type="text" id="reg-apellido1" class="form-control bg-light" placeholder="Ej: Perez" required>
-                                    <div class="invalid-feedback" id="err-apellido1">Sin espacios ni números.</div>
-                                </div>
-                                <div class="col-6">
-                                    <label class="form-label text-muted small fw-bold">2do Apellido</label>
-                                    <input type="text" id="reg-apellido2" class="form-control bg-light" placeholder="Opcional">
-                                    <div class="invalid-feedback" id="err-apellido2">Sin espacios ni números.</div>
-                                </div>
-                            </div>
-
-                            <label class="form-label text-muted small fw-bold mb-1">Fecha de Nacimiento <span class="text-danger">*</span></label>
-                            <div class="row g-2 mb-1">
-                                <div class="col-3">
-                                    <input type="number" id="reg-dia" class="form-control bg-light text-center" placeholder="DD" min="1" max="31" required>
-                                </div>
-                                <div class="col-5">
-                                    <select id="reg-mes" class="form-select bg-light" required>
-                                        <option value="" selected disabled>Mes</option>
-                                        <option value="01">Ene</option>
-                                        <option value="02">Feb</option>
-                                        <option value="03">Mar</option>
-                                        <option value="04">Abr</option>
-                                        <option value="05">May</option>
-                                        <option value="06">Jun</option>
-                                        <option value="07">Jul</option>
-                                        <option value="08">Ago</option>
-                                        <option value="09">Sep</option>
-                                        <option value="10">Oct</option>
-                                        <option value="11">Nov</option>
-                                        <option value="12">Dic</option>
-                                    </select>
-                                </div>
-                                <div class="col-4">
-                                    <input type="number" id="reg-anio" class="form-control bg-light text-center" placeholder="AAAA" min="1900" max="2026" required>
-                                </div>
-                            </div>
-                            <div class="mb-4 d-flex justify-content-between align-items-center px-1">
-                                <small class="text-danger d-none" id="err-fecha">Fecha inválida.</small>
-                                <span class="badge bg-secondary rounded-pill d-none px-3" id="badge-edad">0 años</span>
-                            </div>
-
-                            <h6 class="fw-bold text-primary mb-3 small border-bottom pb-2 mt-4"><i class="bi bi-envelope-at me-2"></i>CONTACTO Y SEGURIDAD</h6>
-
-                            <div class="row g-2 mb-3">
-                                <div class="col-5">
-                                    <label class="form-label text-muted small fw-bold">ID Nacional</label>
-                                    <input type="text" id="reg-id" class="form-control bg-light" placeholder="Opcional">
-                                </div>
-                                <div class="col-7">
-                                    <label class="form-label text-muted small fw-bold">Teléfono <span class="text-danger">*</span></label>
-                                    <input type="tel" id="reg-telefono" class="form-control bg-light" placeholder="Solo números" required>
-                                    <div class="invalid-feedback" id="err-telefono">Solo números permitidos.</div>
-                                </div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label text-muted small fw-bold">Correo Electrónico <span class="text-danger">*</span></label>
-                                <input type="email" id="reg-email" class="form-control bg-light" placeholder="tu@correo.com" required>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label text-muted small fw-bold">Crear Contraseña <span class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <input type="password" id="reg-pass" class="form-control border-end-0 bg-light" placeholder="Mínimo 6 caracteres" required>
-                                    <span class="input-group-text bg-light cursor-pointer btn-toggle-password" onclick="window.togglePassword('reg-pass', 'icono-ojo-reg-pass')">
-                                        <i class="bi bi-eye-slash text-muted" id="icono-ojo-reg-pass"></i>
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div class="mb-4">
-                                <label class="form-label text-muted small fw-bold">Verificar Contraseña <span class="text-danger">*</span></label>
-                                <div class="input-group">
-                                    <input type="password" id="reg-pass-verify" class="form-control border-end-0 bg-light" placeholder="Repite la contraseña" required>
-                                    <span class="input-group-text bg-light cursor-pointer btn-toggle-password" onclick="window.togglePassword('reg-pass-verify', 'icono-ojo-reg-verify')">
-                                        <i class="bi bi-eye-slash text-muted" id="icono-ojo-reg-verify"></i>
-                                    </span>
-                                </div>
-                                <div class="invalid-feedback" id="err-pass">Las contraseñas no coinciden.</div>
-                            </div>
-                            
-                            <div id="reg-error" class="alert alert-danger d-none py-2 small fw-bold" role="alert"></div>
-
-                            <button type="submit" id="btn-reg-submit" class="btn btn-success w-100 py-3 fw-bold rounded-pill shadow-sm mb-3 mt-3">
-                                CREAR MI CUENTA
-                            </button>
-                            
-                        </form>
-                    </div>
-                </div>
-                
-                <button class="btn btn-light w-100 py-3 fw-bold rounded-pill mb-4 shadow-sm" onclick="window.cargarVista('login', 'Login')">
-                    <i class="bi bi-arrow-left me-2"></i> Volver al Login
-                </button>
-            </div>
-        </div>
-    </template>
-
-    <!-- VISTA: INICIO -->
-    <template id="tpl-inicio">
-        <div class="row g-3">
-            <div class="col-12 mb-2">
-                <div class="card app-card bg-primary text-white border-0 shadow-sm">
-                    <div class="card-body d-flex justify-content-between align-items-center p-4">
-                        <div>
-                            <h5 class="card-title fw-bold mb-1" id="inicio-nombre">Hola, Usuario</h5>
-                            <p class="card-text small opacity-75 mb-0">Resumen de tu actividad hoy</p>
-                        </div>
-                        <i class="bi bi-cloud-check fs-1 opacity-50"></i>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-6">
-                <div class="card app-card h-100 cursor-pointer border-0 shadow-sm" onclick="window.location.href='pagos.html'">
-                    <div class="card-body text-center d-flex flex-column align-items-center justify-content-center py-4">
-                        <div class="text-primary mb-2"><i class="bi bi-credit-card fs-1"></i></div>
-                        <h6 class="fw-bold mb-0">Pagos</h6>
-                        <small class="text-muted" style="font-size: 0.70rem;">Gestión web</small>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-6">
-                <div class="card app-card h-100 cursor-pointer border-0 shadow-sm" onclick="window.location.href='instrucciones.html'">
-                    <div class="card-body text-center d-flex flex-column align-items-center justify-content-center py-4">
-                        <div class="text-info mb-2"><i class="bi bi-journal-text fs-1"></i></div>
-                        <h6 class="fw-bold mb-0">Instrucciones</h6>
-                        <small class="text-muted" style="font-size: 0.70rem;">Manual PDF</small>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-6">
-                <div class="card app-card h-100 cursor-pointer border-0 shadow-sm" onclick="window.location.href='factura.html'">
-                    <div class="card-body text-center d-flex flex-column align-items-center justify-content-center py-4">
-                        <div class="text-success mb-2"><i class="bi bi-receipt fs-1"></i></div>
-                        <h6 class="fw-bold mb-0">Factura</h6>
-                        <small class="text-muted" style="font-size: 0.70rem;">Historial</small>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-6">
-                <div class="card app-card h-100 cursor-pointer border-0 shadow-sm" onclick="window.location.href='calendario.html'">
-                    <div class="card-body text-center d-flex flex-column align-items-center justify-content-center py-4">
-                        <div class="text-warning mb-2"><i class="bi bi-calendar-date fs-1"></i></div>
-                        <h6 class="fw-bold mb-0">Calendario</h6>
-                        <small class="text-muted" style="font-size: 0.70rem;">Agenda</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div style="height: 100px; width: 100%;"></div>
-    </template>
-
-    <!-- VISTA: PERFIL -->
-    <template id="tpl-perfil">
-        <div id="perfil-flyer" class="bg-primary mx-n3 mt-n3" style="height: 160px; background-size: cover; background-position: center; border-bottom-left-radius: 20px; border-bottom-right-radius: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);"></div>
-
-        <div class="text-center mb-4" style="margin-top: -60px;">
-            <div class="position-relative d-inline-block">
-                <div class="bg-primary text-white rounded-circle shadow-sm mb-3 d-flex align-items-center justify-content-center fw-bold overflow-hidden" style="width:120px; height:120px; font-size: 3rem; cursor: pointer; border: 4px solid white;" id="perfil-avatar" onclick="if(window.ImageEditorManager) window.ImageEditorManager.abrirSelectorImagen()">U</div>
-                <button class="btn btn-sm btn-primary rounded-circle position-absolute bottom-0 end-0 mb-3 me-2 shadow" onclick="if(window.editarMiPerfil) window.editarMiPerfil()">
-                    <i class="bi bi-pencil"></i>
-                </button>
-            </div>
-            <h4 class="fw-bold mb-0" id="perfil-nombre">Administrador</h4>
-            <p class="text-muted mb-2" id="perfil-email">Cargando...</p>
-            <span class="badge bg-primary" id="perfil-rol">Cargando...</span>
-        </div>
-
-        <div class="card app-card border-0 mb-3 shadow-sm">
-            <div class="card-body p-0">
-                <div class="list-group list-group-flush rounded-3">
-                    <div class="list-group-item py-3">
-                        <small class="text-muted d-block fw-bold mb-1">Teléfono</small>
-                        <span id="perfil-telefono">No especificado</span>
-                    </div>
-                    <div class="list-group-item py-3">
-                        <small class="text-muted d-block fw-bold mb-1">Privilegios del Sistema</small>
-                        <span class="text-success fw-bold"><i class="bi bi-shield-check me-1"></i> Asignado</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="row g-3 mt-2">
-            <div class="col-6">
-                <div class="card app-card h-100 cursor-pointer border border-primary border-opacity-25 shadow-sm" onclick="if(window.editarMiPerfil) window.editarMiPerfil()">
-                    <div class="card-body text-center d-flex flex-column align-items-center justify-content-center py-4">
-                        <div class="text-primary mb-2"><i class="bi bi-person-vcard fs-1"></i></div>
-                        <h6 class="fw-bold mb-0">Editar</h6>
-                        <small class="text-muted">Mi Perfil</small>
-                    </div>
-                </div>
+                <h1 class="fw-bold text-primary">La Tribu</h1>
+                <p class="text-muted">Acceso Seguro</p>
             </div>
 
-            <div class="col-6" id="btn-ir-ajustes-container">
-                <div class="card app-card h-100 cursor-pointer border border-secondary border-opacity-25 bg-light shadow-sm" id="btn-ir-ajustes" onclick="window.cargarVista('ajustes', 'Ajustes del Sistema')">
-                    <div class="card-body text-center d-flex flex-column align-items-center justify-content-center py-4">
-                        <div class="text-secondary mb-2"><i class="bi bi-sliders fs-1"></i></div>
-                        <h6 class="fw-bold mb-0">Ajustes</h6>
-                        <small class="text-muted">Avanzados</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <button class="btn btn-outline-danger w-100 py-3 mt-4 fw-bold rounded-pill mb-4 shadow-sm" onclick="window.cerrarSesion()">
-            <i class="bi bi-box-arrow-right me-2"></i> CERRAR SESIÓN
-        </button>
-
-        <div style="height: 100px; width: 100%;"></div>
-    </template>
-
-    <!-- VISTA: AJUSTES (SOLO PARA SUPERUSUARIOS) -->
-    <template id="tpl-ajustes">
-        <h6 class="fw-bold text-muted mb-3 px-1 small mt-2">SISTEMA Y RENDIMIENTO</h6>
-        <div class="row g-3 mb-4">
-            
-            <div class="col-12">
-                 <div class="card app-card h-100 cursor-pointer border-0 shadow-sm border border-primary border-opacity-50" onclick="window.cargarVista('admin_usuarios', 'Usuarios')">
-                    <div class="card-body d-flex align-items-center p-3">
-                        <div class="bg-primary text-white rounded-circle p-3 me-3 d-flex align-items-center justify-content-center shadow-sm">
-                             <i class="bi bi-people-fill fs-4"></i>
-                        </div>
-                        <div>
-                            <h6 class="fw-bold mb-1">Gestión de Usuarios</h6>
-                            <small class="text-muted">Agregar, editar o suspender cuentas</small>
-                        </div>
-                        <i class="bi bi-chevron-right text-muted ms-auto"></i>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-12">
-                 <div class="card app-card h-100 cursor-pointer border-0 shadow-sm" id="btn-toggle-biometria-ajustes" onclick="window.toggleBiometriaUI()">
-                    <div class="card-body d-flex align-items-center p-3">
-                        <div class="bg-success text-white rounded-circle p-3 me-3 d-flex align-items-center justify-content-center shadow-sm">
-                             <i class="bi bi-fingerprint fs-4"></i>
-                        </div>
-                        <div>
-                            <h6 class="fw-bold mb-1 text-dark">Biometría en Login</h6>
-                            <small class="text-success fw-bold">Visible (Toque para ocultar)</small>
-                        </div>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="text-success ms-auto" viewBox="0 0 16 16">
-                            <path d="M5 3a5 5 0 0 0 0 10h6a5 5 0 0 0 0-10H5zm6 9a4 4 0 1 1 0-8 4 4 0 0 1 0 8z"/>
-                        </svg>
-                    </div>
-                </div>
-                <img src="data:image/gif;base64,R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==" onload="if(window.actualizarTextoBotonBiometria) window.actualizarTextoBotonBiometria();" style="display:none;">
-            </div>
-
-            <div class="col-12">
-                 <div class="card app-card h-100 cursor-pointer border-0 shadow-sm" onclick="if(window.sqliteService && window.sqliteService.testConnection) window.sqliteService.testConnection()">
-                    <div class="card-body d-flex align-items-center p-3">
-                        <div class="bg-secondary bg-opacity-10 text-secondary rounded-circle p-3 me-3 d-flex align-items-center justify-content-center">
-                             <i class="bi bi-speedometer2 fs-4"></i>
-                        </div>
-                        <div>
-                            <h6 class="fw-bold mb-1">Test de Rendimiento SQLite</h6>
-                            <small class="text-muted">Verificar latencia de BD</small>
-                        </div>
-                        <i class="bi bi-chevron-right text-muted ms-auto"></i>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-6">
-                <div class="card app-card h-100 cursor-pointer border-0 shadow-sm" onclick="window.mostrarNotificacion('Sincronizando con la nube...', 'info')">
-                    <div class="card-body text-center d-flex flex-column align-items-center justify-content-center py-3">
-                        <div class="text-primary mb-2"><i class="bi bi-arrow-repeat fs-2"></i></div>
-                        <h6 class="fw-bold mb-0">Sincronizar</h6>
-                        <small class="text-muted" style="font-size: 0.70rem;">Datos globales</small>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-6">
-                <div class="card app-card h-100 border-0 shadow-sm">
-                    <div class="card-body text-center d-flex flex-column align-items-center justify-content-center py-3">
-                        <div class="text-success mb-2"><i class="bi bi-check-circle fs-2"></i></div>
-                        <h6 class="fw-bold mb-0">Estado DB</h6>
-                        <small class="text-muted" style="font-size: 0.70rem;">Local OK</small>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div id="admin-db-controls" class="mb-4">
-            <h6 class="fw-bold text-danger mb-3 px-1 small"><i class="bi bi-shield-lock-fill me-1"></i> ZONA ADMINISTRATIVA DE DATOS</h6>
-            <div class="card app-card border-0 border border-danger border-opacity-25 shadow-sm">
-                <div class="list-group list-group-flush rounded-3">
-                    
-                    <button class="list-group-item list-group-item-action py-3 text-primary d-flex align-items-center" onclick="if(window.AdminDBManager) window.AdminDBManager.respaldarBD()">
-                        <i class="bi bi-filetype-json fs-5 me-3"></i> 
-                        <span class="fw-medium">Exportar Usuarios (JSON)</span>
-                    </button>
-                    <label class="list-group-item list-group-item-action py-3 text-success d-flex align-items-center mb-0 cursor-pointer" style="margin: 0; border-bottom: 1px solid rgba(0,0,0,0.125);">
-                        <i class="bi bi-file-earmark-arrow-up fs-5 me-3"></i> 
-                        <span class="fw-medium">Importar Usuarios (JSON)</span>
-                        <input type="file" accept=".json" class="d-none" onchange="if(window.AdminDBManager) window.AdminDBManager.cargarBD(event)">
-                    </label>
-
-                    <button class="list-group-item list-group-item-action py-3 text-primary fw-bold d-flex align-items-center bg-light" onclick="if(window.AdminDBManager) window.AdminDBManager.respaldarBDCompleta()">
-                        <i class="bi bi-database-down fs-5 me-3"></i> 
-                        <span class="fw-medium">Respaldo Completo (.db)</span>
-                    </button>
-                    <label class="list-group-item list-group-item-action py-3 text-success fw-bold d-flex align-items-center mb-0 cursor-pointer bg-light" style="margin: 0; border-bottom: 1px solid rgba(0,0,0,0.125);">
-                        <i class="bi bi-database-up fs-5 me-3"></i> 
-                        <span class="fw-medium">Restaurar Completo (.db)</span>
-                        <input type="file" accept=".db" class="d-none" onchange="if(window.AdminDBManager) window.AdminDBManager.cargarBDCompleta(event)">
-                    </label>
-
-                    <button class="list-group-item list-group-item-action py-3 text-danger d-flex align-items-center" onclick="if(window.AdminDBManager) window.AdminDBManager.iniciarReseteo()">
-                        <i class="bi bi-exclamation-triangle fs-5 me-3"></i> 
-                        <span class="fw-medium fw-bold">Resetear Base de Datos</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-        
-        <div style="height: 100px; width: 100%;"></div>
-    </template>
-
-    <!-- VISTA: ADMIN USUARIOS -->
-    <template id="tpl-admin_usuarios">
-        <div class="d-flex justify-content-between align-items-center mb-3 mt-2">
-            <div class="input-group">
-                <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
-                <input type="text" id="buscador-usuarios" class="form-control border-start-0 ps-0" placeholder="Buscar usuario en DB...">
-            </div>
-            <button class="btn btn-primary ms-2 rounded-circle shadow-sm" style="width: 40px; height: 40px; flex-shrink: 0;"><i class="bi bi-plus-lg"></i></button>
-        </div>
-
-        <div class="card app-card border-0 shadow-sm">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0 align-middle">
-                    <thead class="table-light">
-                        <tr>
-                            <th class="ps-3 border-0 rounded-top-start">Usuario</th>
-                            <th class="border-0 text-center">Estado</th>
-                            <th class="text-end pe-3 border-0 rounded-top-end">Acción</th>
-                        </tr>
-                    </thead>
-                    <tbody id="lista-usuarios-admin">
-                        <!-- LA BASE DE DATOS LLENARÁ ESTO DINÁMICAMENTE -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        
-        <div style="height: 100px; width: 100%;"></div>
-    </template>
-
-    <!-- VISTA: EDITAR USUARIO -->
-    <template id="tpl-editar_usuario">
-        <div class="card app-card border-0 mt-2 mb-4 shadow-sm overflow-hidden">
-            
-            <div id="editor-flyer" class="bg-primary w-100" style="height: 120px; background-size: cover; background-position: center;">
-            </div>
-
-            <div class="card-body p-4 pt-0" style="margin-top: -50px;">
-                <div class="text-center mb-4 pb-3 border-bottom">
-                    <div class="position-relative d-inline-block">
-                        <div class="bg-primary text-white rounded-circle shadow-sm mb-2 d-flex align-items-center justify-content-center fw-bold overflow-hidden" style="width:100px; height:100px; font-size: 2.5rem; cursor: pointer; margin: 0 auto; border: 4px solid white;" id="edit-avatar" onclick="if(window.ImageEditorManager) window.ImageEditorManager.abrirSelectorImagen('avatar')">U</div>
-                        <button class="btn btn-sm btn-primary rounded-circle position-absolute bottom-0 end-0 mb-2 shadow" style="transform: translate(25%, 25%);" onclick="if(window.ImageEditorManager) window.ImageEditorManager.abrirSelectorImagen('avatar')">
-                            <i class="bi bi-camera-fill"></i>
-                        </button>
-                    </div>
-                    <h6 class="mb-0 fw-bold text-dark mt-2" id="edit-email-display">usuario@correo.com</h6>
-                    <small class="text-muted">Editor de Perfil Completo</small>
-                </div>
-
-                <form id="form-editar-usuario" onsubmit="event.preventDefault(); if(window.guardarEdicionUsuario) window.guardarEdicionUsuario();">
-                    
-                    <h6 class="fw-bold text-primary mb-3 small border-bottom pb-2"><i class="bi bi-person-lines-fill me-2"></i>DATOS PERSONALES</h6>
-                    
-                    <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">Nombre(s) <span class="text-danger">*</span></label>
-                        <input type="text" id="edit-nombre" class="form-control bg-light" placeholder="Ej: Juan Carlos" required>
-                        <div class="invalid-feedback" id="edit-err-nombre">Solo letras. Máx 1 espacio. Primera letra mayúscula.</div>
-                    </div>
-
-                    <div class="row g-2 mb-3">
-                        <div class="col-6">
-                            <label class="form-label text-muted small fw-bold">1er Apellido <span class="text-danger">*</span></label>
-                            <input type="text" id="edit-apellido1" class="form-control bg-light" placeholder="Ej: Perez" required>
-                            <div class="invalid-feedback" id="edit-err-apellido1">Sin espacios ni números.</div>
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label text-muted small fw-bold">2do Apellido</label>
-                            <input type="text" id="edit-apellido2" class="form-control bg-light" placeholder="Opcional">
-                            <div class="invalid-feedback" id="edit-err-apellido2">Sin espacios ni números.</div>
-                        </div>
-                    </div>
-
-                    <label class="form-label text-muted small fw-bold mb-1">Fecha de Nacimiento <span class="text-danger">*</span></label>
-                    <div class="row g-2 mb-3">
-                        <div class="col-3">
-                            <input type="number" id="edit-dia" class="form-control bg-light text-center" placeholder="DD" min="1" max="31" required>
-                        </div>
-                        <div class="col-5">
-                            <select id="edit-mes" class="form-select bg-light" required>
-                                <option value="" selected disabled>Mes</option>
-                                <option value="01">Ene</option>
-                                <option value="02">Feb</option>
-                                <option value="03">Mar</option>
-                                <option value="04">Abr</option>
-                                <option value="05">May</option>
-                                <option value="06">Jun</option>
-                                <option value="07">Jul</option>
-                                <option value="08">Ago</option>
-                                <option value="09">Sep</option>
-                                <option value="10">Oct</option>
-                                <option value="11">Nov</option>
-                                <option value="12">Dic</option>
-                            </select>
-                        </div>
-                        <div class="col-4">
-                            <input type="number" id="edit-anio" class="form-control bg-light text-center" placeholder="AAAA" min="1900" max="2026" required>
-                        </div>
-                    </div>
-
-                    <h6 class="fw-bold text-primary mb-3 small border-bottom pb-2 mt-4"><i class="bi bi-envelope-at me-2"></i>CONTACTO Y SEGURIDAD</h6>
-
-                    <div class="row g-2 mb-3">
-                        <div class="col-5">
-                            <label class="form-label text-muted small fw-bold">ID Nacional</label>
-                            <input type="text" id="edit-id-nacional" class="form-control bg-light" placeholder="Opcional">
-                        </div>
-                        <div class="col-7">
-                            <label class="form-label text-muted small fw-bold">Teléfono</label>
-                            <input type="tel" id="edit-telefono" class="form-control bg-light" placeholder="Ej: 88888888">
-                        </div>
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label text-muted small fw-bold">Correo Electrónico (No editable)</label>
-                        <input type="email" id="edit-email" class="form-control bg-light" readonly>
-                        <small class="text-muted" style="font-size: 0.70rem;">El correo electrónico es el identificador único y no puede cambiarse.</small>
-                    </div>
-                    
-                    <h6 class="fw-bold text-primary mb-3 small border-bottom pb-2 mt-4"><i class="bi bi-shield-lock me-2"></i>SEGURIDAD Y CONTRASEÑA</h6>
-                    
-                    <div class="card bg-light border-0 shadow-sm mb-4">
-                        <div class="card-body">
-                            <small class="text-muted d-block mb-3" style="font-size: 0.75rem;">Deje los campos en blanco si no desea cambiar su contraseña actual.</small>
-                            
-                            <div class="mb-3">
-                                <label class="form-label text-muted small fw-bold">Contraseña Actual</label>
-                                <div class="input-group">
-                                    <input type="password" id="edit-current-password" class="form-control border-end-0" placeholder="••••••••">
-                                    <span class="input-group-text bg-white cursor-pointer border-start-0 btn-toggle-password" onclick="window.togglePassword('edit-current-password', 'icono-ojo-edit-curr')">
-                                        <i class="bi bi-eye-slash text-muted" id="icono-ojo-edit-curr"></i>
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label text-muted small fw-bold">Nueva Contraseña</label>
-                                <div class="input-group">
-                                    <input type="password" id="edit-new-password" class="form-control border-end-0" placeholder="Mínimo 6 caracteres">
-                                    <span class="input-group-text bg-white cursor-pointer border-start-0 btn-toggle-password" onclick="window.togglePassword('edit-new-password', 'icono-ojo-edit-new')">
-                                        <i class="bi bi-eye-slash text-muted" id="icono-ojo-edit-new"></i>
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div class="mb-2">
-                                <label class="form-label text-muted small fw-bold">Verificar Nueva Contraseña</label>
-                                <div class="input-group">
-                                    <input type="password" id="edit-verify-password" class="form-control border-end-0" placeholder="Repite la contraseña">
-                                    <span class="input-group-text bg-white cursor-pointer border-start-0 btn-toggle-password" onclick="window.togglePassword('edit-verify-password', 'icono-ojo-edit-ver')">
-                                        <i class="bi bi-eye-slash text-muted" id="icono-ojo-edit-ver"></i>
-                                    </span>
-                                </div>
-                                <div class="invalid-feedback" id="edit-err-pass">Las contraseñas nuevas no coinciden.</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="box-privilegios" class="p-3 mb-4 rounded-3 border bg-light shadow-sm">
-                        <h6 class="fw-bold mb-3 small text-primary"><i class="bi bi-shield-lock me-1"></i> ZONA ADMINISTRATIVA</h6>
+            <div class="card w-100 border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <!-- FIX: Conectado a la función real de api_db.js -->
+                    <form onsubmit="window.procesarLoginUI(event);">
                         <div class="mb-3">
-                            <label class="form-label text-muted small fw-bold">Rol en el sistema</label>
-                            <select id="edit-rol" class="form-select border-0 py-2 shadow-sm">
-                                <option value="usuario">Usuario Regular</option>
-                                <option value="admin">Administrador</option>
-                                <option value="superusuario">Superusuario</option>
-                            </select>
+                            <label class="form-label text-muted small fw-bold">Correo Electrónico</label>
+                            <input type="email" id="login-email" class="form-control form-control-lg bg-light border-0" placeholder="admin@latribu.com" required>
                         </div>
-                        <div>
-                            <label class="form-label text-muted small fw-bold">Estado de cuenta</label>
-                            <select id="edit-estado" class="form-select border-0 py-2 shadow-sm">
-                                <option value="activo">Activa (Permitir acceso)</option>
-                                <option value="inactivo">Inactiva (Bloqueado)</option>
-                            </select>
+                        <div class="mb-4">
+                            <label class="form-label text-muted small fw-bold">Contraseña</label>
+                            <div class="input-group">
+                                <input type="password" id="login-password" class="form-control form-control-lg bg-light border-0" placeholder="••••••••" required>
+                                <button class="btn btn-light bg-light border-0 text-muted" type="button" onclick="togglePassword('login-password', 'icono-ojo-login')">
+                                    <i class="bi bi-eye-slash" id="icono-ojo-login"></i>
+                                </button>
+                            </div>
                         </div>
-                    </div>
-
-                    <button type="submit" id="btn-save-edit" class="btn btn-primary w-100 py-3 fw-bold rounded-pill shadow-sm mb-3">
-                        <i class="bi bi-check2-circle me-1"></i> GUARDAR CAMBIOS
-                    </button>
-                    <button type="button" class="btn btn-outline-secondary w-100 py-2 fw-bold rounded-pill" onclick="if(window.cancelarEdicion) window.cancelarEdicion()">
-                        CANCELAR
-                    </button>
-                    
-                    <div style="height: 100px; width: 100%;"></div>
-                </form>
+                        
+                        <!-- Extra: Casilla de recordar para que Capacitor guarde la huella -->
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" type="checkbox" id="login-recordar" checked>
+                            <label class="form-check-label text-muted small" for="login-recordar">
+                                Recordar mi sesión
+                            </label>
+                        </div>
+                        
+                        <div id="login-error" class="alert alert-danger d-none small py-2 mb-3"></div>
+                        
+                        <button id="btn-login-submit" type="submit" class="btn btn-primary btn-lg w-100 rounded-pill fw-bold shadow-sm d-flex justify-content-center align-items-center">
+                            <span id="login-text" class="me-2">INGRESAR AL SISTEMA</span>
+                            <div id="login-spinner" class="spinner-border spinner-border-sm d-none" role="status"></div>
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     </template>
 
-   <!-- ==========================================
-         SCRIPTS SEPARADOS Y LOCALES
-    =========================================== -->
-    <!-- Dependencia de UI LOCAL (100% Offline) -->
-    <script src="js/bootstrap.js"></script>
-    
-    <!-- Lógica y Controladores Separados -->
-    <script src="js/temas.js"></script>
-    <script src="js/search.js"></script>
-    <script src="js/registro.js"></script>
-    
-    <!-- ESTRUCTURA MODULAR ACTIVA -->
-    <script src="js/database.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/router.js"></script>
-    <script src="js/userController.js"></script>
-    <script src="js/imageEditor.js"></script>
-    <!-- GESTOR DE ADMIN Y RESPALDOS -->
-    <script src="js/adminDb.js"></script>
-    <!-- GESTOR DE UI Y UTILIDADES GLOBALES -->
-    <script src="js/utils.js"></script>
-    <!-- SCRIPT DE BIOMETRÍA -->
+    <!-- VISTA 2: INICIO (DASHBOARD) -->
+    <template id="tpl-inicio">
+        <!-- Saludo -->
+        <div class="d-flex align-items-center mb-4">
+            <img src="https://ui-avatars.com/api/?name=Admin&background=0d6efd&color=fff" class="rounded-circle me-3 shadow-sm" width="50" height="50">
+            <div>
+                <h4 class="mb-0 fw-bold" id="nombre-usuario-inicio">Hola, Usuario</h4>
+                <p class="text-muted mb-0 small">Bienvenido a La Tribu</p>
+            </div>
+        </div>
+
+        <!-- Tarjetas de Resumen -->
+        <div class="row g-3 mb-4">
+            <div class="col-6">
+                <div class="card app-card border-0 bg-primary text-white rounded-4 shadow-sm h-100">
+                    <div class="card-body text-center p-3">
+                        <i class="bi bi-wallet2 fs-2 mb-2"></i>
+                        <h6 class="fw-bold mb-0">Balance</h6>
+                        <h5 class="fw-bold mt-1">₡ 150.000</h5>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="card app-card border-0 bg-success text-white rounded-4 shadow-sm h-100">
+                    <div class="card-body text-center p-3">
+                        <i class="bi bi-check-circle fs-2 mb-2"></i>
+                        <h6 class="fw-bold mb-0">Facturas</h6>
+                        <h5 class="fw-bold mt-1">12 Activas</h5>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Accesos Rápidos -->
+        <h6 class="fw-bold text-muted mb-3 text-uppercase" style="letter-spacing: 1px;">Accesos Rápidos</h6>
+        <div class="card app-card border-0 rounded-4 shadow-sm mb-3" onclick="cargarVista('pagos', 'Gestión de Pagos')">
+            <div class="card-body d-flex align-items-center p-3">
+                <div class="bg-primary bg-opacity-10 text-primary rounded-circle p-3 me-3">
+                    <i class="bi bi-credit-card fs-4"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold mb-1">Registrar Pago</h6>
+                    <p class="text-muted small mb-0">Añadir nueva transacción</p>
+                </div>
+                <i class="bi bi-chevron-right ms-auto text-muted"></i>
+            </div>
+        </div>
+        
+        <div class="card app-card border-0 rounded-4 shadow-sm" onclick="mostrarNotificacion('Módulo en construcción', 'warning')">
+            <div class="card-body d-flex align-items-center p-3">
+                <div class="bg-info bg-opacity-10 text-info rounded-circle p-3 me-3">
+                    <i class="bi bi-map fs-4"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold mb-1">Itinerarios</h6>
+                    <p class="text-muted small mb-0">Instrucciones de caminatas</p>
+                </div>
+                <i class="bi bi-chevron-right ms-auto text-muted"></i>
+            </div>
+        </div>
+    </template>
+
+    <!-- VISTA 3: PERFIL -->
+    <template id="tpl-perfil">
+        <div class="text-center mb-4 mt-3">
+            <div class="position-relative d-inline-block mb-3">
+                <img src="https://ui-avatars.com/api/?name=Admin&background=0d6efd&color=fff" class="rounded-circle shadow" width="100" height="100">
+                <button class="btn btn-sm btn-primary rounded-circle position-absolute bottom-0 end-0 shadow">
+                    <i class="bi bi-camera-fill"></i>
+                </button>
+            </div>
+            <h4 class="fw-bold mb-0" id="perfil-nombre">Cargando...</h4>
+            <p class="text-muted" id="perfil-email">Cargando...</p>
+        </div>
+
+        <div class="card border-0 shadow-sm rounded-4 mb-3">
+            <div class="list-group list-group-flush rounded-4">
+                <button class="list-group-item list-group-item-action d-flex align-items-center p-3 border-0 border-bottom">
+                    <i class="bi bi-person-gear fs-5 text-primary me-3"></i>
+                    <span class="fw-bold">Editar Datos Personales</span>
+                    <i class="bi bi-chevron-right ms-auto text-muted"></i>
+                </button>
+                <button class="list-group-item list-group-item-action d-flex align-items-center p-3 border-0 border-bottom">
+                    <i class="bi bi-palette fs-5 text-primary me-3"></i>
+                    <span class="fw-bold">Apariencia (Tema)</span>
+                    <i class="bi bi-chevron-right ms-auto text-muted"></i>
+                </button>
+                <!-- FIX: Conectado a la función real de cerrar sesión -->
+                <button class="list-group-item list-group-item-action d-flex align-items-center p-3 border-0 text-danger" onclick="apiDb.cerrarSesion()">
+                    <i class="bi bi-box-arrow-right fs-5 me-3"></i>
+                    <span class="fw-bold">Cerrar Sesión</span>
+                </button>
+            </div>
+        </div>
+    </template>
+
+    <!-- Scripts de Bootstrap (Requerido para el Toast) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- ================================================================
+         SCRIPTS DE LA APLICACIÓN (FUNDAMENTAL PARA CONECTARSE)
+    ================================================================= -->
+    <!-- Inyectamos tu base de datos y controlador de sesión -->
     <script src="js/api_db.js"></script>
-    
-    <!-- Inicializador principal de la App -->
-    <!-- <script src="js/index.js"></script> -->
+
+    <!-- Enrutador SPA -->
     <script>
-        // Envoltura explícita para la biometría para asegurar que no se pierda al cargar dinámicamente las vistas
-        window.ejecutarLoginBiometrico = function() {
-            if (typeof window.procesarLoginBiometrico === 'function') {
-                window.procesarLoginBiometrico();
+        // Utilidad de Notificaciones
+        window.appToast = null;
+        window.mostrarNotificacion = function(mensaje, tipo = 'primary') {
+            const toastEl = document.getElementById('appToast');
+            const msgEl = document.getElementById('toast-message');
+            toastEl.className = `toast align-items-center text-bg-${tipo} border-0`;
+            msgEl.innerText = mensaje;
+            if (!window.appToast) window.appToast = new bootstrap.Toast(toastEl, { delay: 2500 });
+            window.appToast.show();
+        };
+
+        // Enrutador SPA
+        window.cargarVista = function(vistaId, titulo, navElement = null) {
+            const root = document.getElementById('app-root');
+            const header = document.getElementById('app-header');
+            const bottomNav = document.getElementById('app-bottom-nav');
+            const titleEl = document.getElementById('view-title');
+            const template = document.getElementById('tpl-' + vistaId);
+
+            if (!template) {
+                mostrarNotificacion('Vista no encontrada', 'danger');
+                return;
+            }
+
+            // Cambiar contenido
+            root.innerHTML = '';
+            root.appendChild(template.content.cloneNode(true));
+            root.dataset.vistaActual = vistaId;
+            if (titleEl && titulo) titleEl.innerText = titulo;
+
+            // Inyectar datos del usuario si estamos en perfil o inicio
+            const usuario = apiDb.obtenerUsuario();
+            if (usuario) {
+                const nombreEl = document.getElementById('nombre-usuario-inicio');
+                if(nombreEl) nombreEl.innerText = 'Hola, ' + (usuario.name || usuario.nombre || 'Usuario');
+                
+                const perfilNombre = document.getElementById('perfil-nombre');
+                const perfilEmail = document.getElementById('perfil-email');
+                if(perfilNombre) perfilNombre.innerText = usuario.name || usuario.nombre || 'Usuario';
+                if(perfilEmail) perfilEmail.innerText = usuario.email || '';
+            }
+
+            // Lógica de visualización (Login vs App Interna)
+            const esAuth = (vistaId === 'login');
+            if (esAuth) {
+                header.classList.add('d-none');
+                bottomNav.classList.remove('d-flex');
+                bottomNav.classList.add('d-none');
+                // Cargar credenciales guardadas al entrar al login
+                if(window.cargarCredencialesGuardadas) window.cargarCredencialesGuardadas();
             } else {
-                 window.mostrarNotificacion('Biometría no disponible o en carga', 'warning');
+                header.classList.remove('d-none');
+                bottomNav.classList.remove('d-none');
+                bottomNav.classList.add('d-flex');
+            }
+
+            // Actualizar clase 'active' en la botonera inferior
+            if (navElement) {
+                document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+                navElement.classList.add('active');
+            } else if (!esAuth) {
+                // Auto-seleccionar el primer tab si venimos de un lugar sin click en el nav
+                document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+                document.querySelector('.nav-item').classList.add('active');
             }
         };
 
-        // Lógica de "Volver Atrás" Global Segura
+        // Lógica del botón Atrás global
         window.irAtrasGlobal = function() {
-            const title = document.getElementById('view-title')?.innerText.toLowerCase() || '';
-            // Si el usuario está editando perfil, vuelve al Perfil
-            if (title.includes('edit')) {
-                window.cargarVista('perfil', 'Mi Perfil');
-            } 
-            // Si el usuario estaba viendo la tabla de usuarios, vuelve a Ajustes
-            else if (title.includes('usuarios')) {
-                window.cargarVista('ajustes', 'Ajustes del Sistema');
-            } 
-            // Por defecto, cualquier otra vista interna (Pagos, Factura, etc.) vuelve a Inicio
-            else {
-                window.cargarVista('inicio', 'Inicio');
-            }
+            cargarVista('inicio', 'Inicio');
         };
 
-        // Observador para mostrar u ocultar el botón "Atrás" automáticamente
+        // Observador para mostrar/ocultar el botón "Atrás"
         document.addEventListener('DOMContentLoaded', () => {
             const titleNode = document.getElementById('view-title');
             const backBtn = document.getElementById('btn-global-back');
@@ -772,15 +390,20 @@
             if (titleNode && backBtn) {
                 const observer = new MutationObserver(() => {
                     const title = titleNode.innerText.toLowerCase();
-                    // Ocultar botón en las pantallas raíz (Inicio, Login, Registro, Mi Perfil)
-                    if (title === 'inicio' || title === 'login' || title === 'mi perfil' || title === 'registro') {
+                    if (title === 'inicio' || title === 'login' || title === 'mi perfil') {
                         backBtn.classList.add('d-none');
                     } else {
                         backBtn.classList.remove('d-none');
                     }
                 });
-                // Iniciar la observación de los cambios en el título
                 observer.observe(titleNode, { childList: true, characterData: true, subtree: true });
+            }
+
+            // ARRANQUE DE LA APP: Revisar si ya hay sesión iniciada
+            if (apiDb.estaAutenticado()) {
+                cargarVista('inicio', 'Inicio');
+            } else {
+                cargarVista('login', 'Login');
             }
         });
     </script>

@@ -1,21 +1,21 @@
 {
   "_metadata": "ESTE ARCHIVO ES CONTROLADO POR CONFIGURAR_PROYECTO.JS (MODO DIOS)",
-  "timestamp_ejecucion": 1773498558272,
+  "timestamp_ejecucion": 1774658599335,
   "dbAction": "overwrite",
-  "dbName": "Altair.db",
-  "useEncryption": true,
-  "dbPassword": "ligaliga",
+  "dbName": "Pepinocho.db",
+  "useEncryption": false,
+  "dbPassword": "",
   "superusers": [
     {
       "nombre": "Administrador Supremo 1",
-      "email": "admin@gmail.com",
+      "email": "kenth1977@gmail.com",
       "password": "a54178fa969ccb39e6c64425ef2b4fac0ae573e16ce9174576aee80105d35392",
       "telefono": "00000000",
       "rol": "superusuario",
       "estado": "activo",
       "foto_perfil": "",
       "pin": "00000000",
-      "_timestamp_inyeccion": 1773498539708
+      "_timestamp_inyeccion": 1774658586647
     }
   ]
 }

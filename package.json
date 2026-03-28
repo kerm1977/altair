@@ -1,11 +1,12 @@
 {
-  "name": "altair",
+  "name": "pepinocho",
   "version": "1.0.0",
   "description": "alatir",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "serve": "http-server www -c-1"
+    "serve": "http-server www -c-1",
+    "start-global": "node runserver.js"
   },
   "keywords": [],
   "author": "",

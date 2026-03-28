@@ -18,23 +18,22 @@ PASO 1: ¿QUÉ METO EN EL .ZIP Y SE COMPILA ALGO?
 
 PASO 2: ¿A DÓNDE SUBO ESE .ZIP?
 
-• Abres tu servidor en PythonAnywhere.
-• Vas a la carpeta específica que designaste para las actualizaciones: /home/kenth1977/myDBs/updates
+• Abres tu panel de control o servidor (AWS, VPS, tu backend genérico, etc.).
+• Vas a la carpeta pública específica que designaste para alojar las actualizaciones estáticas (ej. /var/www/html/updates).
 • Subes tu archivo "actualizacion_v2.zip" ahí.
-• Luego, en tu código de app.py, cambias el número para avisarle al mundo que la versión "2.0.0" ya existe y pones el link hacia ese .zip.
+• Luego, actualizas la base de datos o API indicándole a la app cuál es la nueva versión (ej. v2) y el enlace exacto (ej. https://api.midominio.com/updates/actualizacion_v2.zip).
 
-PASO 3: ¿QUÉ PASA EN EL CELULAR CUANDO TOCO EL BOTÓN?
+PASO 3: ¿CÓMO SE ENTERA EL CELULAR?
 
-• El celular del usuario se conecta a PythonAnywhere y dice: "¿Hay algo nuevo?".
-• PythonAnywhere responde: "Sí, la versión 2.0.0 está en este link".
-• El plugin mágico de tu app (Capacitor Updater) empieza a descargar el archivo "actualizacion_v2.zip" a través de internet.
-• ¿Dónde lo guarda? Lo guarda en una "zona secreta" de la memoria interna del celular a la que solo tu app tiene acceso. El usuario nunca verá este .zip en su galería ni en sus descargas normales.
+• Un usuario abre la app en su celular.
+• La app se conecta al servidor y pregunta silenciosamente: "¿Hay alguna versión nueva?"
+• El servidor responde: "Sí, estamos en la v2. Descárgala de este enlace".
 
-PASO 4: ¿SE DESCOMPRIME EL .ZIP?
+PASO 4: LA DESCARGA INVISIBLE
 
-• ¡SÍ! Automáticamente.
-• Una vez que el .zip termina de bajar, el plugin Capacitor Updater toma ese .zip y lo extrae (lo descomprime) dentro de esa misma memoria secreta del celular.
-• Al descomprimirlo, saca todos los archivos nuevecitos (tu nuevo index.html, tu nuevo CSS, etc.) y los pone en una nueva carpetita interna.
+• El plugin de Capacitor-Updater entra en acción.
+• Descarga el archivo "actualizacion_v2.zip" a una carpeta secreta y temporal en la memoria interna del teléfono.
+• Descomprime todos los archivos (el nuevo index, el nuevo CSS, etc.) y los pone en una nueva carpetita interna.
 • Una vez descomprimido, el archivo .zip se borra solo para no ocupar espacio basura en el teléfono.
 
 PASO 5: LA MAGIA DEL CAMBIO (¿CÓMO ACTUALIZA SIN APK?)
@@ -55,15 +54,12 @@ RESUMEN DE MANZANITAS:
 
 Comprimes tus textos (www) en un .zip en tu compu.
 
-Lo subes a la nube en /home/kenth1977/myDBs/updates.
+Lo subes a la nube en tu servidor (VPS/AWS/Backend).
 
 El celular baja el .zip.
 
-El celular descomprime el .zip en una carpeta oculta.
+El celular descomprime el .zip en una carpeta secreta.
 
-El celular cambia la configuración para leer esa nueva carpeta.
+El celular "cambia los rieles" apuntando a la nueva carpeta.
 
-La app se recarga y muestra lo nuevo.
-
-
-comprimir toda la carpeta www y subirla a la ruta kenth1977/myDBs/updates 
+La app se reinicia sola y muestra la magia.

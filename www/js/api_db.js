@@ -6,16 +6,27 @@
 console.log("🚀 Iniciando api_db.js...");
 
 // 1. CONFIGURACIÓN BASE
-const APP_SLUG = "Altair"; 
+const APP_SLUG = "LaTribu"; 
 
 // --- INTERRUPTOR DE ENTORNO ---
-const ESTOY_EN_LOCAL = true; // true = Local, false = PythonAnywhere
+const ESTOY_EN_LOCAL = false; // <-- false = Usa el túnel global de Tailscale
 
+// ==============================================================================
+// 🎯 EL SEÑUELO: Esta variable solo existe para que 'configurar_proyecto.js' 
+// la lea, la modifique y no explote (No la usamos en las peticiones reales).
+// ==============================================================================
 const API_URL = ESTOY_EN_LOCAL 
-    ? `http://127.0.0.1:5000/api/${APP_SLUG}` 
+    ? `http://127.0.0.1:8090/api/${APP_SLUG}` 
     : `https://kenth1977.pythonanywhere.com/api/${APP_SLUG}`;
 
-console.log(`🌍 Entorno configurado apuntando a: ${API_URL}`);
+// ==============================================================================
+// 🚀 LA URL REAL: Esta es la que realmente usará tu App para hablar con PocketBase
+// ==============================================================================
+const POCKETBASE_URL = ESTOY_EN_LOCAL 
+    ? `http://127.0.0.1:8090/api` 
+    : `https://desktop-71uhcug.tailb81e5f.ts.net/api`;
+
+console.log(`🌍 Entorno configurado (Real) apuntando a: ${POCKETBASE_URL}`);
 
 const apiDb = {
     // ==========================================
@@ -69,7 +80,8 @@ const apiDb = {
         const config = { ...opciones, headers };
 
         try {
-            const respuesta = await fetch(`${API_URL}${endpoint}`, config);
+            // Usamos directamente la URL real de PocketBase/Tailscale
+            const respuesta = await fetch(`${POCKETBASE_URL}${endpoint}`, config);
             
             if (respuesta.status === 401) {
                 console.warn("Sesión expirada o token inválido.");
@@ -85,42 +97,52 @@ const apiDb = {
     },
 
     // ==========================================
-    // FUNCIONES DE AUTENTICACIÓN (API)
+    // FUNCIONES DE AUTENTICACIÓN (API POCKETBASE)
     // ==========================================
 
     login: async function(email, password) {
         try {
-            const data = await this.fetchProtegido('/login', {
+            // PocketBase usa esta ruta nativa para login de usuarios
+            const data = await this.fetchProtegido('/collections/users/auth-with-password', {
                 method: 'POST',
-                body: JSON.stringify({ email, password })
+                body: JSON.stringify({ 
+                    identity: email, // PocketBase usa 'identity' en lugar de 'email' para el login
+                    password: password 
+                })
             });
 
-            if (data.status === 'ok') {
-                this.guardarSesion(data.token, data.usuario);
-                return { exito: true, usuario: data.usuario };
+            if (data.token && data.record) {
+                this.guardarSesion(data.token, data.record);
+                return { exito: true, usuario: data.record }; 
             } else {
-                return { exito: false, error: data.error };
+                return { exito: false, error: data.message || "Credenciales incorrectas." };
             }
         } catch (error) {
-            return { exito: false, error: "Error de conexión con el servidor local." };
+            return { exito: false, error: "Error de conexión con el servidor." };
         }
     },
 
     registro: async function(nombre, email, password) {
         try {
-            const data = await this.fetchProtegido('/registro', {
+            // PocketBase usa esta ruta nativa para crear registros (usuarios)
+            const data = await this.fetchProtegido('/collections/users/records', {
                 method: 'POST',
-                body: JSON.stringify({ nombre, email, password })
+                body: JSON.stringify({ 
+                    name: nombre, // FIX: PocketBase espera 'name', no 'nombre'
+                    email: email, 
+                    password: password,
+                    passwordConfirm: password 
+                })
             });
 
-            if (data.status === 'ok') {
-                this.guardarSesion(data.token, data.usuario);
-                return { exito: true, usuario: data.usuario };
+            if (data.id) {
+                // Hacemos login automático tras registrar
+                return await this.login(email, password);
             } else {
-                return { exito: false, error: data.error };
+                return { exito: false, error: data.message || "Error al registrar usuario. Verifica los datos." };
             }
         } catch (error) {
-            return { exito: false, error: "Error de conexión con el servidor local." };
+            return { exito: false, error: "Error de conexión con el servidor." };
         }
     },
 
@@ -146,9 +168,9 @@ const apiDb = {
                 await window.Capacitor.Plugins.NativeBiometric.setCredentials({
                     username: email,
                     password: password,
-                    server: 'com.titan.app' // Identificador del llavero
+                    server: 'com.titan.app'
                 });
-                console.log("Credenciales aseguradas en el llavero nativo (Keychain/Keystore).");
+                console.log("Credenciales aseguradas en el llavero nativo.");
             } catch (e) {
                 console.error("Error al guardar biometría", e);
             }
@@ -160,7 +182,7 @@ const apiDb = {
                 await window.Capacitor.Plugins.NativeBiometric.deleteCredentials({
                     server: 'com.titan.app'
                 });
-                console.log("Credenciales biométricas eliminadas del sistema.");
+                console.log("Credenciales biométricas eliminadas.");
             } catch (e) {
                 console.error("Error al eliminar biometría", e);
             }
@@ -172,8 +194,6 @@ const apiDb = {
                     return { exito: false, error: "Biometría no soportada en este dispositivo." };
                 }
                 
-                // Abre el lector nativo de huella del teléfono
-                // Textos requeridos para que funcione en pantallas Under-Display de Android
                 const credentials = await window.Capacitor.Plugins.NativeBiometric.getCredentials({
                     server: 'com.titan.app',
                     reason: 'Usa tu huella dactilar para acceder de forma segura',
@@ -182,7 +202,6 @@ const apiDb = {
                 });
 
                 if (credentials && credentials.username && credentials.password) {
-                    // CORRECCIÓN APK: Intenta iniciar sesión primero con la base de datos local SQLite
                     if (window.sqliteService) {
                         try {
                             const encoder = new TextEncoder();
@@ -203,7 +222,6 @@ const apiDb = {
                         }
                     }
                     
-                    // Si SQLite falla o no está, intenta con la API externa (fallback)
                     return await apiDb.login(credentials.username, credentials.password);
                 }
                 return { exito: false, error: "No se encontraron credenciales previas guardadas." };
@@ -219,7 +237,6 @@ const apiDb = {
 // CONTROLADOR DE UI GLOBAL PARA LOGIN
 // ==========================================
 
-// CORRECCIÓN OJO: Ahora acepta parámetros para funcionar en cualquier formulario
 window.togglePassword = function(inputId = 'login-password', iconId = 'icono-ojo-login') {
     const passwordInput = document.getElementById(inputId);
     const icon = document.getElementById(iconId);
@@ -280,8 +297,8 @@ window.procesarLoginUI = async function(event) {
     if (btnText && btnText.tagName === 'SPAN') btnText.innerText = "INGRESANDO...";
 
     let resultado = { exito: false, error: "Servicio no disponible" };
+    let atrapadoEnLocal = false; 
 
-    // CORRECCIÓN APK: Inicio de sesión offline vía SQLite primero
     if (window.sqliteService) {
         try {
             const encoder = new TextEncoder();
@@ -299,15 +316,14 @@ window.procesarLoginUI = async function(event) {
                     await window.sqliteService.setSession(user);
                     resultado = { exito: true, usuario: user };
                 }
-            } else {
-                resultado = { exito: false, error: "Credenciales incorrectas o usuario inexistente." };
+                atrapadoEnLocal = true; 
             }
         } catch (err) {
             console.error("Error en BD Local:", err);
-            resultado = { exito: false, error: "Error interno al consultar la base de datos." };
         }
-    } else {
-        // Fallback: Si no hay SQLite, intenta con el servidor (Solo web/online)
+    } 
+    
+    if (!atrapadoEnLocal) {
         resultado = await apiDb.login(email, password);
     }
 
@@ -318,7 +334,6 @@ window.procesarLoginUI = async function(event) {
     if (resultado.exito) {
         if (recordarCheckbox && recordarCheckbox.checked) {
             localStorage.setItem('credenciales_guardadas', JSON.stringify({ email, password }));
-            // Guardamos la contraseña en el llavero biométrico del celular
             await apiDb.biometria.guardarCredenciales(email, password);
         } else {
             localStorage.removeItem('credenciales_guardadas');
@@ -344,7 +359,6 @@ window.procesarLoginBiometrico = async function() {
     const errorDiv = document.getElementById('login-error');
     if (errorDiv) errorDiv.classList.add('d-none');
     
-    // Abre el lector de huellas
     const resultado = await apiDb.biometria.iniciarSesion();
     
     if (resultado.exito) {
@@ -357,7 +371,7 @@ window.procesarLoginBiometrico = async function() {
         }
     } else {
         if (errorDiv) {
-            errorDiv.textContent = resultado.error || "Lector cancelado o error biométrico.";
+            errorDiv.textContent = resultado.error || "Lector cancelado o huella no reconocida.";
             errorDiv.classList.remove('d-none');
         }
     }
@@ -367,10 +381,8 @@ window.procesarLoginBiometrico = async function() {
 // CONFIGURACIÓN DE VISIBILIDAD DE BIOMETRÍA
 // ==========================================
 
-// CSS dinámico para ocultar el botón si la preferencia lo marca
 document.head.insertAdjacentHTML('beforeend', '<style>body.ocultar-biometria #btn-bio-login { display: none !important; }</style>');
 
-// Aplica la preferencia al cargar
 if (localStorage.getItem('mostrar_biometria') === 'false') {
     document.body.classList.add('ocultar-biometria');
 }

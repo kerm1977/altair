@@ -1,0 +1,135 @@
+🚀 MANUAL RÁPIDO: CREAR UNA NUEVA APP (MÉTODO ISLAS)
+
+Sigue estos 10 pasos exactos cada vez que quieras crear una aplicación totalmente nueva basada en tu plantilla actual.
+
+FASE 1: PREPARAR EL TERRENO (ARCHIVOS)
+
+1. Duplicar la Plantilla:
+    Copia la carpeta de tu proyecto base (altair o latribu) y pégala en tu escritorio. Cámbiale el nombre al nuevo proyecto (Ej: App_Restaurante).
+
+2. Borrar la Base de Datos Vieja:
+    Entra a tu nueva carpeta (App_Restaurante). Busca la carpeta llamada pb_data y ELIMÍNALA. Esto asegura que la nueva app nazca sin los usuarios ni datos de la app anterior.
+
+3. Asignar un Nuevo Puerto (Para evitar choques):
+    Abre el archivo runserver.js con tu editor de código.
+    Busca la línea de PocketBase (aprox. línea 15) y cámbiale el puerto agregando --http=127.0.0.1:8091 (o 8092, 8093...).
+    Ejemplo: const pbProcess = spawn('.\\pocketbase.exe', ['serve', '--http=127.0.0.1:8091'], { shell: true });
+
+
+FASE 2: BAUTIZAR LA APP (MODO DIOS)
+
+4. Ejecutar el Configurador:
+    Abre la consola (Terminal) dentro de tu nueva carpeta y ejecuta:
+
+    node configurar_proyecto.js
+
+
+    Responde las preguntas del asistente con los datos de tu nueva app (Nuevo Nombre, Nuevo ID como com.restaurante.app, etc.).
+
+    FASE 3: CONECTAR EL SERVIDOR Y LA APP
+
+5. Levantar el Servidor:
+En esa misma terminal, enciende tu nuevo servidor ejecutando:
+
+    npm run start-global
+
+    (Déjala abierta minimizada)
+
+6. Crear el Túnel (Tailscale):
+    Abre una NUEVA consola y abre el túnel hacia tu nuevo puerto:
+
+    tailscale funnel 8091
+
+
+    (Copia el enlace https://... que te devuelve Tailscale).
+
+7. Actualizar el Código de la App:
+    Ve a www/js/api_db.js y actualiza las dos variables principales con tus nuevos datos:
+
+    APP_SLUG: Pon el nombre de tu nueva app (Ej: "Restaurante").
+
+    POCKETBASE_URL: Pon tu nuevo enlace de Tailscale o tu nuevo 127.0.0.1:8091.
+
+    FASE 4: PREPARAR LA BASE DE DATOS (POCKETBASE)
+
+8. Configurar Usuarios y Candados:
+    Abre tu navegador y entra a http://127.0.0.1:8091/_/ (nota que es el puerto nuevo). Sigue los pasos del Anexo de Base de Datos que está más abajo para configurar las tablas correctamente.
+
+    FASE 5: COMPILAR EL APK
+
+9. Inyectar el Código al Celular:
+    Vuelve a abrir una consola en la carpeta principal de tu proyecto y ejecuta el comando vital:
+
+    npx cap sync
+
+
+10. Sellar y Construir:
+    Finalmente, entra a la carpeta de Android y ejecuta el compilador:
+
+    cd android
+    construir.bat
+
+
+¡LISTO! Pasa el APK de la carpeta /apks a tu celular y tu nueva app estará funcionando de forma totalmente independiente.
+
+🛠️ ANEXO: CÓMO CONFIGURAR CADA BASE DE DATOS (ISLA) PASO A PASO
+
+Cada vez que creas un PocketBase nuevo y borras la carpeta pb_data, el servidor nace completamente en blanco. Para que tu aplicación pueda guardar usuarios y leer información, debes seguir estos pasos exactos en tu panel de PocketBase (http://127.0.0.1:809X/_/):
+
+1. Crear el Superadministrador Maestro:
+    Al entrar por primera vez al panel, la pantalla te pedirá crear una cuenta. Escribe tu correo y una contraseña segura. Esta será la única cuenta con acceso total al panel de administración.
+
+2. Preparar los Campos de Usuario (users):
+    La colección users viene por defecto, pero debes ajustarla para tu app.
+
+    En el menú izquierdo ve a Collections y haz clic en users.
+
+    Arriba a la derecha haz clic en el ícono del engranaje (Settings) y selecciona la pestaña Fields.
+
+    Haz clic en New field, elige el tipo Text, y llámalo exactamente name (sin mayúsculas). Esto permite que la app guarde el nombre de la persona.
+
+    Haz clic en New field, elige el tipo Text, y llámalo exactamente rol (para que luego puedas diferenciar entre usuarios normales y VIPs).
+
+    Haz clic en el botón de guardar abajo a la derecha.
+
+3. Abrir los Candados de Registro (API Rules):
+    Si omites este paso, nadie podrá registrarse desde el celular.
+
+    En el mismo menú de configuración de users, ve a la pestaña API Rules.
+
+    Busca la regla llamada Create rule (Regla de creación).
+
+    Haz clic sobre el candado gris para que se ponga en color verde (Unlock).
+
+    Borra cualquier texto que haya en la barra, debe quedar completamente vacía: ""
+
+    Haz clic en guardar. ¡Ahora la creación de cuentas es pública!
+
+4. Crear las Tablas de Negocio (Colecciones Nuevas):
+
+    Haz clic en el botón + New collection en el panel izquierdo.
+
+    Ponle un nombre sin espacios a tu tabla (Ejemplo: pagos o facturas).
+
+    En la pestaña Fields, añade las columnas que necesites:
+
+    Ej: monto (Tipo: Number)
+
+    Ej: concepto (Tipo: Text)
+
+    Ej: cliente_id (Tipo: Relation -> apuntando a users para saber de quién es el pago).
+
+    Ve a la pestaña API Rules de esta nueva colección y pon los candados en verde (Unlock) para List/Search, View y Create según lo que tu app necesite hacer con esa tabla.
+
+5. Preparar la Colección OTA (Actualizaciones Automáticas):
+    Para poder enviar actualizaciones remotas sin reconstruir el APK:
+
+    Crea otra colección usando + New collection.
+
+    Llámala exactamente ota_updates.
+
+    Añade un campo tipo Text llamado version.
+
+    Añade un campo tipo File llamado archivo_zip.
+
+    En la pestaña API Rules, desbloquea (verde) las reglas de List/Search y View dejándolas en blanco "" para que la app pueda consultar si hay un .zip nuevo para descargar.

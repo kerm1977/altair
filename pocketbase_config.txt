@@ -1,0 +1,229 @@
+Módulo Reutilizable: Configuración y Esquemas de PocketBase
+
+Este documento contiene la arquitectura exacta de base de datos utilizada en la aplicación. Su propósito es servir como un módulo "Copiar y Pegar" para trasladar el mismo backend a cualquier otra aplicación o framework de forma totalmente local e independiente.
+
+1. Requisitos Previos
+
+Para que esta configuración funcione en un nuevo proyecto, debes incluir el SDK de PocketBase de manera local.
+
+Instalación Vía NPM (React, Vue, Angular, Ionic, Node):
+
+npm install pocketbase
+
+
+(Nota para Vanilla JS puro: Si no usas un gestor de paquetes, debes descargar el archivo pocketbase.umd.js desde el repositorio oficial de GitHub de PocketBase, guardarlo en tu carpeta de proyecto y enlazarlo localmente con <script src="./js/pocketbase.umd.js"></script>)
+
+Inicialización Global:
+
+import PocketBase from 'pocketbase'; 
+
+const pb = new PocketBase('[http://127.0.0.1:8090](http://127.0.0.1:8090)'); // Reemplazar por la URL de tu servidor
+
+
+2. Los Esquemas de Base de Datos (JSON)
+
+La aplicación depende de 3 colecciones (collections) principales. Esta es la estructura exacta que debes replicar o que el script de inyección creará por ti:
+
+Colección 1: notes (Notas principales)
+
+Almacena el contenido enriquecido y metadatos de configuración.
+
+Tipo: base
+
+Reglas (API Rules): Todas vacías "" (Acceso público/anónimo permitido).
+
+Campos (Schema):
+
+noteId (text): ID único generado en el cliente.
+
+title (text): Título de la nota.
+
+content (editor): Contenido HTML (WYSIWYG).
+
+tag (text): Nombre del espacio/categoría.
+
+theme (text): 'dark' o 'default'.
+
+date (text): Fecha de creación en formato local.
+
+editedDate (text): Fecha de última edición.
+
+pinned (bool): Estado de favorito.
+
+showTableBorders (bool): Preferencia visual de tablas.
+
+timestamp (number): Control de concurrencia (Date.now()).
+
+reminderDate (text): Fecha del recordatorio (YYYY-MM-DD).
+
+reminderTime (text): Hora del recordatorio (HH:MM).
+
+reminderAdvance (text): Tiempo de antelación ("0", "1", "2", "3").
+
+reminderDismissed (bool): Si la alerta ya sonó.
+
+Colección 2: tags (Etiquetas/Espacios)
+
+Almacena las categorías creadas por el usuario.
+
+Tipo: base
+
+Campos (Schema):
+
+name (text): Nombre de la etiqueta.
+
+Colección 3: glass_archivos (Multimedia)
+
+Almacena imágenes, audios y videos pesados para no saturar el almacenamiento local.
+
+Tipo: base
+
+Campos (Schema):
+
+file (file): Opciones configuradas a maxSize: 52428800 (50MB) y maxSelect: 1.
+
+3. El Script Maestro de Auto-Inyección
+
+Este es el bloque de código más valioso. Puedes pegarlo en cualquier app nueva, pasarle las credenciales de administrador de tu servidor PocketBase, y él mismo se encargará de crear todas las tablas y configurar las reglas de seguridad.
+
+/**
+ * Conecta a PocketBase como Admin, crea las tablas si no existen,
+ * o actualiza sus reglas a público si ya existen.
+ */
+async function injectPocketBaseArchitecture(url, email, pass) {
+    pb.baseUrl = url;
+
+    try {
+        // 1. Autenticación como Administrador (Requerido para modificar esquemas)
+        await pb.admins.authWithPassword(email, pass, { requestKey: null });
+        console.log("Autenticación de Admin exitosa.");
+
+        // 2. Definición de Esquemas
+        const notesSchema = {
+            name: 'notes',
+            type: 'base',
+            schema: [
+                { name: 'noteId', type: 'text' },
+                { name: 'title', type: 'text' },
+                { name: 'content', type: 'editor' },
+                { name: 'tag', type: 'text' },
+                { name: 'theme', type: 'text' },
+                { name: 'date', type: 'text' },
+                { name: 'editedDate', type: 'text' },
+                { name: 'pinned', type: 'bool' },
+                { name: 'showTableBorders', type: 'bool' },
+                { name: 'timestamp', type: 'number' },
+                { name: 'reminderDate', type: 'text' },
+                { name: 'reminderTime', type: 'text' },
+                { name: 'reminderAdvance', type: 'text' },
+                { name: 'reminderDismissed', type: 'bool' }
+            ],
+            // Reglas vacías "" = Acceso Público. 
+            // Si quieres protegerlo por usuario, cambiar a: "@request.auth.id != ''"
+            listRule: "", viewRule: "", createRule: "", updateRule: "", deleteRule: ""
+        };
+
+        const tagsSchema = {
+            name: 'tags',
+            type: 'base',
+            schema: [{ name: 'name', type: 'text' }],
+            listRule: "", viewRule: "", createRule: "", updateRule: "", deleteRule: ""
+        };
+
+        const mediaSchema = {
+            name: 'glass_archivos',
+            type: 'base',
+            schema: [
+                { name: 'file', type: 'file', options: { maxSize: 52428800, maxSelect: 1 } }
+            ],
+            listRule: "", viewRule: "", createRule: "", updateRule: "", deleteRule: ""
+        };
+
+        // 3. Ejecución e Inyección (Try/Catch individual para no detener el flujo)
+        
+        // --- Inyectar 'notes' ---
+        try {
+            await pb.collections.create(notesSchema, { requestKey: null });
+            console.log("✅ Tabla 'notes' creada.");
+        } catch(e) { 
+            // Si ya existe, forzamos la actualización de reglas y esquema
+            try { 
+                let n = await pb.collections.getOne('notes', { requestKey: null }); 
+                n.listRule=""; n.viewRule=""; n.createRule=""; n.updateRule=""; n.deleteRule=""; 
+                n.schema = notesSchema.schema; 
+                await pb.collections.update('notes', n, { requestKey: null }); 
+                console.log("⚠️ Tabla 'notes' actualizada.");
+            } catch(ex){ console.error("Error al actualizar notes:", ex); }
+        }
+
+        // --- Inyectar 'tags' ---
+        try {
+            await pb.collections.create(tagsSchema, { requestKey: null });
+            console.log("✅ Tabla 'tags' creada.");
+        } catch(e) { 
+            try { 
+                let t = await pb.collections.getOne('tags', { requestKey: null }); 
+                t.listRule=""; t.viewRule=""; t.createRule=""; t.updateRule=""; t.deleteRule=""; 
+                await pb.collections.update('tags', t, { requestKey: null }); 
+                console.log("⚠️ Tabla 'tags' actualizada.");
+            } catch(ex){}
+        }
+
+        // --- Inyectar 'glass_archivos' ---
+        try {
+            await pb.collections.create(mediaSchema, { requestKey: null });
+            console.log("✅ Tabla 'glass_archivos' creada.");
+        } catch(e) { 
+            try { 
+                let m = await pb.collections.getOne('glass_archivos', { requestKey: null }); 
+                m.listRule=""; m.viewRule=""; m.createRule=""; m.updateRule=""; m.deleteRule=""; 
+                await pb.collections.update('glass_archivos', m, { requestKey: null }); 
+                console.log("⚠️ Tabla 'glass_archivos' actualizada.");
+            } catch(ex){}
+        }
+
+        return true; // Arquitectura lista para usar
+    } catch (err) {
+        console.error("Error crítico de autenticación o conexión:", err);
+        return false;
+    }
+}
+
+
+4. Referencia Rápida de Operaciones (Cheatsheet)
+
+Una vez que la arquitectura está inyectada, puedes interactuar con ella desde cualquier parte de tu nueva aplicación usando estos fragmentos:
+
+Obtener todas las notas (con timestamp para concurrencia)
+
+const records = await pb.collection('notes').getFullList({ 
+    sort: '-timestamp', // Ordenar por las más recientes
+    requestKey: null 
+});
+
+
+Crear o Actualizar una Nota
+
+const noteData = {
+    noteId: "id_local_unico",
+    title: "Mi nueva idea",
+    content: "<p>Hola mundo</p>",
+    timestamp: Date.now()
+};
+
+// Crear:
+const record = await pb.collection('notes').create(noteData);
+
+// Actualizar (requiere el ID interno de PocketBase, no el noteId local):
+await pb.collection('notes').update(RECORD_ID_POCKETBASE, noteData);
+
+
+Subir un archivo (Imágenes/Audios pesados)
+
+const formData = new FormData();
+formData.append('file', fileObject); // fileObject proviene de un <input type="file">
+
+const record = await pb.collection('glass_archivos').create(formData);
+
+// Construir la URL pública del archivo subido:
+const fileUrl = `${pb.baseUrl}/api/files/${record.collectionId}/${record.id}/${record.file}`;

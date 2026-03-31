@@ -1,0 +1,671 @@
+<!DOCTYPE html>
+<html lang="es" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CPanel Enterprise - Modo Dios</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #121418; }
+        .glass-card { background-color: rgba(33, 37, 41, 0.9); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .clickable-card { cursor: pointer; transition: all 0.2s ease; }
+        .clickable-card:hover { filter: brightness(1.2); }
+        pre { scrollbar-width: thin; }
+        .discreet-btn { opacity: 0.3; transition: opacity 0.3s; font-size: 0.8rem; }
+        .discreet-btn:hover { opacity: 1; }
+        /* Estilos nuevos para los Backups */
+        .backup-item { transition: background 0.2s; }
+        .backup-item:hover { background-color: rgba(255,255,255,0.05); }
+        .locked-section { opacity: 0.5; pointer-events: none; filter: grayscale(100%); transition: all 0.3s; }
+        .unlocked-section { opacity: 1; pointer-events: auto; filter: grayscale(0%); transition: all 0.3s; }
+    </style>
+</head>
+<body class="py-4 py-md-5">
+
+    <div class="container" style="max-width: 1000px;">
+        
+        <!-- Header -->
+        <div class="card glass-card shadow-lg mb-4 rounded-4">
+            <div class="card-body p-4 d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+                <div>
+                    <h1 class="h2 fw-bold text-primary mb-1">
+                        <i class="bi bi-sliders text-info"></i> CPanel Enterprise
+                    </h1>
+                    <p class="text-secondary mb-0">Gestor de Entornos, Base de Datos y Backups</p>
+                </div>
+                <div id="statusBadge" class="badge bg-secondary p-2 fs-6 fw-normal d-flex align-items-center gap-2">
+                    <i class="bi bi-circle-fill text-light"></i> Estado: Desconocido
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Columna Izquierda: Controles y Backups -->
+            <div class="col-md-6 d-flex flex-column gap-4">
+                
+                <!-- Selector de Entorno -->
+                <div class="card glass-card shadow rounded-4">
+                    <div class="card-body p-4">
+                        <h5 class="card-title fw-bold border-bottom border-secondary pb-3 mb-4">
+                            <i class="bi bi-toggle-on text-primary"></i> Interruptor de Entorno
+                        </h5>
+                        
+                        <div class="d-flex flex-column gap-3">
+                            <label class="form-check p-3 rounded-3 border clickable-card d-flex align-items-center m-0" id="cardDev">
+                                <input class="form-check-input ms-1 me-3 fs-5 mt-0" type="radio" name="envSwitch" value="dev">
+                                <div>
+                                    <span class="d-block fw-bold text-primary">Desarrollo (DEV)</span>
+                                    <span class="text-secondary small">Tailscale o Localhost. Para probar.</span>
+                                </div>
+                            </label>
+
+                            <label class="form-check p-3 rounded-3 border clickable-card d-flex align-items-center m-0" id="cardProd">
+                                <input class="form-check-input ms-1 me-3 fs-5 mt-0" type="radio" name="envSwitch" value="prod">
+                                <div>
+                                    <span class="d-block fw-bold text-success">Producción (PROD)</span>
+                                    <span class="text-secondary small">Servidor VPS Real. Datos intocables.</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Configuración de URLs -->
+                <div class="card glass-card shadow rounded-4">
+                    <div class="card-body p-4">
+                        <h5 class="card-title fw-bold border-bottom border-secondary pb-3 mb-4">
+                            <i class="bi bi-link-45deg text-primary"></i> URLs de Servidores
+                        </h5>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-secondary small mb-1">URL Entorno DEV</label>
+                            <input type="text" id="devUrl" class="form-control bg-dark text-primary font-monospace border-secondary focus-ring" placeholder="http://127.0.0.1:8090">
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label text-secondary small mb-1">URL Entorno PROD</label>
+                            <input type="text" id="prodUrl" class="form-control bg-dark text-success font-monospace border-secondary focus-ring" placeholder="https://api.mi-app.com">
+                        </div>
+                        
+                        <button onclick="saveSettings()" id="saveBtn" class="btn btn-primary w-100 fw-bold py-2 shadow">
+                            <i class="bi bi-floppy-fill me-1"></i> Guardar Configuración
+                        </button>
+                    </div>
+                </div>
+
+                <!-- GESTOR DE BACKUPS -->
+                <div class="card glass-card shadow rounded-4 border-info border-opacity-50">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-3 mb-3">
+                            <h5 class="card-title fw-bold text-info mb-0">
+                                <i class="bi bi-archive-fill"></i> Copias de Seguridad
+                            </h5>
+                            <button onclick="loadBackups()" class="btn btn-sm btn-outline-info" title="Refrescar Lista">
+                                <i class="bi bi-arrow-clockwise"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Mensaje de bloqueo si no hay sesión -->
+                        <div id="backupLockMessage" class="alert bg-danger bg-opacity-10 border border-danger text-danger small py-2 d-flex align-items-center gap-2">
+                            <i class="bi bi-lock-fill"></i> Inicia sesión Master (panel derecho) para usar los respaldos.
+                        </div>
+
+                        <!-- Controles de Backup -->
+                        <div id="backupControls" class="locked-section">
+                            <p class="text-secondary small mb-3">
+                                <i class="bi bi-info-circle text-info"></i> Exporta o importa tu BD (.db) y configuración (.json) en formato .zip.
+                            </p>
+                            
+                            <div class="d-grid gap-2 mb-3">
+                                <button onclick="createBackup()" id="btnCreateBackup" class="btn btn-info text-dark fw-bold shadow-sm">
+                                    <i class="bi bi-plus-circle-fill me-1"></i> Crear Respaldo (Exportar)
+                                </button>
+                                <label class="btn btn-outline-light fw-semibold mb-0 cursor-pointer">
+                                    <i class="bi bi-upload me-1"></i> Subir Respaldo / Importar (.zip)
+                                    <input type="file" id="backupUpload" class="d-none" accept=".zip" onchange="uploadBackup(this)">
+                                </label>
+                            </div>
+
+                            <div class="bg-dark rounded-3 border border-secondary p-1" style="height: 180px; overflow-y: auto;">
+                                <ul class="list-unstyled mb-0" id="backupsList">
+                                    <li class="p-3 text-center text-secondary small">Esperando autenticación...</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Columna Derecha: Acciones, Login e Info -->
+            <div class="col-md-6 d-flex flex-column gap-4">
+                
+                <!-- Acciones del Servidor -->
+                <div class="card glass-card shadow rounded-4">
+                    <div class="card-body p-4">
+                        <h5 class="card-title fw-bold border-bottom border-secondary pb-3 mb-4">
+                            <i class="bi bi-lightning-charge-fill text-warning"></i> Acciones
+                        </h5>
+                        
+                        <div class="p-3 bg-dark rounded-3 border border-secondary mb-4">
+                            <span class="text-secondary small d-block mb-1">Conectado actualmente a:</span>
+                            <div id="currentUrlDisplay" class="font-monospace fs-6 text-break">Cargando...</div>
+                        </div>
+
+                        <div class="d-grid gap-3">
+                            <button onclick="testConnection()" class="btn btn-outline-light py-2 fw-semibold">
+                                <i class="bi bi-wifi me-2"></i> Probar Conexión (Ping)
+                            </button>
+                            <button onclick="openAdminUI()" class="btn btn-light py-2 fw-bold shadow-sm">
+                                <i class="bi bi-database-fill-gear me-2"></i> Abrir Panel PocketBase (/_/)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Login PocketBase (Superuser) -->
+                <div class="card glass-card shadow rounded-4 border-danger border-opacity-50" style="background-color: rgba(220, 53, 69, 0.05);">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-start border-bottom border-secondary pb-3 mb-4">
+                            <h5 class="card-title fw-bold mb-0">
+                                <i class="bi bi-shield-lock-fill text-danger"></i> Login Master
+                            </h5>
+                            <!-- BOTÓN DISIMULADO (S.O.S) -->
+                            <button id="btnRescue" class="btn btn-link text-secondary text-decoration-none discreet-btn p-0" data-bs-toggle="modal" data-bs-target="#dummyModal" title="¿Problemas fatales? Reinstalar todo">
+                                <i class="bi bi-life-preserver"></i> S.O.S
+                            </button>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-secondary small mb-1">Email Master</label>
+                            <input type="email" id="adminEmail" class="form-control bg-dark text-light border-secondary" placeholder="admin@miapp.com">
+                        </div>
+                        <div class="mb-4">
+                            <label class="form-label text-secondary small mb-1">Contraseña</label>
+                            <input type="password" id="adminPass" class="form-control bg-dark text-light border-secondary" placeholder="••••••••">
+                        </div>
+                        
+                        <button onclick="loginPocketBase()" id="loginBtn" class="btn btn-danger w-100 fw-bold py-2 shadow-sm">
+                            <i class="bi bi-box-arrow-in-right me-1"></i> Autenticar
+                        </button>
+                        
+                        <div id="loginFeedback" class="mt-3 small text-center d-none"></div>
+                    </div>
+                </div>
+
+                <!-- Instrucciones de Integración -->
+                <div class="card shadow rounded-4 border-warning border-opacity-50" style="background-color: rgba(255, 193, 7, 0.05);">
+                    <div class="card-body p-4">
+                        <h6 class="card-title fw-bold text-warning mb-2">
+                            <i class="bi bi-tools"></i> ¿Cómo conectar tu App?
+                        </h6>
+                        <p class="text-secondary small mb-3">
+                            Pega esto al principio de tu archivo <code class="text-warning bg-dark px-1 rounded">www/js/api_db.js</code> para automatizar la conexión.
+                        </p>
+                        
+                        <div class="position-relative">
+                            <pre class="bg-dark p-3 rounded-3 text-light font-monospace" style="font-size: 0.75rem; overflow-x: auto; border: 1px solid rgba(255,255,255,0.1);">
+// 1. Leer configuración del CPANEL
+const savedEnv = localStorage.getItem('APP_ENV') || 'dev';
+const devUrl = localStorage.getItem('APP_DEV_URL') || 'http://127.0.0.1:8090';
+const prodUrl = localStorage.getItem('APP_PROD_URL') || 'https://api.tu-app.com';
+
+// 2. Asignar URL dinámica
+const POCKETBASE_URL = savedEnv === 'prod' ? prodUrl : devUrl;
+const APP_SLUG = savedEnv === 'prod' ? 'App_Oficial' : 'App_Pruebas';
+
+console.log("🔥 Entorno:", savedEnv.toUpperCase());
+console.log("📡 Conectando:", POCKETBASE_URL);
+
+// 3. Inicializar BD
+// const pb = new PocketBase(POCKETBASE_URL);</pre>
+                            <button onclick="copyCode()" id="copyBtn" class="btn btn-sm btn-secondary position-absolute top-0 end-0 m-2">
+                                <i class="bi bi-clipboard"></i> Copiar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+        
+        <!-- Volver a la app -->
+        <div class="text-center mt-5">
+            <a href="base.html" class="text-decoration-none text-secondary custom-link">
+                <i class="bi bi-arrow-left"></i> Volver al inicio de la App (base.html)
+            </a>
+        </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- MODAL MODO DIOS: INSTALACIÓN PARA DUMMIES DESDE CERO      -->
+    <!-- ========================================================= -->
+    <div class="modal fade" id="dummyModal" tabindex="-1" aria-labelledby="dummyModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content bg-dark text-light border-secondary">
+                <div class="modal-header border-secondary bg-black">
+                    <h5 class="modal-title fw-bold text-danger" id="dummyModalLabel">
+                        <i class="bi bi-fire me-2"></i> PROTOCOLO DE RESCATE: INSTALACIÓN DESDE CERO
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4" style="font-family: 'Segoe UI', sans-serif;">
+                    
+                    <div class="alert alert-danger border-danger bg-danger bg-opacity-10">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i> <strong>¿Base de datos corrupta? ¿No arranca?</strong> Sigue estos pasos exactos en tu terminal CMD o Cmder para reconstruir todo el ecosistema.
+                    </div>
+
+                    <h6 class="text-info fw-bold mt-4 border-bottom border-secondary pb-2">FASE 1: LIMPIEZA NUCLEAR ☢️</h6>
+                    <p class="small text-secondary mb-1">Cierra todas las consolas abiertas. Ve a la carpeta de tu proyecto y elimina la base de datos corrupta:</p>
+                    <pre class="bg-black p-3 rounded border border-secondary text-light font-monospace small user-select-all">rmdir /s /q pb_data
+del pb_migrations\*.js</pre>
+                    <p class="text-muted" style="font-size: 0.8rem;">* Nota: Esto borrará TODOS los usuarios y registros. Solo hazlo si quieres empezar de cero.</p>
+
+                    <h6 class="text-info fw-bold mt-4 border-bottom border-secondary pb-2">FASE 2: REINSTALAR POCKETBASE 📦</h6>
+                    <p class="small text-secondary mb-1">Abre tu CMD o Cmder en la carpeta del proyecto y ejecuta el servidor de nuevo. Esto creará una base de datos virgen.</p>
+                    <pre class="bg-black p-3 rounded border border-secondary text-warning font-monospace small user-select-all">.\pocketbase.exe serve</pre>
+                    
+                    <div class="bg-secondary bg-opacity-25 p-3 rounded mt-2 mb-3 border border-secondary">
+                        <strong class="d-block text-white mb-2"><i class="bi bi-1-circle-fill text-info"></i> Crear el Superusuario Master:</strong>
+                        <ol class="small text-light mb-0 ps-3 space-y-1">
+                            <li>Abre tu navegador y entra a: <a href="http://127.0.0.1:8090/_/" target="_blank" class="text-info">http://127.0.0.1:8090/_/</a></li>
+                            <li>Te pedirá crear el primer administrador.</li>
+                            <li>Pon tu email master y una contraseña segura.</li>
+                            <li>¡Listo! Tu BD ha revivido. Cierra la consola con <kbd>Ctrl+C</kbd> para seguir al siguiente paso.</li>
+                        </ol>
+                    </div>
+
+                    <h6 class="text-info fw-bold mt-4 border-bottom border-secondary pb-2">FASE 3: INICIAR EL ORQUESTADOR Y TÚNEL 🌐</h6>
+                    <p class="small text-secondary mb-1">Para arrancar PocketBase + Tailscale juntos automáticamente:</p>
+                    <pre class="bg-black p-3 rounded border border-secondary text-success font-monospace small user-select-all">npm run start-global</pre>
+                    <p class="text-muted" style="font-size: 0.8rem;">* Minimiza esta consola. El servidor está vivo y publicado en internet.</p>
+
+                    <h6 class="text-info fw-bold mt-4 border-bottom border-secondary pb-2">FASE 4: SINCRONIZAR Y COMPILAR LA APP (CAPACITOR) 📱</h6>
+                    <p class="small text-secondary mb-1">Abre OTRA consola nueva en la carpeta de tu proyecto. Inyecta el código al contenedor nativo:</p>
+                    <pre class="bg-black p-3 rounded border border-secondary text-light font-monospace small user-select-all">npx cap sync</pre>
+                    <p class="small text-secondary mb-1 mt-3">Luego, entra a la carpeta Android, limpia la caché vieja y compila el APK final:</p>
+                    <pre class="bg-black p-3 rounded border border-secondary text-light font-monospace small user-select-all">cd android
+gradlew clean
+construir.bat</pre>
+                    
+                    <div class="alert alert-success mt-4 mb-0 border-success bg-success bg-opacity-10">
+                        <i class="bi bi-check-circle-fill me-2"></i> <strong>¡Sistema Restaurado!</strong> Ahora vuelve al CPanel y prueba el Login de nuevo.
+                    </div>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Entendido, cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Variables Globales
+        const radios = document.getElementsByName('envSwitch');
+        const devUrlInput = document.getElementById('devUrl');
+        const prodUrlInput = document.getElementById('prodUrl');
+        const currentUrlDisplay = document.getElementById('currentUrlDisplay');
+        const statusBadge = document.getElementById('statusBadge');
+        
+        const cardDev = document.getElementById('cardDev');
+        const cardProd = document.getElementById('cardProd');
+        const saveBtn = document.getElementById('saveBtn');
+        const copyBtn = document.getElementById('copyBtn');
+
+        // Variables de Backup
+        const backupsList = document.getElementById('backupsList');
+        const backupControls = document.getElementById('backupControls');
+        const backupLockMessage = document.getElementById('backupLockMessage');
+
+        // Valores por defecto
+        const DEFAULT_DEV_URL = "http://127.0.0.1:8090";
+        const DEFAULT_PROD_URL = "https://api.tu-servidor-premium.com";
+
+        // Inicialización
+        function init() {
+            const savedEnv = localStorage.getItem('APP_ENV') || 'dev';
+            const devUrl = localStorage.getItem('APP_DEV_URL') || DEFAULT_DEV_URL;
+            const prodUrl = localStorage.getItem('APP_PROD_URL') || DEFAULT_PROD_URL;
+
+            devUrlInput.value = devUrl;
+            prodUrlInput.value = prodUrl;
+
+            radios.forEach(radio => {
+                if(radio.value === savedEnv) radio.checked = true;
+                radio.addEventListener('change', handleEnvChange);
+            });
+
+            updateUI();
+            checkAuthAndLoadBackups();
+        }
+
+        function handleEnvChange() {
+            updateUI();
+            saveSettings(); 
+        }
+
+        function getActiveEnv() {
+            let active = 'dev';
+            radios.forEach(radio => { if(radio.checked) active = radio.value; });
+            return active;
+        }
+
+        function getActiveUrl() {
+            let url = getActiveEnv() === 'dev' ? devUrlInput.value : prodUrlInput.value;
+            return url.replace(/\/$/, ""); // Remover slash al final
+        }
+
+        function updateUI() {
+            const activeEnv = getActiveEnv();
+            const activeUrl = getActiveUrl();
+            
+            currentUrlDisplay.textContent = activeUrl || "URL no definida";
+
+            if(activeEnv === 'dev') {
+                // UI Desarrollo
+                cardDev.classList.add('border-primary', 'bg-primary', 'bg-opacity-10');
+                cardDev.classList.remove('border-secondary');
+                cardProd.classList.remove('border-success', 'bg-success', 'bg-opacity-10');
+                cardProd.classList.add('border-secondary');
+                currentUrlDisplay.className = 'font-monospace fs-6 text-break text-primary mt-1';
+            } else {
+                // UI Producción
+                cardProd.classList.add('border-success', 'bg-success', 'bg-opacity-10');
+                cardProd.classList.remove('border-secondary');
+                cardDev.classList.remove('border-primary', 'bg-primary', 'bg-opacity-10');
+                cardDev.classList.add('border-secondary');
+                currentUrlDisplay.className = 'font-monospace fs-6 text-break text-success mt-1';
+            }
+
+            // Resetear estado
+            statusBadge.className = "badge bg-secondary p-2 fs-6 fw-normal d-flex align-items-center gap-2";
+            statusBadge.innerHTML = `<i class="bi bi-circle-fill text-light"></i> Estado: Listo para probar`;
+        }
+
+        function saveSettings() {
+            const activeEnv = getActiveEnv();
+            
+            localStorage.setItem('APP_ENV', activeEnv);
+            localStorage.setItem('APP_DEV_URL', devUrlInput.value);
+            localStorage.setItem('APP_PROD_URL', prodUrlInput.value);
+
+            // Efecto visual en el botón
+            const originalHTML = saveBtn.innerHTML;
+            saveBtn.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> ¡Guardado!';
+            saveBtn.classList.replace('btn-primary', 'btn-success');
+            
+            setTimeout(() => {
+                saveBtn.innerHTML = originalHTML;
+                saveBtn.classList.replace('btn-success', 'btn-primary');
+            }, 2000);
+
+            updateUI();
+            checkAuthAndLoadBackups();
+        }
+
+        async function testConnection() {
+            const targetUrl = getActiveUrl();
+
+            if(!targetUrl) {
+                alert("Por favor, ingresa una URL válida primero.");
+                return;
+            }
+
+            // Estado: Cargando
+            statusBadge.className = "badge bg-warning text-dark p-2 fs-6 fw-normal d-flex align-items-center gap-2";
+            statusBadge.innerHTML = `<span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Conectando...`;
+
+            try {
+                const response = await fetch(`${targetUrl}/api/health`, { method: 'GET', mode: 'cors' });
+                const data = await response.json();
+
+                if(response.ok && data.code === 200) {
+                    // Estado: Éxito
+                    statusBadge.className = "badge bg-success p-2 fs-6 fw-normal d-flex align-items-center gap-2";
+                    statusBadge.innerHTML = `<i class="bi bi-check-circle-fill"></i> Conexión Exitosa`;
+                } else {
+                    throw new Error("Respuesta inválida del servidor");
+                }
+            } catch (error) {
+                console.error("Error de conexión:", error);
+                // Estado: Error
+                statusBadge.className = "badge bg-danger p-2 fs-6 fw-normal d-flex align-items-center gap-2";
+                statusBadge.innerHTML = `<i class="bi bi-x-circle-fill"></i> Error de Conexión`;
+                alert(`No se pudo conectar a: ${targetUrl}\n\nAsegúrate de que:\n1. El servidor esté encendido.\n2. La URL no termine en barra diagonal (/).`);
+            }
+        }
+
+        // ==========================================
+        // 🔐 AUTENTICACIÓN POCKETBASE
+        // ==========================================
+        async function loginPocketBase() {
+            const targetUrl = getActiveUrl();
+            const email = document.getElementById('adminEmail').value;
+            const pass = document.getElementById('adminPass').value;
+            const loginBtn = document.getElementById('loginBtn');
+            const feedback = document.getElementById('loginFeedback');
+
+            if(!targetUrl || !email || !pass) {
+                alert("Completa la URL activa, el email y la contraseña.");
+                return;
+            }
+
+            const originalHTML = loginBtn.innerHTML;
+            loginBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span> Verificando...';
+            loginBtn.disabled = true;
+            feedback.classList.add('d-none');
+
+            try {
+                const response = await fetch(`${targetUrl}/api/collections/_superusers/auth-with-password`, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ identity: email, password: pass })
+                });
+
+                const data = await response.json();
+
+                if(response.ok && data.token) {
+                    feedback.className = "mt-3 small text-center text-success fw-bold";
+                    feedback.innerHTML = '<i class="bi bi-check-circle-fill"></i> ¡Sesión Master Iniciada correctamente!';
+                    feedback.classList.remove('d-none');
+                    document.getElementById('adminPass').value = ''; 
+                    
+                    localStorage.setItem('PB_ADMIN_TOKEN', data.token);
+                    checkAuthAndLoadBackups();
+                } else {
+                    throw new Error(data.message || "Credenciales inválidas");
+                }
+            } catch (error) {
+                feedback.className = "mt-3 small text-center text-danger fw-bold";
+                feedback.innerHTML = '<i class="bi bi-x-circle-fill"></i> Error: Credenciales incorrectas o BD apagada.';
+                feedback.classList.remove('d-none');
+            } finally {
+                loginBtn.innerHTML = originalHTML;
+                loginBtn.disabled = false;
+            }
+        }
+
+        // ==========================================
+        // 📦 SISTEMA DE RESPALDOS (BACKUPS)
+        // ==========================================
+        function checkAuthAndLoadBackups() {
+            const token = localStorage.getItem('PB_ADMIN_TOKEN');
+            if(token) {
+                backupLockMessage.classList.add('d-none');
+                backupControls.classList.replace('locked-section', 'unlocked-section');
+                loadBackups();
+            } else {
+                backupLockMessage.classList.remove('d-none');
+                backupControls.classList.replace('unlocked-section', 'locked-section');
+                backupsList.innerHTML = '<li class="p-3 text-center text-secondary small">Esperando autenticación...</li>';
+            }
+        }
+
+        async function loadBackups() {
+            const token = localStorage.getItem('PB_ADMIN_TOKEN');
+            if(!token) return;
+            
+            backupsList.innerHTML = '<li class="p-3 text-center text-info"><span class="spinner-border spinner-border-sm"></span> Cargando...</li>';
+            
+            try {
+                const res = await fetch(`${getActiveUrl()}/api/backups`, { headers: { 'Authorization': token } });
+                if(res.status === 401) {
+                    localStorage.removeItem('PB_ADMIN_TOKEN'); // Token expirado
+                    checkAuthAndLoadBackups();
+                    return;
+                }
+                const data = await res.json();
+                
+                if(data.length === 0) {
+                    backupsList.innerHTML = '<li class="p-3 text-center text-secondary">No hay respaldos. Crea uno nuevo.</li>';
+                    return;
+                }
+
+                backupsList.innerHTML = data.map(b => `
+                    <li class="d-flex justify-content-between align-items-center p-2 border-bottom border-secondary backup-item">
+                        <div>
+                            <i class="bi bi-file-zip text-info me-2"></i>
+                            <span class="text-light small font-monospace">${b.key}</span>
+                            <div class="text-secondary" style="font-size: 0.7rem; margin-left: 24px;">${(b.size / 1024 / 1024).toFixed(2)} MB</div>
+                        </div>
+                        <div class="d-flex gap-1">
+                            <!-- AQUI ESTÁ EL CAMBIO PARA FORZAR LA DESCARGA -->
+                            <button onclick="downloadBackup('${b.key}', this)" class="btn btn-sm btn-outline-light py-0 px-2" title="Descargar">
+                                <i class="bi bi-download"></i>
+                            </button>
+                            <button onclick="restoreBackup('${b.key}')" class="btn btn-sm btn-outline-danger py-0 px-2" title="Restaurar BD">
+                                <i class="bi bi-arrow-counterclockwise"></i>
+                            </button>
+                        </div>
+                    </li>
+                `).join('');
+            } catch (e) {
+                backupsList.innerHTML = '<li class="p-3 text-center text-danger">Error de red.</li>';
+            }
+        }
+
+        async function createBackup() {
+            const btn = document.getElementById('btnCreateBackup');
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Comprimiendo...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(`${getActiveUrl()}/api/backups`, { 
+                    method: 'POST', 
+                    headers: { 'Authorization': localStorage.getItem('PB_ADMIN_TOKEN') } 
+                });
+                if(res.ok) { alert("Respaldo creado con éxito."); loadBackups(); } 
+                else throw new Error();
+            } catch(e) { alert("Error al crear el respaldo."); }
+            
+            btn.innerHTML = '<i class="bi bi-plus-circle-fill me-1"></i> Crear Respaldo (Exportar)';
+            btn.disabled = false;
+        }
+
+        async function uploadBackup(input) {
+            if(!input.files.length) return;
+            const formData = new FormData();
+            formData.append('file', input.files[0]);
+
+            try {
+                const res = await fetch(`${getActiveUrl()}/api/backups/upload`, { 
+                    method: 'POST', 
+                    headers: { 'Authorization': localStorage.getItem('PB_ADMIN_TOKEN') },
+                    body: formData
+                });
+                if(res.ok) { alert("¡Respaldo importado correctamente!"); loadBackups(); } 
+                else throw new Error();
+            } catch(e) { alert("Error al subir el archivo."); }
+            input.value = "";
+        }
+
+        // ==========================================
+        // 🚀 DESCARGA NATIVA SEGURA (FILE TOKEN METHOD)
+        // ==========================================
+        async function downloadBackup(key, btnElement) {
+            const originalHTML = btnElement.innerHTML;
+            btnElement.innerHTML = '<span class="spinner-border spinner-border-sm" style="width: 1rem; height: 1rem;"></span>';
+            btnElement.disabled = true;
+
+            try {
+                const authToken = localStorage.getItem('PB_ADMIN_TOKEN');
+                const targetUrl = getActiveUrl();
+                
+                // 1. POCKETBASE REQUIERE UN "FILE TOKEN" PARA DESCARGAS
+                // No permite usar el Token Master en la URL por seguridad. Pedimos uno de un solo uso.
+                const tokenRes = await fetch(`${targetUrl}/api/files/token`, {
+                    method: 'POST',
+                    headers: { 'Authorization': authToken }
+                });
+
+                if (!tokenRes.ok) throw new Error(`Fallo al obtener File Token (Status: ${tokenRes.status})`);
+                
+                const tokenData = await tokenRes.json();
+                const fileToken = tokenData.token;
+                
+                // 2. Generamos la URL de descarga nativa inyectando el File Token desechable
+                const downloadUrl = `${targetUrl}/api/backups/${key}?token=${fileToken}`;
+                
+                // 3. Forzamos al navegador a descargar el archivo sin abrir ventanas nuevas
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = downloadUrl;
+                a.download = key; // Sugiere el nombre del archivo
+                
+                document.body.appendChild(a);
+                a.click(); 
+                document.body.removeChild(a);
+
+            } catch (e) {
+                console.error("Error al descargar:", e);
+                alert(`Error al descargar: ${e.message}\nRevisa la consola para más detalles.`);
+            } finally {
+                // Restaurar el botón pasado 1 segundo
+                setTimeout(() => {
+                    btnElement.innerHTML = originalHTML;
+                    btnElement.disabled = false;
+                }, 1000);
+            }
+        }
+
+        async function restoreBackup(key) {
+            if(!confirm(`⚠️ PELIGRO: Restaurar la base de datos a "${key}" reemplazará TODOS los datos actuales.\n\n¿Deseas continuar?`)) return;
+            try {
+                const res = await fetch(`${getActiveUrl()}/api/backups/${key}/restore`, { 
+                    method: 'POST', 
+                    headers: { 'Authorization': localStorage.getItem('PB_ADMIN_TOKEN') } 
+                });
+                if(res.ok || res.status === 204) alert("¡Restauración exitosa!\nEl servidor PocketBase se ha reiniciado con los datos del backup.");
+                else throw new Error();
+            } catch(e) { alert("Error al intentar restaurar."); }
+        }
+
+        function openAdminUI() {
+            const targetUrl = getActiveUrl();
+            if(!targetUrl) return alert("Guarda una URL primero");
+            window.open(`${targetUrl}/_/`, '_blank');
+        }
+
+        function copyCode() {
+            const codeText = document.querySelector('pre').innerText;
+            navigator.clipboard.writeText(codeText).then(() => {
+                const originalHTML = copyBtn.innerHTML;
+                copyBtn.innerHTML = '<i class="bi bi-check2"></i> ¡Copiado!';
+                copyBtn.classList.replace('btn-secondary', 'btn-success');
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalHTML;
+                    copyBtn.classList.replace('btn-success', 'btn-secondary');
+                }, 2000);
+            });
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>

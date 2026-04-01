@@ -1,865 +1,440 @@
-<!DOCTYPE html>
-<html lang="es" data-bs-theme="dark">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CPanel Enterprise - Modo Dios</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <style>
-        /* ==========================================
-           🎨 MOTOR DE TEMAS (SIN ALTERAR TU HTML)
-           ========================================== */
-        :root {
-            /* Tema Light (Blanco Hueso Premium) */
-            --bg-gradient: linear-gradient(135deg, #fdfbf7 0%, #f0ebe1 100%);
-            --glass-bg: rgba(255, 255, 255, 0.65);
-            --glass-border: rgba(255, 255, 255, 0.6);
-            --text-main: #2c2b2a;
-            --text-muted: #6c6a66;
-            --input-bg: rgba(255, 255, 255, 0.8);
-            --hover-bg: rgba(0, 0, 0, 0.04);
-            --modal-bg: rgba(255, 255, 255, 0.3);
-            --code-text: #0dcaf0;
-        }
-
-        [data-bs-theme="dark"] {
-            /* Tema Dark (Teal/Dark Blue) */
-            --bg-gradient: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
-            --glass-bg: rgba(33, 37, 41, 0.9);
-            --glass-border: rgba(255, 255, 255, 0.05);
-            --text-main: #f8f9fa;
-            --text-muted: #adb5bd;
-            --input-bg: #212529; 
-            --hover-bg: rgba(255, 255, 255, 0.05);
-            --modal-bg: rgba(0, 0, 0, 0.5);
-            --code-text: #0dcaf0;
-        }
-
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background: var(--bg-gradient); 
-            color: var(--text-main);
-            transition: background 0.5s ease, color 0.3s ease; 
-            min-height: 100vh;
-        }
-
-        /* 💡 SECUESTRO DE TUS CLASES ORIGINALES PARA QUE ADAPTEN AL TEMA LUZ/OSCURO */
-        .glass-card { background-color: var(--glass-bg); border: 1px solid var(--glass-border); transition: all 0.3s ease; backdrop-filter: blur(10px); }
-        .text-light { color: var(--text-main) !important; }
-        .text-secondary { color: var(--text-muted) !important; }
-        .bg-dark { background-color: var(--input-bg) !important; color: var(--text-main) !important; }
-        .border-secondary { border-color: var(--glass-border) !important; }
-        .bg-black { background-color: rgba(0,0,0,0.8) !important; } 
-
-        .clickable-card { cursor: pointer; transition: all 0.2s ease; }
-        .clickable-card:hover { filter: brightness(1.1); background-color: var(--hover-bg); }
-        pre { scrollbar-width: thin; color: var(--code-text) !important; }
-        .discreet-btn { opacity: 0.3; transition: opacity 0.3s; font-size: 0.8rem; color: var(--text-muted); }
-        .discreet-btn:hover { opacity: 1; }
+<div class="container fade-view pt-4 pb-5 mb-5" style="max-width: 1000px;">
         
-        /* Estilos nuevos para los Backups y Tablas */
-        .backup-item { transition: background 0.2s; }
-        .backup-item:hover { background-color: var(--hover-bg); }
-        .locked-section { opacity: 0.5; pointer-events: none; filter: grayscale(100%); transition: all 0.3s; }
-        .unlocked-section { opacity: 1; pointer-events: auto; filter: grayscale(0%); transition: all 0.3s; }
-        
-        /* Estilos para las pestañas del tutorial */
-        .nav-pills .nav-link { color: var(--text-muted); border: 1px solid transparent; }
-        .nav-pills .nav-link.active { background-color: #0dcaf0; color: #000; font-weight: bold; border-color: #0dcaf0 !important; }
-        
-        /* Animación suave para hover de las tablas */
-        .table-card { transition: transform 0.2s ease, box-shadow 0.2s ease; background-color: var(--glass-bg); border: 1px solid var(--glass-border); }
-        .table-card:hover { transform: translateY(-3px); box-shadow: 0 .5rem 1rem rgba(0,0,0,.5)!important; border-color: rgba(13, 202, 240, 0.5) !important; }
-
-        .modal-backdrop.show { opacity: 1 !important; background-color: var(--modal-bg) !important; backdrop-filter: blur(5px); }
-    </style>
-</head>
-<body class="py-4 py-md-5">
-
-    <!-- GUARDIA DE SEGURIDAD (SOLO KENTH O SUPERUSER) -->
-    <script>
-        (function() {
-            const user = JSON.parse(localStorage.getItem('PB_USER_DATA') || '{}');
-            const superEmail = 'kenth1977@gmail.com';
-            // Si no es el correo maestro ni tiene rol de Superusuario, fuera
-            if (user.email !== superEmail && user.rol !== 'Superusuario') {
-                window.location.href = 'index.html';
-            }
-        })();
-    </script>
-
-    <div class="container" style="max-width: 1000px;">
-        
-        <div class="card glass-card shadow-lg mb-4 rounded-4">
-            <div class="card-body p-4 d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
-                <div>
-                    <h1 class="h2 fw-bold text-primary mb-1">
-                        <i class="bi bi-sliders text-info"></i> CPanel Enterprise
-                    </h1>
-                    <p class="text-secondary mb-0">Gestor de Entornos, Base de Datos y Backups</p>
-                </div>
-                
-                <div class="d-flex align-items-center gap-3">
-                    <!-- BOTÓN DE TEMA AGREGADO -->
-                    <button class="btn btn-sm btn-outline-info rounded-circle d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;" id="btnThemeToggle" title="Cambiar Tema">
-                        <i class="bi bi-sun-fill" id="themeIcon"></i>
-                    </button>
-
-                    <!-- AQUÍ ESTÁ EL BADGE QUE AHORA ES INTELIGENTE -->
-                    <div id="statusBadge" class="badge bg-secondary p-2 fs-6 fw-normal d-flex align-items-center gap-2 transition">
-                        <span class="spinner-border spinner-border-sm" style="width: 14px; height: 14px;"></span> Inicializando...
-                    </div>
-                </div>
+    <div class="card glass-panel shadow-lg mb-4 rounded-4 mx-3 mx-sm-0">
+        <div class="card-body p-4 d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
+            <div>
+                <h1 class="h2 fw-bold text-primary mb-1">
+                    <i class="bi bi-sliders text-info"></i> CPanel Enterprise
+                </h1>
+                <p class="text-secondary mb-0">Gestor de Entornos, Base de Datos y Backups</p>
             </div>
-        </div>
-
-        <div class="row g-4">
-            <div class="col-md-6 d-flex flex-column gap-4">
-                
-                <div class="card glass-card shadow rounded-4">
-                    <div class="card-body p-4">
-                        <h5 class="card-title fw-bold border-bottom border-secondary pb-3 mb-4">
-                            <i class="bi bi-toggle-on text-primary"></i> Interruptor de Entorno
-                        </h5>
-                        
-                        <div class="d-flex flex-column gap-3">
-                            <label class="form-check p-3 rounded-3 border clickable-card d-flex align-items-center m-0" id="cardDev">
-                                <input class="form-check-input ms-1 me-3 fs-5 mt-0" type="radio" name="envSwitch" value="dev">
-                                <div>
-                                    <span class="d-block fw-bold text-primary">Desarrollo (DEV)</span>
-                                    <span class="text-secondary small">Tailscale/Headscale o Localhost. Para probar.</span>
-                                </div>
-                            </label>
-
-                            <label class="form-check p-3 rounded-3 border clickable-card d-flex align-items-center m-0" id="cardProd">
-                                <input class="form-check-input ms-1 me-3 fs-5 mt-0" type="radio" name="envSwitch" value="prod">
-                                <div>
-                                    <span class="d-block fw-bold text-success">Producción (PROD)</span>
-                                    <span class="text-secondary small">Servidor VPS Real. Datos intocables.</span>
-                                </div>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card glass-card shadow rounded-4">
-                    <div class="card-body p-4">
-                        <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-3 mb-4">
-                            <h5 class="card-title fw-bold m-0">
-                                <i class="bi bi-link-45deg text-primary"></i> URLs de Servidores
-                            </h5>
-                            <button onclick="resetDefaults()" class="btn btn-sm btn-outline-secondary" title="Restaurar valores de fábrica">
-                                <i class="bi bi-arrow-counterclockwise"></i> Reset
-                            </button>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label text-secondary small mb-1">URL Entorno DEV (Túnel por defecto)</label>
-                            <input type="text" id="devUrl" class="form-control bg-dark text-primary font-monospace border-secondary focus-ring" placeholder="https://desktop-71uhcug.tailb81e5f.ts.net">
-                        </div>
-                        <div class="mb-4">
-                            <label class="form-label text-secondary small mb-1">URL Entorno PROD</label>
-                            <input type="text" id="prodUrl" class="form-control bg-dark text-success font-monospace border-secondary focus-ring" placeholder="https://api.mi-app.com">
-                        </div>
-                        
-                        <button onclick="saveSettings()" id="saveBtn" class="btn btn-primary w-100 fw-bold py-2 shadow">
-                            <i class="bi bi-floppy-fill me-1"></i> Guardar Configuración
-                        </button>
-                    </div>
-                </div>
-
-                <div class="card glass-card shadow rounded-4 border-info border-opacity-50">
-                    <div class="card-body p-4">
-                        <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-3 mb-3">
-                            <h5 class="card-title fw-bold text-info mb-0">
-                                <i class="bi bi-archive-fill"></i> Copias de Seguridad
-                            </h5>
-                            <button onclick="loadBackups()" class="btn btn-sm btn-outline-info" title="Refrescar Lista">
-                                <i class="bi bi-arrow-clockwise"></i>
-                            </button>
-                        </div>
-                        
-                        <div id="backupLockMessage" class="alert bg-danger bg-opacity-10 border border-danger text-danger small py-2 d-flex align-items-center gap-2">
-                            <i class="bi bi-lock-fill"></i> Inicia sesión Master (panel derecho) para usar los respaldos.
-                        </div>
-
-                        <div id="backupControls" class="locked-section">
-                            <p class="text-secondary small mb-3">
-                                <i class="bi bi-info-circle text-info"></i> Exporta o importa tu BD (.db) y configuración (.json) en formato .zip.
-                            </p>
-                            
-                            <div class="d-grid gap-2 mb-3">
-                                <button onclick="createBackup()" id="btnCreateBackup" class="btn btn-info text-dark fw-bold shadow-sm">
-                                    <i class="bi bi-plus-circle-fill me-1"></i> Crear Respaldo (Exportar)
-                                </button>
-                                <label class="btn btn-outline-light fw-semibold mb-0 cursor-pointer">
-                                    <i class="bi bi-upload me-1"></i> Subir Respaldo / Importar (.zip)
-                                    <input type="file" id="backupUpload" class="d-none" accept=".zip" onchange="uploadBackup(this)">
-                                </label>
-                            </div>
-
-                            <div class="bg-dark rounded-3 border border-secondary p-1" style="height: 180px; overflow-y: auto;">
-                                <ul class="list-unstyled mb-0" id="backupsList">
-                                    <li class="p-3 text-center text-secondary small">Esperando autenticación...</li>
-                                </ul>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-
-            </div>
-
-            <div class="col-md-6 d-flex flex-column gap-4">
-                
-                <div class="card glass-card shadow rounded-4">
-                    <div class="card-body p-4">
-                        <h5 class="card-title fw-bold border-bottom border-secondary pb-3 mb-4">
-                            <i class="bi bi-lightning-charge-fill text-warning"></i> Acciones
-                        </h5>
-                        
-                        <div class="p-3 bg-dark rounded-3 border border-secondary mb-4">
-                            <span class="text-secondary small d-block mb-1">Conectado actualmente a:</span>
-                            <div id="currentUrlDisplay" class="font-monospace fs-6 text-break">Cargando...</div>
-                        </div>
-
-                        <div class="d-grid gap-3">
-                            <button onclick="testConnection(true)" class="btn btn-outline-light py-2 fw-semibold">
-                                <i class="bi bi-wifi me-2"></i> Probar Conexión Manual (Ping)
-                            </button>
-                            <button onclick="openAdminUI()" class="btn btn-light py-2 fw-bold shadow-sm">
-                                <i class="bi bi-database-fill-gear me-2"></i> Abrir Panel PocketBase (/_/)
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card glass-card shadow rounded-4 border-danger border-opacity-50" style="background-color: rgba(220, 53, 69, 0.05);">
-                    <div class="card-body p-4">
-                        <div class="d-flex justify-content-between align-items-start border-bottom border-secondary pb-3 mb-4">
-                            <h5 class="card-title fw-bold mb-0">
-                                <i class="bi bi-shield-lock-fill text-danger"></i> Login Master
-                            </h5>
-                            <button id="btnRescue" class="btn btn-link text-secondary text-decoration-none discreet-btn p-0" data-bs-toggle="modal" data-bs-target="#dummyModal" title="¿Problemas fatales? Reinstalar todo">
-                                <i class="bi bi-life-preserver"></i> S.O.S
-                            </button>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label text-secondary small mb-1">Email Master</label>
-                            <input type="email" id="adminEmail" class="form-control bg-dark text-light border-secondary" placeholder="admin@miapp.com">
-                        </div>
-                        <div class="mb-4">
-                            <label class="form-label text-secondary small mb-1">Contraseña</label>
-                            <input type="password" id="adminPass" class="form-control bg-dark text-light border-secondary" placeholder="••••••••">
-                        </div>
-                        
-                        <button onclick="loginPocketBase()" id="loginBtn" class="btn btn-danger w-100 fw-bold py-2 shadow-sm">
-                            <i class="bi bi-box-arrow-in-right me-1"></i> Autenticar
-                        </button>
-                        
-                        <div id="loginFeedback" class="mt-3 small text-center d-none"></div>
-                    </div>
-                </div>
-
-                <div class="card shadow rounded-4 border-warning border-opacity-50" style="background-color: rgba(255, 193, 7, 0.05);">
-                    <div class="card-body p-4">
-                        <h6 class="card-title fw-bold text-warning mb-2">
-                            <i class="bi bi-tools"></i> ¿Cómo conectar tu App?
-                        </h6>
-                        <p class="text-secondary small mb-3">
-                            Pega esto al principio de tu archivo <code class="text-warning bg-dark px-1 rounded">www/js/api_db.js</code> para automatizar la conexión.
-                        </p>
-                        
-                        <div class="position-relative">
-                            <pre class="bg-dark p-3 rounded-3 text-light font-monospace" style="font-size: 0.75rem; overflow-x: auto; border: 1px solid rgba(255,255,255,0.1);">
-// 1. Leer configuración del CPANEL (o usar la de fábrica)
-const savedEnv = localStorage.getItem('APP_ENV') || 'dev';
-const devUrl = localStorage.getItem('APP_DEV_URL') || 'https://desktop-71uhcug.tailb81e5f.ts.net';
-const prodUrl = localStorage.getItem('APP_PROD_URL') || 'https://api.tu-app.com';
-
-// 2. Asignar URL dinámica
-const POCKETBASE_URL = savedEnv === 'prod' ? prodUrl : devUrl;
-const APP_SLUG = savedEnv === 'prod' ? 'App_Oficial' : 'App_Pruebas';
-
-console.log("🔥 Entorno:", savedEnv.toUpperCase());
-console.log("📡 Conectando:", POCKETBASE_URL);
-
-// 3. Inicializar BD
-// const pb = new PocketBase(POCKETBASE_URL);</pre>
-                            <button onclick="copyCode()" id="copyBtn" class="btn btn-sm btn-secondary position-absolute top-0 end-0 m-2">
-                                <i class="bi bi-clipboard"></i> Copiar
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-
-        <!-- ========================================================= -->
-        <!-- NUEVO: EXPLORADOR DE TABLAS POCKETBASE CON SEPARADORES    -->
-        <!-- ========================================================= -->
-        <div class="row g-4 mt-1">
-            <div class="col-12">
-                <div class="card glass-card shadow rounded-4 border-info border-opacity-50">
-                    <div class="card-body p-4">
-                        <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-3 mb-4">
-                            <h5 class="card-title fw-bold text-info mb-0">
-                                <i class="bi bi-table"></i> Explorador de Tablas (Esquema)
-                            </h5>
-                            <div>
-                                <button id="btnCollapseTables" class="btn btn-sm btn-outline-secondary me-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTables" aria-expanded="true" aria-controls="collapseTables" title="Colapsar/Expandir Sección">
-                                    <i class="bi bi-arrows-collapse"></i>
-                                </button>
-                                <button onclick="loadCollections()" class="btn btn-sm btn-outline-info" title="Refrescar Tablas">
-                                    <i class="bi bi-arrow-clockwise"></i> Refrescar
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- SECCIÓN COLAPSABLE -->
-                        <div class="collapse show" id="collapseTables">
-                            <div id="dbLockMessage" class="alert bg-danger bg-opacity-10 border border-danger text-danger small py-2 d-flex align-items-center gap-2">
-                                <i class="bi bi-lock-fill"></i> Inicia sesión Master (panel derecho) para explorar las tablas.
-                            </div>
-
-                            <div id="dbControls" class="locked-section">
-                                <div class="row g-3" id="collectionsList">
-                                    <!-- Las tarjetas de tablas y separadores se dibujan aquí mediante JS -->
-                                    <div class="col-12 text-center text-secondary small p-3">Esperando autenticación...</div>
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-            </div>
-        </div>
-        
-        <div class="text-center mt-5 mb-4">
-            <a href="index.html" class="text-decoration-none text-secondary custom-link">
-                <i class="bi bi-arrow-left"></i> Volver al inicio de la App (index.html)
-            </a>
-        </div>
-    </div>
-
-    <!-- MODAL DE NOTIFICACIONES (SOBRESCRIBE EL ALERT) -->
-    <div class="modal fade" id="appAlertModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-        <div class="modal-dialog modal-dialog-centered modal-sm">
-            <div class="modal-content glass-card text-light border border-secondary border-opacity-50 shadow-lg rounded-4">
-                <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title fw-bold text-warning fs-6">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i> Notificación del Sistema
-                    </h5>
-                </div>
-                <div class="modal-body pt-3 pb-4">
-                    <p id="appAlertMessage" class="mb-0 text-secondary" style="white-space: pre-wrap; font-size: 0.95rem;"></p>
-                </div>
-                <div class="modal-footer border-0 pt-0 justify-content-center">
-                    <button type="button" class="btn btn-primary w-100 rounded-pill fw-bold shadow-sm" data-bs-dismiss="modal">Aceptar</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL S.O.S (REINSTALACIÓN) -->
-    <div class="modal fade" id="dummyModal" tabindex="-1" aria-labelledby="dummyModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg modal-dialog-scrollable">
-            <div class="modal-content bg-dark text-light border-secondary">
-                <div class="modal-header border-secondary bg-black">
-                    <h5 class="modal-title fw-bold text-danger" id="dummyModalLabel">
-                        <i class="bi bi-fire me-2"></i> PROTOCOLO DE RESCATE: INSTALACIÓN DESDE CERO
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body p-4" style="font-family: 'Segoe UI', sans-serif;">
-                    <div class="alert alert-danger border-danger bg-danger bg-opacity-10">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i> <strong>¿Base de datos corrupta? ¿No arranca?</strong> Sigue estos pasos exactos en tu terminal CMD o Cmder para reconstruir todo el ecosistema.
-                    </div>
-                    <h6 class="text-info fw-bold mt-4 border-bottom border-secondary pb-2">FASE 1: LIMPIEZA NUCLEAR ☢️</h6>
-                    <p class="small text-secondary mb-1">Cierra todas las consolas abiertas. Ve a la carpeta de tu proyecto y elimina la base de datos corrupta:</p>
-                    <pre class="bg-black p-3 rounded border border-secondary text-light font-monospace small user-select-all">rmdir /s /q pb_data
-del pb_migrations\*.js</pre>
-                    <p class="text-muted" style="font-size: 0.8rem;">* Nota: Esto borrará TODOS los usuarios y registros. Solo hazlo si quieres empezar de cero.</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
-    <script>
-        // ==========================================
-        // 🌓 LÓGICA DE TEMA UNIFICADO (APP_THEME)
-        // ==========================================
-        const btnThemeToggle = document.getElementById('btnThemeToggle');
-        const themeIcon = document.getElementById('themeIcon');
-        const htmlElement = document.documentElement;
-
-        const savedTheme = localStorage.getItem('APP_THEME') || 'dark';
-        setTheme(savedTheme);
-
-        if(btnThemeToggle) {
-            btnThemeToggle.addEventListener('click', () => {
-                const currentTheme = htmlElement.getAttribute('data-bs-theme');
-                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-                setTheme(newTheme);
-                localStorage.setItem('APP_THEME', newTheme);
-            });
-        }
-
-        function setTheme(theme) {
-            htmlElement.setAttribute('data-bs-theme', theme);
-            if(theme === 'dark') {
-                if(themeIcon) themeIcon.className = "bi bi-sun-fill fs-5 text-warning"; 
-                document.querySelectorAll('.btn-close').forEach(b => b.classList.add('btn-close-white'));
-            } else {
-                if(themeIcon) themeIcon.className = "bi bi-moon-stars-fill fs-5 text-dark"; 
-                document.querySelectorAll('.btn-close').forEach(b => b.classList.remove('btn-close-white'));
-            }
-        }
-
-        // Variables Globales
-        const radios = document.getElementsByName('envSwitch');
-        const devUrlInput = document.getElementById('devUrl');
-        const prodUrlInput = document.getElementById('prodUrl');
-        const currentUrlDisplay = document.getElementById('currentUrlDisplay');
-        const statusBadge = document.getElementById('statusBadge');
-        
-        const cardDev = document.getElementById('cardDev');
-        const cardProd = document.getElementById('cardProd');
-        const saveBtn = document.getElementById('saveBtn');
-        const copyBtn = document.getElementById('copyBtn');
-
-        // Variables de Data Privada (Backups y BD)
-        const backupsList = document.getElementById('backupsList');
-        const backupControls = document.getElementById('backupControls');
-        const backupLockMessage = document.getElementById('backupLockMessage');
-        const dbControls = document.getElementById('dbControls');
-        const dbLockMessage = document.getElementById('dbLockMessage');
-        const collectionsList = document.getElementById('collectionsList');
-
-        // ==========================================
-        // 🔥 VALORES DE FÁBRICA
-        // ==========================================
-        const DEFAULT_ENV = "dev"; 
-        const DEFAULT_DEV_URL = "https://desktop-71uhcug.tailb81e5f.ts.net";
-        const DEFAULT_PROD_URL = "https://api.tu-servidor-premium.com";
-
-        // Inicialización
-        function init() {
-            const savedEnv = localStorage.getItem('APP_ENV') || DEFAULT_ENV;
             
-            devUrlInput.value = localStorage.getItem('APP_DEV_URL') || DEFAULT_DEV_URL;
-            prodUrlInput.value = localStorage.getItem('APP_PROD_URL') || DEFAULT_PROD_URL;
+            <div class="d-flex align-items-center gap-3">
+                <div id="statusBadge" class="badge bg-secondary p-2 fs-6 fw-normal d-flex align-items-center gap-2 transition">
+                    <span class="spinner-border spinner-border-sm" style="width: 14px; height: 14px;"></span> Inicializando...
+                </div>
+            </div>
+        </div>
+    </div>
 
-            radios.forEach(radio => {
+    <div class="row g-4 mx-2 mx-sm-0">
+        <div class="col-md-6 d-flex flex-column gap-4">
+            
+            <div class="card glass-panel shadow rounded-4">
+                <div class="card-body p-4">
+                    <h5 class="card-title fw-bold border-bottom border-secondary pb-3 mb-4">
+                        <i class="bi bi-toggle-on text-primary"></i> Interruptor de Entorno
+                    </h5>
+                    <div class="d-flex flex-column gap-3">
+                        <label class="form-check p-3 rounded-3 border clickable-card d-flex align-items-center m-0" id="cardDev">
+                            <input class="form-check-input ms-1 me-3 fs-5 mt-0" type="radio" name="envSwitch" value="dev">
+                            <div>
+                                <span class="d-block fw-bold text-primary">Desarrollo (DEV)</span>
+                                <span class="text-secondary small">Tailscale o Localhost. Para probar.</span>
+                            </div>
+                        </label>
+                        <label class="form-check p-3 rounded-3 border clickable-card d-flex align-items-center m-0" id="cardProd">
+                            <input class="form-check-input ms-1 me-3 fs-5 mt-0" type="radio" name="envSwitch" value="prod">
+                            <div>
+                                <span class="d-block fw-bold text-success">Producción (PROD)</span>
+                                <span class="text-secondary small">Servidor VPS Real. Datos intocables.</span>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card glass-panel shadow rounded-4">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-3 mb-4">
+                        <h5 class="card-title fw-bold m-0"><i class="bi bi-link-45deg text-primary"></i> URLs de Servidores</h5>
+                        <button onclick="resetDefaults()" class="btn btn-sm btn-outline-secondary" title="Restaurar de fábrica"><i class="bi bi-arrow-counterclockwise"></i> Reset</button>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label text-secondary small mb-1">URL Entorno DEV</label>
+                        <input type="text" id="devUrl" class="form-control bg-dark text-primary font-monospace border-secondary focus-ring" placeholder="https://desktop.ts.net">
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label text-secondary small mb-1">URL Entorno PROD</label>
+                        <input type="text" id="prodUrl" class="form-control bg-dark text-success font-monospace border-secondary focus-ring" placeholder="https://api.mi-app.com">
+                    </div>
+                    <button onclick="saveSettings()" id="saveBtn" class="btn btn-primary w-100 fw-bold py-2 shadow">
+                        <i class="bi bi-floppy-fill me-1"></i> Guardar Configuración
+                    </button>
+                </div>
+            </div>
+
+            <div class="card glass-panel shadow rounded-4 border-info border-opacity-50">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-3 mb-3">
+                        <h5 class="card-title fw-bold text-info mb-0"><i class="bi bi-archive-fill"></i> Copias de Seguridad</h5>
+                        <button onclick="loadBackups()" class="btn btn-sm btn-outline-info" title="Refrescar"><i class="bi bi-arrow-clockwise"></i></button>
+                    </div>
+                    <div id="backupLockMessage" class="alert bg-danger bg-opacity-10 border border-danger text-danger small py-2 d-flex align-items-center gap-2">
+                        <i class="bi bi-lock-fill"></i> Inicia sesión Master para usar los respaldos.
+                    </div>
+                    <div id="backupControls" style="opacity: 0.5; pointer-events: none; filter: grayscale(100%);">
+                        <div class="d-grid gap-2 mb-3">
+                            <button onclick="createBackup()" id="btnCreateBackup" class="btn btn-info text-dark fw-bold shadow-sm">
+                                <i class="bi bi-plus-circle-fill me-1"></i> Crear Respaldo (Exportar)
+                            </button>
+                            <label class="btn btn-outline-light fw-semibold mb-0 cursor-pointer">
+                                <i class="bi bi-upload me-1"></i> Subir Respaldo / Importar (.zip)
+                                <input type="file" id="backupUpload" class="d-none" accept=".zip" onchange="uploadBackup(this)">
+                            </label>
+                        </div>
+                        <div class="bg-dark rounded-3 border border-secondary p-1" style="height: 180px; overflow-y: auto;">
+                            <ul class="list-unstyled mb-0" id="backupsList"><li class="p-3 text-center text-secondary small">Esperando...</li></ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="col-md-6 d-flex flex-column gap-4">
+            <div class="card glass-panel shadow rounded-4">
+                <div class="card-body p-4">
+                    <h5 class="card-title fw-bold border-bottom border-secondary pb-3 mb-4"><i class="bi bi-lightning-charge-fill text-warning"></i> Acciones</h5>
+                    <div class="p-3 bg-dark rounded-3 border border-secondary mb-4">
+                        <span class="text-secondary small d-block mb-1">Conectado actualmente a:</span>
+                        <div id="currentUrlDisplay" class="font-monospace fs-6 text-break">Cargando...</div>
+                    </div>
+                    <div class="d-grid gap-3">
+                        <button onclick="testConnection(true)" class="btn btn-outline-light py-2 fw-semibold"><i class="bi bi-wifi me-2"></i> Probar Conexión Manual (Ping)</button>
+                        <button onclick="openAdminUI()" class="btn btn-light py-2 fw-bold shadow-sm"><i class="bi bi-database-fill-gear me-2"></i> Abrir Panel PocketBase (/_/)</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card glass-panel shadow rounded-4 border-danger border-opacity-50" style="background-color: rgba(220, 53, 69, 0.05);">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start border-bottom border-secondary pb-3 mb-4">
+                        <h5 class="card-title fw-bold mb-0"><i class="bi bi-shield-lock-fill text-danger"></i> Login Master</h5>
+                        <button class="btn btn-link text-secondary text-decoration-none p-0" style="opacity:0.5;" data-bs-toggle="modal" data-bs-target="#dummyModal" title="¿Problemas fatales?"><i class="bi bi-life-preserver"></i> S.O.S</button>
+                    </div>
+                    <div class="mb-3">
+                        <input type="email" id="adminEmail" class="form-control bg-dark text-light border-secondary" placeholder="admin@miapp.com">
+                    </div>
+                    <div class="mb-4">
+                        <input type="password" id="adminPass" class="form-control bg-dark text-light border-secondary" placeholder="••••••••">
+                    </div>
+                    <button onclick="loginPocketBaseCpanel()" id="loginBtnCpanel" class="btn btn-danger w-100 fw-bold py-2 shadow-sm">Autenticar</button>
+                    <div id="loginFeedback" class="mt-3 small text-center d-none"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- EXPLORADOR DE TABLAS POCKETBASE -->
+    <div class="row g-4 mt-1 mx-2 mx-sm-0">
+        <div class="col-12">
+            <div class="card glass-panel shadow rounded-4 border-info border-opacity-50">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-3 mb-4">
+                        <h5 class="card-title fw-bold text-info mb-0"><i class="bi bi-table"></i> Explorador de Tablas (Esquema)</h5>
+                        <button onclick="loadCollections()" class="btn btn-sm btn-outline-info" title="Refrescar Tablas"><i class="bi bi-arrow-clockwise"></i> Refrescar</button>
+                    </div>
+                    <div id="dbLockMessage" class="alert bg-danger bg-opacity-10 border border-danger text-danger small py-2 d-flex align-items-center gap-2">
+                        <i class="bi bi-lock-fill"></i> Inicia sesión Master para explorar las tablas.
+                    </div>
+                    <div id="dbControls" style="opacity: 0.5; pointer-events: none; filter: grayscale(100%);">
+                        <div class="row g-3" id="collectionsList">
+                            <div class="col-12 text-center text-secondary small p-3">Esperando autenticación...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL S.O.S (REINSTALACIÓN) -->
+<div class="modal fade" id="dummyModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content bg-dark text-light border-secondary">
+            <div class="modal-header border-secondary bg-black">
+                <h5 class="modal-title fw-bold text-danger"><i class="bi bi-fire me-2"></i> PROTOCOLO DE RESCATE</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="alert alert-danger border-danger bg-danger bg-opacity-10"><strong>¿Base de datos corrupta?</strong> Borra la carpeta pb_data y reinicia el servidor. CUIDADO: Borrará todos los datos.</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Uso exclusivo del objeto 'window' para evitar redeclaraciones en la SPA
+    window.radios = document.getElementsByName('envSwitch');
+    window.devUrlInput = document.getElementById('devUrl');
+    window.prodUrlInput = document.getElementById('prodUrl');
+    window.currentUrlDisplay = document.getElementById('currentUrlDisplay');
+    window.statusBadge = document.getElementById('statusBadge');
+    window.cardDev = document.getElementById('cardDev');
+    window.cardProd = document.getElementById('cardProd');
+    window.saveBtn = document.getElementById('saveBtn');
+
+    window.backupsList = document.getElementById('backupsList');
+    window.backupControls = document.getElementById('backupControls');
+    window.backupLockMessage = document.getElementById('backupLockMessage');
+    window.dbControls = document.getElementById('dbControls');
+    window.dbLockMessage = document.getElementById('dbLockMessage');
+    window.collectionsList = document.getElementById('collectionsList');
+
+    window.DEFAULT_ENV = "dev"; 
+    window.DEFAULT_DEV_URL = "https://desktop-71uhcug.tailb81e5f.ts.net";
+    window.DEFAULT_PROD_URL = "https://api.tu-servidor-premium.com";
+
+    // Auto-ejecución al inyectar el fragmento en la SPA
+    setTimeout(function() {
+        // Movemos modal SOS al root
+        var vistaD = document.getElementById('vista-dinamica');
+        if(vistaD) {
+            var nuevoModal = vistaD.querySelector('#dummyModal');
+            if(nuevoModal) {
+                var viejoModal = document.body.querySelector('body > #dummyModal');
+                if (viejoModal) viejoModal.remove();
+                document.body.appendChild(nuevoModal);
+            }
+        }
+
+        const savedEnv = localStorage.getItem('APP_ENV') || window.DEFAULT_ENV;
+        if(window.devUrlInput) window.devUrlInput.value = localStorage.getItem('APP_DEV_URL') || window.DEFAULT_DEV_URL;
+        if(window.prodUrlInput) window.prodUrlInput.value = localStorage.getItem('APP_PROD_URL') || window.DEFAULT_PROD_URL;
+        
+        if(window.radios) {
+            window.radios.forEach(function(radio) {
                 if(radio.value === savedEnv) radio.checked = true;
                 radio.addEventListener('change', handleEnvChange);
             });
+        }
 
-            // Eventos para cambiar el icono del botón de colapsar
-            const collapseTablesEl = document.getElementById('collapseTables');
-            const btnCollapseTables = document.getElementById('btnCollapseTables');
-            if (collapseTablesEl && btnCollapseTables) {
-                collapseTablesEl.addEventListener('show.bs.collapse', () => {
-                    btnCollapseTables.innerHTML = '<i class="bi bi-arrows-collapse"></i>';
-                });
-                collapseTablesEl.addEventListener('hide.bs.collapse', () => {
-                    btnCollapseTables.innerHTML = '<i class="bi bi-arrows-expand"></i>';
-                });
+        updateUI();
+        checkAuthAndLoadAdminData();
+        testConnection(false); 
+    }, 100);
+
+    function resetDefaults() {
+        if(confirm("¿Restaurar URLs a valores de fábrica?")) {
+            if(window.devUrlInput) window.devUrlInput.value = window.DEFAULT_DEV_URL; 
+            if(window.prodUrlInput) window.prodUrlInput.value = window.DEFAULT_PROD_URL;
+            var r = document.querySelector('input[name="envSwitch"][value="' + window.DEFAULT_ENV + '"]');
+            if(r) r.checked = true;
+            saveSettings();
+        }
+    }
+
+    function handleEnvChange() { updateUI(); saveSettings(); }
+    function getActiveEnv() { var act = 'dev'; if(window.radios){ window.radios.forEach(function(r) { if(r.checked) act = r.value; }); } return act; }
+    function getActiveUrl() { var u = getActiveEnv() === 'dev' ? (window.devUrlInput ? window.devUrlInput.value : '') : (window.prodUrlInput ? window.prodUrlInput.value : ''); return u.replace(/\/$/, ""); }
+
+    function updateUI() {
+        var aEnv = getActiveEnv(); 
+        if(window.currentUrlDisplay) window.currentUrlDisplay.textContent = getActiveUrl() || "URL no definida";
+        if(aEnv === 'dev' && window.cardDev && window.cardProd) {
+            window.cardDev.classList.add('border-primary', 'bg-primary', 'bg-opacity-10'); window.cardDev.classList.remove('border-secondary');
+            window.cardProd.classList.remove('border-success', 'bg-success', 'bg-opacity-10'); window.cardProd.classList.add('border-secondary');
+            if(window.currentUrlDisplay) window.currentUrlDisplay.className = 'font-monospace fs-6 text-break text-primary mt-1';
+        } else if (window.cardDev && window.cardProd) {
+            window.cardProd.classList.add('border-success', 'bg-success', 'bg-opacity-10'); window.cardProd.classList.remove('border-secondary');
+            window.cardDev.classList.remove('border-primary', 'bg-primary', 'bg-opacity-10'); window.cardDev.classList.add('border-secondary');
+            if(window.currentUrlDisplay) window.currentUrlDisplay.className = 'font-monospace fs-6 text-break text-success mt-1';
+        }
+    }
+
+    function saveSettings() {
+        localStorage.setItem('APP_ENV', getActiveEnv()); 
+        if(window.devUrlInput) localStorage.setItem('APP_DEV_URL', window.devUrlInput.value); 
+        if(window.prodUrlInput) localStorage.setItem('APP_PROD_URL', window.prodUrlInput.value);
+        if(window.saveBtn) {
+            var oHtml = window.saveBtn.innerHTML; window.saveBtn.innerHTML = '<i class="bi bi-check"></i> Guardado!'; window.saveBtn.classList.replace('btn-primary', 'btn-success');
+            setTimeout(function() { window.saveBtn.innerHTML = oHtml; window.saveBtn.classList.replace('btn-success', 'btn-primary'); }, 2000);
+        }
+        updateUI(); checkAuthAndLoadAdminData(); testConnection(false); 
+    }
+
+    async function testConnection(showManualAlert) {
+        var tUrl = getActiveUrl();
+        if(!tUrl) { if(showManualAlert) alert("Ingresa URL válida."); return; }
+        if(window.statusBadge) { window.statusBadge.className = "badge bg-warning text-dark p-2 gap-2"; window.statusBadge.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Comprobando...'; }
+        try {
+            const ctrl = new AbortController(); const tId = setTimeout(function() { ctrl.abort(); }, 5000); 
+            const res = await fetch(tUrl + '/api/health', { signal: ctrl.signal }); clearTimeout(tId);
+            if(res.ok) {
+                if(window.statusBadge) { window.statusBadge.className = "badge bg-success p-2 gap-2"; window.statusBadge.innerHTML = '<i class="bi bi-check-circle-fill"></i> En Línea'; }
+                if(showManualAlert) alert("¡Conexión Exitosa con " + tUrl + "!");
+            } else throw new Error();
+        } catch (e) {
+            if(window.statusBadge) { window.statusBadge.className = "badge bg-danger p-2 gap-2"; window.statusBadge.innerHTML = '<i class="bi bi-x-circle-fill"></i> Desconectado'; }
+            if(showManualAlert) alert("Fallo conexión a: " + tUrl);
+        }
+    }
+
+    async function loginPocketBaseCpanel() {
+        var tUrl = getActiveUrl(), email = document.getElementById('adminEmail').value, pass = document.getElementById('adminPass').value, btn = document.getElementById('loginBtnCpanel'), feed = document.getElementById('loginFeedback');
+        if(!tUrl || !email || !pass) return alert("Completa los datos.");
+        var oHtml = btn.innerHTML; btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>...'; btn.disabled = true; feed.classList.add('d-none');
+        try {
+            let res = await fetch(tUrl + '/api/collections/_superusers/auth-with-password', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({identity:email, password:pass}) });
+            let data = await res.json().catch(function(){return {};});
+            if(!res.ok) {
+                res = await fetch(tUrl + '/api/admins/auth-with-password', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({identity:email, password:pass}) });
+                data = await res.json().catch(function(){return {};});
+                if(!res.ok) throw new Error();
             }
+            feed.className = "mt-3 small text-center text-success fw-bold"; feed.innerHTML = '<i class="bi bi-check-circle-fill"></i> ¡Sesión Master Iniciada!'; feed.classList.remove('d-none');
+            document.getElementById('adminPass').value = ''; localStorage.setItem('PB_ADMIN_TOKEN', data.token); checkAuthAndLoadAdminData();
+        } catch (e) {
+            feed.className = "mt-3 small text-center text-danger fw-bold"; feed.innerHTML = '<i class="bi bi-x-circle-fill"></i> Credenciales incorrectas o BD apagada.'; feed.classList.remove('d-none');
+        } finally { btn.innerHTML = oHtml; btn.disabled = false; }
+    }
 
-            updateUI();
-            checkAuthAndLoadAdminData();
-            testConnection(false); 
+    function checkAuthAndLoadAdminData() {
+        if(localStorage.getItem('PB_ADMIN_TOKEN')) {
+            if(window.backupLockMessage) window.backupLockMessage.classList.add('d-none'); 
+            if(window.backupControls) { window.backupControls.style.opacity = '1'; window.backupControls.style.pointerEvents = 'auto'; window.backupControls.style.filter = 'none'; }
+            if(window.dbLockMessage) window.dbLockMessage.classList.add('d-none'); 
+            if(window.dbControls) { window.dbControls.style.opacity = '1'; window.dbControls.style.pointerEvents = 'auto'; window.dbControls.style.filter = 'none'; }
+            loadBackups(); loadCollections();
+        } else {
+            if(window.backupLockMessage) window.backupLockMessage.classList.remove('d-none'); 
+            if(window.backupControls) { window.backupControls.style.opacity = '0.5'; window.backupControls.style.pointerEvents = 'none'; window.backupControls.style.filter = 'grayscale(100%)'; }
+            if(window.backupsList) window.backupsList.innerHTML = '<li class="p-3 text-center text-secondary small">Esperando autenticación...</li>';
+            if(window.dbLockMessage) window.dbLockMessage.classList.remove('d-none'); 
+            if(window.dbControls) { window.dbControls.style.opacity = '0.5'; window.dbControls.style.pointerEvents = 'none'; window.dbControls.style.filter = 'grayscale(100%)'; }
+            if(window.collectionsList) window.collectionsList.innerHTML = '<div class="col-12 text-center text-secondary small p-3">Esperando autenticación...</div>';
         }
+    }
 
-        function resetDefaults() {
-            if(confirm("¿Restaurar las URLs a sus valores por defecto?")) {
-                devUrlInput.value = DEFAULT_DEV_URL;
-                prodUrlInput.value = DEFAULT_PROD_URL;
-                document.querySelector(`input[name="envSwitch"][value="${DEFAULT_ENV}"]`).checked = true;
-                saveSettings();
-            }
-        }
+    async function loadBackups() {
+        var token = localStorage.getItem('PB_ADMIN_TOKEN'); if(!token || !window.backupsList) return;
+        window.backupsList.innerHTML = '<li class="p-3 text-center text-info"><span class="spinner-border spinner-border-sm"></span> Cargando...</li>';
+        try {
+            const res = await fetch(getActiveUrl() + '/api/backups', { headers: { 'Authorization': token } });
+            if(res.status === 401) { localStorage.removeItem('PB_ADMIN_TOKEN'); checkAuthAndLoadAdminData(); return; }
+            const data = await res.json();
+            if(data.length === 0) return window.backupsList.innerHTML = '<li class="p-3 text-center text-secondary">No hay respaldos.</li>';
+            window.backupsList.innerHTML = data.map(function(b) { 
+                return '<li class="d-flex justify-content-between p-2 border-bottom border-secondary backup-item"><div><i class="bi bi-file-zip text-info me-2"></i><span class="text-light small font-monospace">' + b.key + '</span></div>' +
+                '<div class="d-flex gap-1">' +
+                '<button onclick="downloadBackup(\'' + b.key + '\', this)" class="btn btn-sm btn-outline-light py-0 px-2" title="Descargar"><i class="bi bi-download"></i></button>' +
+                '<button onclick="restoreBackup(\'' + b.key + '\')" class="btn btn-sm btn-outline-danger py-0 px-2" title="Restaurar BD"><i class="bi bi-arrow-counterclockwise"></i></button>' +
+                '</div></li>'; 
+            }).join('');
+        } catch (e) { window.backupsList.innerHTML = '<li class="p-3 text-center text-danger">Error de red.</li>'; }
+    }
 
-        function handleEnvChange() {
-            updateUI();
-            saveSettings(); 
-        }
+    async function createBackup() {
+        var btn = document.getElementById('btnCreateBackup'); btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>...'; btn.disabled = true;
+        try {
+            const res = await fetch(getActiveUrl() + '/api/backups', { method: 'POST', headers: { 'Authorization': localStorage.getItem('PB_ADMIN_TOKEN') } });
+            if(res.ok) { alert("Respaldo creado."); loadBackups(); } else throw new Error();
+        } catch(e) { alert("Error al respaldar."); }
+        btn.innerHTML = '<i class="bi bi-plus-circle-fill me-1"></i> Crear Respaldo (Exportar)'; btn.disabled = false;
+    }
 
-        function getActiveEnv() {
-            let active = 'dev';
-            radios.forEach(radio => { if(radio.checked) active = radio.value; });
-            return active;
-        }
-
-        function getActiveUrl() {
-            let url = getActiveEnv() === 'dev' ? devUrlInput.value : prodUrlInput.value;
-            return url.replace(/\/$/, ""); 
-        }
-
-        function updateUI() {
-            const activeEnv = getActiveEnv();
-            const activeUrl = getActiveUrl();
-            
-            currentUrlDisplay.textContent = activeUrl || "URL no definida";
-
-            if(activeEnv === 'dev') {
-                cardDev.classList.add('border-primary', 'bg-primary', 'bg-opacity-10');
-                cardDev.classList.remove('border-secondary');
-                cardProd.classList.remove('border-success', 'bg-success', 'bg-opacity-10');
-                cardProd.classList.add('border-secondary');
-                currentUrlDisplay.className = 'font-monospace fs-6 text-break text-primary mt-1';
-            } else {
-                cardProd.classList.add('border-success', 'bg-success', 'bg-opacity-10');
-                cardProd.classList.remove('border-secondary');
-                cardDev.classList.remove('border-primary', 'bg-primary', 'bg-opacity-10');
-                cardDev.classList.add('border-secondary');
-                currentUrlDisplay.className = 'font-monospace fs-6 text-break text-success mt-1';
-            }
-        }
-
-        function saveSettings() {
-            const activeEnv = getActiveEnv();
-            localStorage.setItem('APP_ENV', activeEnv);
-            localStorage.setItem('APP_DEV_URL', devUrlInput.value);
-            localStorage.setItem('APP_PROD_URL', prodUrlInput.value);
-
-            const originalHTML = saveBtn.innerHTML;
-            saveBtn.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> ¡Guardado!';
-            saveBtn.classList.replace('btn-primary', 'btn-success');
-            
-            setTimeout(() => {
-                saveBtn.innerHTML = originalHTML;
-                saveBtn.classList.replace('btn-success', 'btn-primary');
-            }, 2000);
-
-            updateUI();
-            checkAuthAndLoadAdminData();
-            testConnection(false); 
-        }
-
-        async function testConnection(showManualAlert = true) {
-            const targetUrl = getActiveUrl();
-            if(!targetUrl) {
-                if(showManualAlert) alert("Por favor, ingresa una URL válida primero.");
-                return;
-            }
-
-            statusBadge.className = "badge bg-warning text-dark p-2 fs-6 fw-normal d-flex align-items-center gap-2";
-            statusBadge.innerHTML = `<span class="spinner-border spinner-border-sm" style="width: 14px; height: 14px;"></span> Comprobando...`;
-
-            try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 5000); 
-
-                const response = await fetch(`${targetUrl}/api/health`, { 
-                    method: 'GET', 
-                    mode: 'cors',
-                    signal: controller.signal
-                });
-                clearTimeout(timeoutId);
-
-                if(response.ok) {
-                    statusBadge.className = "badge bg-success p-2 fs-6 fw-normal d-flex align-items-center gap-2 shadow-sm";
-                    statusBadge.innerHTML = `<i class="bi bi-check-circle-fill"></i> En Línea`;
-                    if(showManualAlert) alert(`¡Conexión Exitosa!\nEl servidor en ${targetUrl} está respondiendo perfectamente.`);
-                } else {
-                    throw new Error("Respuesta inválida del servidor");
-                }
-            } catch (error) {
-                let errorMsg = "Desconectado";
-                statusBadge.className = "badge bg-danger p-2 fs-6 fw-normal d-flex align-items-center gap-2 shadow-sm";
-                statusBadge.innerHTML = `<i class="bi bi-x-circle-fill"></i> ${errorMsg}`;
-                if(showManualAlert) alert(`No se pudo conectar a: ${targetUrl}`);
-            }
-        }
-
-        async function loginPocketBase() {
-            const targetUrl = getActiveUrl();
-            const email = document.getElementById('adminEmail').value;
-            const pass = document.getElementById('adminPass').value;
-            const loginBtn = document.getElementById('loginBtn');
-            const feedback = document.getElementById('loginFeedback');
-
-            if(!targetUrl || !email || !pass) {
-                alert("Completa la URL activa, el email y la contraseña.");
-                return;
-            }
-
-            const originalHTML = loginBtn.innerHTML;
-            loginBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span> Verificando...';
-            loginBtn.disabled = true;
-            feedback.classList.add('d-none');
-
-            try {
-                const response = await fetch(`${targetUrl}/api/collections/_superusers/auth-with-password`, { 
-                    method: 'POST', 
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ identity: email, password: pass })
-                });
-
-                const data = await response.json();
-
-                if(response.ok && data.token) {
-                    feedback.className = "mt-3 small text-center text-success fw-bold";
-                    feedback.innerHTML = '<i class="bi bi-check-circle-fill"></i> ¡Sesión Master Iniciada correctamente!';
-                    feedback.classList.remove('d-none');
-                    document.getElementById('adminPass').value = ''; 
-                    
-                    localStorage.setItem('PB_ADMIN_TOKEN', data.token);
-                    checkAuthAndLoadAdminData();
-                } else {
-                    throw new Error(data.message || "Credenciales inválidas");
-                }
-            } catch (error) {
-                feedback.className = "mt-3 small text-center text-danger fw-bold";
-                feedback.innerHTML = '<i class="bi bi-x-circle-fill"></i> Error: Credenciales incorrectas o BD apagada.';
-                feedback.classList.remove('d-none');
-            } finally {
-                loginBtn.innerHTML = originalHTML;
-                loginBtn.disabled = false;
-            }
-        }
-
-        // ==========================================
-        // 🔐 SISTEMA DE DATOS ADMINISTRATIVOS
-        // Controla Backups y Explorador de Tablas
-        // ==========================================
-        function checkAuthAndLoadAdminData() {
-            const token = localStorage.getItem('PB_ADMIN_TOKEN');
-            if(token) {
-                // Desbloquear UI de Backups
-                backupLockMessage.classList.add('d-none');
-                backupControls.classList.replace('locked-section', 'unlocked-section');
-                // Desbloquear UI de Explorador de DB
-                dbLockMessage.classList.add('d-none');
-                dbControls.classList.replace('locked-section', 'unlocked-section');
-                
-                // Cargar la información
-                loadBackups();
-                loadCollections();
-            } else {
-                // Bloquear UI
-                backupLockMessage.classList.remove('d-none');
-                backupControls.classList.replace('unlocked-section', 'locked-section');
-                backupsList.innerHTML = '<li class="p-3 text-center text-secondary small">Esperando autenticación...</li>';
-                
-                dbLockMessage.classList.remove('d-none');
-                dbControls.classList.replace('unlocked-section', 'locked-section');
-                collectionsList.innerHTML = '<div class="col-12 text-center text-secondary small p-3">Esperando autenticación...</div>';
-            }
-        }
-
-        // --- LÓGICA DE BACKUPS ---
-        async function loadBackups() {
-            const token = localStorage.getItem('PB_ADMIN_TOKEN');
-            if(!token) return;
-            backupsList.innerHTML = '<li class="p-3 text-center text-info"><span class="spinner-border spinner-border-sm"></span> Cargando...</li>';
-            
-            try {
-                const res = await fetch(`${getActiveUrl()}/api/backups`, { headers: { 'Authorization': token } });
-                if(res.status === 401) {
-                    localStorage.removeItem('PB_ADMIN_TOKEN'); 
-                    checkAuthAndLoadAdminData();
-                    return;
-                }
-                const data = await res.json();
-                
-                if(data.length === 0) {
-                    backupsList.innerHTML = '<li class="p-3 text-center text-secondary">No hay respaldos. Crea uno nuevo.</li>';
-                    return;
-                }
-
-                backupsList.innerHTML = data.map(b => `
-                    <li class="d-flex justify-content-between align-items-center p-2 border-bottom border-secondary backup-item">
-                        <div>
-                            <i class="bi bi-file-zip text-info me-2"></i>
-                            <span class="text-light small font-monospace">${b.key}</span>
-                            <div class="text-secondary" style="font-size: 0.7rem; margin-left: 24px;">${(b.size / 1024 / 1024).toFixed(2)} MB</div>
-                        </div>
-                        <div class="d-flex gap-1">
-                            <button onclick="downloadBackup('${b.key}', this)" class="btn btn-sm btn-outline-light py-0 px-2" title="Descargar">
-                                <i class="bi bi-download"></i>
-                            </button>
-                            <button onclick="restoreBackup('${b.key}')" class="btn btn-sm btn-outline-danger py-0 px-2" title="Restaurar BD">
-                                <i class="bi bi-arrow-counterclockwise"></i>
-                            </button>
-                        </div>
-                    </li>
-                `).join('');
-            } catch (e) {
-                backupsList.innerHTML = '<li class="p-3 text-center text-danger">Error de red al cargar backups.</li>';
-            }
-        }
-
-        async function createBackup() {
-            const btn = document.getElementById('btnCreateBackup');
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Comprimiendo...';
-            btn.disabled = true;
-
-            try {
-                const res = await fetch(`${getActiveUrl()}/api/backups`, { 
-                    method: 'POST', 
-                    headers: { 'Authorization': localStorage.getItem('PB_ADMIN_TOKEN') } 
-                });
-                if(res.ok) { alert("Respaldo creado con éxito."); loadBackups(); } 
-                else throw new Error();
-            } catch(e) { alert("Error al crear el respaldo."); }
-            
-            btn.innerHTML = '<i class="bi bi-plus-circle-fill me-1"></i> Crear Respaldo (Exportar)';
-            btn.disabled = false;
-        }
-
-        // --- LÓGICA DE EXPLORADOR DE TABLAS (ACTUALIZADO CON FILTRO INTELIGENTE) ---
-        async function loadCollections() {
-            const token = localStorage.getItem('PB_ADMIN_TOKEN');
-            if(!token) return;
-            
-            collectionsList.innerHTML = '<div class="col-12 text-center text-info py-4"><span class="spinner-border spinner-border-sm me-2"></span> Analizando Base de Datos...</div>';
-            
-            try {
-                const res = await fetch(`${getActiveUrl()}/api/collections?perPage=500`, { 
-                    headers: { 'Authorization': token } 
-                });
-                
-                if(res.status === 401) {
-                    localStorage.removeItem('PB_ADMIN_TOKEN'); 
-                    checkAuthAndLoadAdminData();
-                    return;
-                }
-                
-                const data = await res.json();
-                
-                if(!data.items || data.items.length === 0) {
-                    collectionsList.innerHTML = '<div class="col-12 text-center text-secondary py-3">No hay tablas creadas.</div>';
-                    return;
-                }
-
-                // 1. Filtrar y separar colecciones (Sistema vs Registros Personalizados)
-                const systemTables = [];
-                const customTables = [];
-
-                data.items.forEach(c => {
-                    // FILTRO INTELIGENTE: Ocultar tablas internas puras de PocketBase, excepto las de administrador (_superusers)
-                    if (c.name.startsWith('_') && c.name !== '_superusers') {
-                        return; // Ocultamos esta tabla del CPanel
-                    }
-
-                    // Detectar tablas de sistema vitales (Usuarios y Admins)
-                    if (c.name === 'users' || c.name === '_superusers' || c.type === 'auth') {
-                        systemTables.push({ ...c, displayName: c.name });
-                    } else {
-                        // Formateo automático: Si se llama "contactos", se mostrará "Registro de Contactos"
-                        const capitalized = c.name.charAt(0).toUpperCase() + c.name.slice(1);
-                        customTables.push({ ...c, displayName: `Registro de ${capitalized}` });
-                    }
-                });
-
-                // 2. Función auxiliar para dibujar tarjetas
-                const generateCardHtml = (c) => {
-                    const camposCount = c.fields ? c.fields.length : (c.schema ? c.schema.length : 0);
-                    let badgeColor = 'bg-primary';
-                    if (c.type === 'auth') badgeColor = 'bg-danger';
-                    if (c.type === 'view') badgeColor = 'bg-info text-dark';
-
-                    return `
-                    <div class="col-md-6 col-lg-4">
-                        <div class="card bg-dark border border-secondary h-100 table-card">
-                            <div class="card-body p-3">
-                                <div class="d-flex justify-content-between align-items-start mb-2">
-                                    <strong class="text-light fs-6 text-truncate pe-2" title="${c.displayName}">${c.displayName}</strong>
-                                    <span class="badge ${badgeColor} bg-opacity-75" style="font-size: 0.65rem;">${c.type.toUpperCase()}</span>
-                                </div>
-                                <div class="text-secondary mb-3" style="font-size: 0.8rem;">
-                                    <i class="bi bi-columns-gap"></i> ${camposCount} Columnas<br>
-                                    <span style="font-size: 0.7rem; opacity: 0.7; font-family: monospace;">TB: ${c.name}</span>
-                                </div>
-                                <button onclick="openTableRecords('${c.id}')" class="btn btn-sm btn-outline-info w-100 fw-semibold shadow-sm" style="font-size: 0.8rem;">
-                                    <i class="bi bi-list-ul"></i> Ver Registros
-                                </button>
-                            </div>
-                        </div>
-                    </div>`;
-                };
-
-                let finalHtml = '';
-
-                // 3. Renderizar Bloque 1: Sistema (Solo las relevantes a la app)
-                if (systemTables.length > 0) {
-                    finalHtml += `
-                        <div class="col-12 mt-2 mb-1">
-                            <h6 class="text-secondary border-bottom border-secondary pb-2">
-                                <i class="bi bi-shield-lock-fill"></i> Tablas de Sistema (Usuarios y Admin)
-                            </h6>
-                        </div>`;
-                    finalHtml += systemTables.map(generateCardHtml).join('');
-                }
-
-                // 4. Renderizar Bloque 2: Registros Creados
-                if (customTables.length > 0) {
-                    finalHtml += `
-                        <div class="col-12 mt-4 mb-1">
-                            <h6 class="text-info border-bottom border-info border-opacity-25 pb-2">
-                                <i class="bi bi-folder2-open"></i> Registros y Vistas Creadas
-                            </h6>
-                        </div>`;
-                    finalHtml += customTables.map(generateCardHtml).join('');
-                }
-
-                collectionsList.innerHTML = finalHtml;
-
-            } catch (e) {
-                console.error(e);
-                collectionsList.innerHTML = '<div class="col-12 text-center text-danger py-3">Error al conectar con la base de datos para extraer tablas.</div>';
-            }
-        }
-
-        // Abre directamente los registros de la tabla seleccionada en una pestaña nueva
-        function openTableRecords(collectionId) {
-            const targetUrl = getActiveUrl();
-            if(!targetUrl) return;
-            window.open(`${targetUrl}/_/#/collections?collectionId=${collectionId}`, '_blank');
-        }
-
-        // ==========================================
-        // MÉTODOS GENERALES (Copiados y Alertas)
-        // ==========================================
-        function openAdminUI() {
-            const targetUrl = getActiveUrl();
-            if(!targetUrl) return alert("Guarda una URL primero");
-            window.open(`${targetUrl}/_/`, '_blank');
-        }
-
-        function copyCode() {
-            const codeText = document.querySelector('pre').innerText;
-            navigator.clipboard.writeText(codeText).then(() => {
-                const originalHTML = copyBtn.innerHTML;
-                copyBtn.innerHTML = '<i class="bi bi-check2"></i> ¡Copiado!';
-                copyBtn.classList.replace('btn-secondary', 'btn-success');
-                setTimeout(() => {
-                    copyBtn.innerHTML = originalHTML;
-                    copyBtn.classList.replace('btn-success', 'btn-secondary');
-                }, 2000);
+    // 🔥 NUEVA: Función de Descarga Física (CORREGIDA PARA NAVEGADORES)
+    async function downloadBackup(key, btn) {
+        var token = localStorage.getItem('PB_ADMIN_TOKEN'); 
+        if(!token) return;
+        var oHtml = btn.innerHTML; 
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>'; 
+        btn.disabled = true;
+        
+        try {
+            // 1. Pedimos un "File Token" temporal para no exponer tu Token Maestro ni chocar con el CORS
+            const tokenRes = await fetch(getActiveUrl() + '/api/files/token', {
+                method: 'POST',
+                headers: { 'Authorization': token }
             });
-        }
 
-        window.alert = function(message) {
-            if(!document.getElementById('appAlertMessage')) {
-                console.warn("Alerta nativa:", message);
-                return;
+            let secureToken = token; 
+            if(tokenRes.ok) {
+                const tokenData = await tokenRes.json();
+                secureToken = tokenData.token;
             }
-            document.getElementById('appAlertMessage').textContent = message;
-            const alertModalElement = document.getElementById('appAlertModal');
-            const modalInstance = bootstrap.Modal.getOrCreateInstance(alertModalElement);
-            modalInstance.show();
-        };
 
-        window.onload = init;
-    </script>
-</body>
-</html>
+            // 2. Usamos el gestor de descargas NATIVO del navegador mediante un enlace <a>
+            // Esto previene que se agote la memoria RAM intentando guardar un Blob gigante.
+            const downloadUrl = getActiveUrl() + '/api/backups/' + key + '?token=' + secureToken;
+            
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = downloadUrl;
+            a.download = key;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            
+        } catch(e) { 
+            alert("Error crítico al intentar descargar:\n" + e.message); 
+        } finally { 
+            btn.innerHTML = oHtml; 
+            btn.disabled = false; 
+        }
+    }
+
+    // 🔥 NUEVA: Función de Restauración de BD
+    async function restoreBackup(key) {
+        if(!confirm("⚠️ ADVERTENCIA CRÍTICA\n\nEstás a punto de restaurar la Base de Datos al punto exacto de este backup. Todo progreso posterior se perderá.\n\n¿Deseas continuar?")) return;
+        
+        var token = localStorage.getItem('PB_ADMIN_TOKEN');
+        try {
+            const res = await fetch(getActiveUrl() + '/api/backups/' + key + '/restore', { method: 'POST', headers: { 'Authorization': token } });
+            if(!res.ok) throw new Error();
+            
+            alert("✅ Restauración Iniciada\n\nEl servidor se reiniciará. Vuelve a iniciar sesión en unos segundos.");
+            localStorage.removeItem('PB_ADMIN_TOKEN'); // Cerramos sesión para evitar conflictos
+            checkAuthAndLoadAdminData();
+            
+        } catch(e) { alert("Fallo la restauración."); }
+    }
+
+    // 🔥 NUEVA: Función para Importar/Subir Backups de PC
+    async function uploadBackup(input) {
+        var file = input.files[0];
+        if(!file) return;
+        var token = localStorage.getItem('PB_ADMIN_TOKEN');
+        
+        var fd = new FormData();
+        fd.append('file', file);
+        
+        try {
+            const res = await fetch(getActiveUrl() + '/api/backups/upload', { 
+                method: 'POST', 
+                headers: { 'Authorization': token }, 
+                body: fd 
+            });
+            if(!res.ok) throw new Error();
+            
+            alert("✅ Respaldo subido correctamente al servidor.");
+            input.value = ""; // Limpiamos el input
+            loadBackups();    // Refrescamos la lista visual
+            
+        } catch(e) { alert("Error al subir el archivo. Revisa que sea un .zip válido."); }
+    }
+
+    async function loadCollections() {
+        var token = localStorage.getItem('PB_ADMIN_TOKEN'); if(!token || !window.collectionsList) return;
+        window.collectionsList.innerHTML = '<div class="col-12 text-center text-info py-4"><span class="spinner-border spinner-border-sm me-2"></span> Analizando Tablas...</div>';
+        try {
+            const res = await fetch(getActiveUrl() + '/api/collections?perPage=500', { headers: { 'Authorization': token } });
+            if(res.status === 401) { localStorage.removeItem('PB_ADMIN_TOKEN'); checkAuthAndLoadAdminData(); return; }
+            const data = await res.json();
+            if(!data.items || data.items.length === 0) return window.collectionsList.innerHTML = '<div class="col-12 text-center text-secondary py-3">No hay tablas.</div>';
+            
+            let finalHtml = '';
+            data.items.forEach(function(c) {
+                if (c.name.startsWith('_') && c.name !== '_superusers') return;
+                const campos = c.fields ? c.fields.length : (c.schema ? c.schema.length : 0);
+                finalHtml += '<div class="col-md-6 col-lg-4"><div class="card glass-panel bg-dark border-secondary h-100"><div class="card-body p-3"><strong class="text-light">' + c.name + '</strong><br><span class="text-secondary small">' + campos + ' Columnas</span></div></div></div>';
+            });
+            window.collectionsList.innerHTML = finalHtml;
+        } catch (e) { window.collectionsList.innerHTML = '<div class="col-12 text-center text-danger py-3">Error extrayendo tablas.</div>'; }
+    }
+
+    function openAdminUI() {
+        var u = getActiveUrl(); if(!u) return alert("Guarda URL primero"); window.open(u + '/_/', '_blank');
+    }
+</script>

@@ -1,0 +1,132 @@
+<div class="container fade-view pt-4 pb-5 mb-5" style="max-width: 900px;">
+        
+    <!-- Barra de Navegación Interna (Header del Fragmento) -->
+    <header class="d-flex justify-content-between align-items-center mb-5 pb-3 border-bottom border-secondary border-opacity-50">
+        <div class="d-flex align-items-center gap-3">
+            <div class="bg-primary text-white rounded-3 d-flex align-items-center justify-content-center shadow" style="width: 48px; height: 48px;">
+                <i class="bi bi-box-seam fs-4"></i>
+            </div>
+            <div>
+                <h1 class="h4 fw-bold text-themed m-0">Mi Proyecto</h1>
+                <span class="text-muted-themed small">Versión 1.0.0</span>
+            </div>
+        </div>
+        
+        <!-- Oculto por defecto. JS lo mostrará solo si es el Superusuario -->
+        <button id="btnModoDiosHome" onclick="cambiarVista('CPANEL')" class="btn btn-outline-warning rounded-pill px-4 fw-semibold shadow-sm d-none align-items-center gap-2" style="transition: transform 0.2s;">
+            <i class="bi bi-gear-fill"></i> <span class="d-none d-sm-inline">Modo Dios</span> (CPanel)
+        </button>
+    </header>
+
+    <!-- Área Principal de la App -->
+    <main>
+        <div class="card glass-panel shadow-lg rounded-4 text-center p-5 mb-4 mx-3 mx-sm-0">
+            <div class="mb-4">
+                <i class="bi bi-rocket-takeoff text-primary" style="font-size: 4rem;"></i>
+            </div>
+            <h2 class="fw-bold text-themed mb-3">¡Bienvenido a tu Frontend!</h2>
+            <p class="text-muted-themed lead mb-4 mx-auto" style="max-width: 600px;">
+                Este es el fragmento <code>home.html</code>. Absolutamente limpio y heredando los estilos globales de index.html.
+            </p>
+
+            <!-- Zona de pruebas de Mensajes y Alertas -->
+            <div class="p-4 bg-dark bg-opacity-25 border border-secondary rounded-4 mx-auto mb-5" style="max-width: 700px;">
+                <h6 class="text-muted-themed mb-3"><i class="bi bi-ui-checks"></i> Probar Componentes de Interfaz Globales</h6>
+                <div class="d-flex flex-wrap gap-2 justify-content-center">
+                    <button type="button" class="btn btn-danger btn-sm" id="btnShowNativeAlert">
+                        <i class="bi bi-exclamation-triangle"></i> Probar Alert() Nativo
+                    </button>
+                    <button type="button" class="btn btn-success btn-sm" id="btnShowSuccess">
+                        <i class="bi bi-check-circle"></i> Mostrar Toast de Éxito
+                    </button>
+                </div>
+            </div>
+            
+            <div class="row g-4 justify-content-center">
+                <div class="col-md-5">
+                    <div class="p-4 rounded-4 glass-panel border border-secondary h-100 text-start">
+                        <i class="bi bi-database text-success fs-3 mb-2 d-block"></i>
+                        <h5 class="fw-bold text-themed">Base de Datos</h5>
+                        <p class="text-muted-themed small mb-0">Tu conexión con PocketBase y Tailscale ya está configurada estructuralmente gracias al CPanel.</p>
+                    </div>
+                </div>
+                <div class="col-md-5">
+                    <div class="p-4 rounded-4 glass-panel border border-secondary h-100 text-start">
+                        <i class="bi bi-phone text-info fs-3 mb-2 d-block"></i>
+                        <h5 class="fw-bold text-themed">Lista para compilar</h5>
+                        <p class="text-muted-themed small mb-0">Al ejecutar <code>construir.bat</code>, todo lo que dibujes aquí se convertirá mágicamente en un APK de Android.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- SCRIPT LOCAL DEL FRAGMENTO HOME -->
+<script>
+    // setTimeout asegura que el DOM del fragmento inyectado esté 100% listo.
+    // Usamos 'var' o funciones aisladas para evitar errores de sintaxis (redeclaration) en la SPA.
+    setTimeout(function() {
+        var user = JSON.parse(localStorage.getItem('PB_USER_DATA') || '{}');
+        var urlBase = typeof getApiUrl === 'function' ? getApiUrl() : 'http://127.0.0.1:8090';
+        
+        if(!user.id) return;
+
+        // Mostrar el botón Modo Dios SOLO si es Superusuario
+        var btnModoDios = document.getElementById('btnModoDiosHome');
+        if (user.rol === 'Superusuario' || (user.email && user.email.toLowerCase() === 'kenth1977@gmail.com')) {
+            if (btnModoDios) {
+                btnModoDios.classList.remove('d-none');
+                btnModoDios.classList.add('d-flex');
+            }
+        }
+
+        // Llenar datos de la tarjeta de bienvenida
+        var userNameEl = document.getElementById('userName');
+        if(userNameEl) userNameEl.innerText = user.name || user.username || 'Amigo';
+
+        var badgeRol = document.getElementById('badgeRol');
+        if (badgeRol) {
+            if (user.rol === 'Superusuario' || (user.email && user.email.toLowerCase() === 'kenth1977@gmail.com')) {
+                badgeRol.innerText = 'Superusuario';
+                badgeRol.className = 'position-absolute bottom-0 start-50 translate-middle-x badge bg-danger rounded-pill shadow-sm';
+            } else if (user.rol === 'Administrador') {
+                badgeRol.innerText = 'Administrador';
+                badgeRol.className = 'position-absolute bottom-0 start-50 translate-middle-x badge bg-warning text-dark rounded-pill shadow-sm';
+            } else {
+                badgeRol.className = 'position-absolute bottom-0 start-50 translate-middle-x badge bg-primary rounded-pill shadow-sm';
+            }
+        }
+
+        // Configurar avatar
+        var avatarEl = document.getElementById('userAvatar');
+        if (avatarEl) {
+            var collection = user.collectionName || 'users'; 
+            if (user.rol === 'Superusuario') collection = '_superusers';
+
+            if(user.avatar) {
+                avatarEl.src = urlBase + '/api/files/' + collection + '/' + user.id + '/' + user.avatar;
+            } else {
+                var queryName = encodeURIComponent(user.name || 'Usuario');
+                avatarEl.src = 'https://ui-avatars.com/api/?name=' + queryName + '&background=random&size=130';
+            }
+        }
+
+        // Conectar botones de prueba a las funciones del Index Maestro
+        var btnAlert = document.getElementById('btnShowNativeAlert');
+        if(btnAlert) {
+            btnAlert.addEventListener('click', function() {
+                alert("¡Este es el alert() nativo, secuestrado y convertido en modal de cristal en la SPA!\n\nFunciona desde cualquier vista.");
+            });
+        }
+
+        var btnSuccess = document.getElementById('btnShowSuccess');
+        var toastEl = document.getElementById('successToast'); 
+        if(btnSuccess && toastEl && typeof bootstrap !== 'undefined') {
+            var toast = new bootstrap.Toast(toastEl, { delay: 4000 });
+            btnSuccess.addEventListener('click', function() {
+                toast.show();
+            });
+        }
+    }, 100);
+</script>

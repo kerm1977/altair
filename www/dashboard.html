@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="es" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Admin - La Tribu</title>
+    <link rel="icon" href="data:,">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <style>
+        /* ==========================================
+           🎨 VARIABLES DE TEMA Y GLASSMORPHISM UNIFICADO
+           ========================================== */
+        :root {
+            --bg-gradient: linear-gradient(135deg, #fdfbf7 0%, #f0ebe1 100%);
+            --glass-bg: rgba(255, 255, 255, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --glass-shadow: rgba(0, 0, 0, 0.05);
+            --text-primary: #2c2b2a;
+            --text-secondary: #6c6a66;
+            --input-bg: rgba(255, 255, 255, 0.8);
+            --hover-row: rgba(0, 0, 0, 0.04);
+            --modal-backdrop-bg: rgba(255, 255, 255, 0.3);
+        }
+
+        [data-bs-theme="dark"] {
+            --bg-gradient: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+            --glass-bg: rgba(18, 20, 24, 0.6);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --glass-shadow: rgba(0, 0, 0, 0.4);
+            --text-primary: #f8f9fa;
+            --text-secondary: #adb5bd;
+            --input-bg: rgba(0, 0, 0, 0.25);
+            --hover-row: rgba(255, 255, 255, 0.05);
+            --modal-backdrop-bg: rgba(0, 0, 0, 0.5);
+        }
+
+        body {
+            background: var(--bg-gradient);
+            color: var(--text-primary);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            background-attachment: fixed;
+            transition: background 0.5s ease, color 0.3s ease;
+        }
+
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--glass-border);
+            border-radius: 1.5rem; 
+            box-shadow: 0 8px 32px 0 var(--glass-shadow);
+        }
+        .glass-panel:hover { box-shadow: 0 12px 40px 0 var(--glass-shadow); }
+
+        .modal-backdrop.show {
+            opacity: 1 !important;
+            background-color: var(--modal-backdrop-bg) !important;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .table-glass { --bs-table-bg: transparent; color: var(--text-primary); margin-bottom: 0; }
+        .table-glass th { border-bottom: 2px solid var(--glass-border); color: var(--text-primary); font-weight: 600; text-transform: uppercase; font-size: 0.85rem; letter-spacing: 0.5px; }
+        .table-glass td { border-bottom: 1px solid var(--glass-border); color: var(--text-secondary); vertical-align: middle; transition: background-color 0.2s ease; }
+        .table-interactive tbody tr { cursor: pointer; transition: transform 0.2s ease; }
+        .table-interactive tbody tr:hover td { background-color: var(--hover-row); color: var(--text-primary); }
+        .table-interactive tbody tr:active { transform: scale(0.98); }
+
+        .input-group-glass {
+            background: var(--input-bg); border: 1px solid var(--glass-border); border-radius: 1rem; 
+            display: flex; align-items: stretch; transition: all 0.3s ease; overflow: hidden; 
+        }
+        .input-group-glass:focus-within { border-color: #0dcaf0; box-shadow: 0 0 0 4px rgba(13, 202, 240, 0.15); background: var(--glass-bg); }
+        .icon-box-glass { background: transparent; border: none; color: var(--text-secondary); padding: 0 0.5rem 0 1.25rem; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; }
+        .icon-btn-glass { background: transparent; border: none; color: var(--text-secondary); padding: 0 1.25rem 0 0.5rem; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; cursor: pointer; transition: color 0.2s; }
+        .icon-btn-glass:hover { color: var(--text-primary); }
+        
+        .form-control-glass, .form-select-glass {
+            background: transparent !important; border: none !important; color: var(--text-primary) !important;
+            padding: 0.85rem 1rem 0.85rem 0.5rem; font-size: 1rem; box-shadow: none !important; flex-grow: 1; min-width: 0; 
+        }
+        .form-select-glass { padding-left: 0.5rem; cursor: pointer; }
+        .form-control-glass::placeholder { color: var(--text-secondary); opacity: 0.5; }
+        [data-bs-theme="dark"] .form-select-glass option { background-color: #121418; color: #fff; }
+
+        .cursor-pointer { cursor: pointer; }
+        .avatar-upload-container:hover .avatar-upload-overlay { opacity: 1 !important; }
+        .text-themed { color: var(--text-primary) !important; }
+        .text-muted-themed { color: var(--text-secondary) !important; }
+        
+        .modal-body::-webkit-scrollbar { width: 6px; }
+        .modal-body::-webkit-scrollbar-track { background: transparent; }
+        .modal-body::-webkit-scrollbar-thumb { background: rgba(13, 202, 240, 0.3); border-radius: 10px; }
+
+        /* 🔥 Animación para el Paso 3 de Eliminación */
+        @keyframes pulse-danger {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.15); opacity: 0.7; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .pulse-danger { animation: pulse-danger 1.2s infinite; }
+    </style>
+</head>
+<body class="pb-5">
+
+    <!-- GUARDIA DE SEGURIDAD (SOLO KENTH O SUPERUSER) -->
+    <script>
+        (function() {
+            const user = JSON.parse(localStorage.getItem('PB_USER_DATA') || '{}');
+            const superEmail = 'kenth1977@gmail.com';
+            // Si no es el correo maestro ni tiene rol de Superusuario, fuera
+            if (user.email !== superEmail && user.rol !== 'Superusuario') {
+                window.location.href = 'index.html';
+            }
+        })();
+    </script>
+
+    <nav class="navbar navbar-expand-lg glass-panel sticky-top mx-3 mt-3 mb-4 px-3">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center fw-bold text-themed gap-2" href="#">
+                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                    <i class="bi bi-pie-chart-fill fs-5"></i>
+                </div>
+                App Dashboard
+            </a>
+            
+            <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent">
+                <i class="bi bi-list fs-1 text-themed"></i>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarContent">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item"><a class="nav-link active text-themed fw-semibold" href="#">Usuarios</a></li>
+                </ul>
+                <div class="d-flex align-items-center gap-3">
+                    <button class="btn btn-sm btn-outline-info rounded-circle d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;" id="btnThemeToggle" title="Cambiar Tema">
+                        <i class="bi bi-sun-fill" id="themeIcon"></i>
+                    </button>
+
+                    <a href="CPANEL.html" class="btn btn-warning fw-bold rounded-pill shadow-sm d-flex align-items-center gap-2" title="Ir a la Configuración Base">
+                        <i class="bi bi-gear-wide-connected"></i> 
+                        <span class="d-none d-sm-inline text-dark">CPANEL</span>
+                    </a>
+                    
+                    <div class="dropdown">
+                        <button class="btn border-0 p-0 text-themed d-flex align-items-center gap-2" data-bs-toggle="dropdown">
+                            <img src="https://ui-avatars.com/api/?name=Admin&background=0D8ABC&color=fff" class="rounded-circle" width="40" alt="Avatar">
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end glass-panel border-0 shadow-lg mt-2">
+                            <li><a class="dropdown-item text-themed" href="#"><i class="bi bi-person me-2"></i> Mi Perfil</a></li>
+                            <li><hr class="dropdown-divider border-secondary opacity-25"></li>
+                            <li><a class="dropdown-item text-danger" href="index.html" onclick="localStorage.clear();"><i class="bi bi-box-arrow-right me-2"></i> Cerrar Sesión</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid px-4">
+        
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+            <div>
+                <h2 class="fw-bold text-themed mb-0"><i class="bi bi-people-fill text-primary me-2"></i> Gestión de Usuarios</h2>
+                <p class="text-muted-themed mb-0">Directorio conectado en tiempo real a la base de datos.</p>
+            </div>
+            <button class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow" onclick="prepararModalCrear()">
+                <i class="bi bi-person-plus-fill me-1"></i> Añadir Nuevo Usuario
+            </button>
+        </div>
+
+        <div id="diagnosticoBD" class="d-none mb-4"></div>
+
+        <div class="glass-panel p-4 overflow-hidden mb-5">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 gap-3">
+                <h5 class="fw-bold text-themed m-0">Directorio de Cuentas</h5>
+                <div class="input-group-glass" style="max-width: 400px; flex-grow: 1;">
+                    <div class="icon-box-glass"><i class="bi bi-search"></i></div>
+                    <input type="text" id="buscadorUsuarios" class="form-control-glass" placeholder="Buscar por nombre, email, teléfono, rol...">
+                </div>
+            </div>
+            
+            <div class="table-responsive" style="overflow-x: hidden;"> <table class="table table-glass table-interactive align-middle">
+                    <thead>
+                        <tr>
+                            <th scope="col" style="width: 50px;">Img</th>
+                            <th scope="col">Usuario</th>
+                            <th scope="col" class="text-end">Rol</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaUsuariosBody">
+                        <tr>
+                            <td colspan="3" class="text-center py-4 text-muted-themed">
+                                <span class="spinner-border spinner-border-sm me-2"></span> Conectando a la base de datos...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top border-secondary border-opacity-25">
+                <span id="lblContadorTabla" class="text-muted-themed small fw-semibold">0 cuentas listadas</span>
+                <button onclick="cargarUsuariosDesdeBD()" class="btn btn-sm btn-outline-info rounded-pill px-3">
+                    <i class="bi bi-arrow-clockwise"></i> Refrescar
+                </button>
+            </div>
+        </div>
+
+        <div id="estadisticas">
+            <h4 class="fw-bold text-themed mb-3 mt-4"><i class="bi bi-graph-up-arrow text-info me-2"></i> Resumen del Sistema</h4>
+            <div class="row g-4 mb-4">
+                <div class="col-sm-6 col-lg-3">
+                    <div class="glass-panel p-4 d-flex align-items-center gap-3">
+                        <div class="bg-primary bg-opacity-25 text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                            <i class="bi bi-people fs-3"></i>
+                        </div>
+                        <div>
+                            <h4 class="fw-bold text-themed mb-0" id="statTotal">0</h4>
+                            <span class="text-muted-themed small">Usuarios Totales</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="glass-panel p-4 d-flex align-items-center gap-3">
+                        <div class="bg-danger bg-opacity-25 text-danger rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                            <i class="bi bi-lightning-charge fs-3"></i>
+                        </div>
+                        <div>
+                            <h4 class="fw-bold text-themed mb-0" id="statSuper">0</h4>
+                            <span class="text-muted-themed small">Superusuarios</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="glass-panel p-4 d-flex align-items-center gap-3">
+                        <div class="bg-warning bg-opacity-25 text-warning rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                            <i class="bi bi-shield-check fs-3"></i>
+                        </div>
+                        <div>
+                            <h4 class="fw-bold text-themed mb-0" id="statAdmin">0</h4>
+                            <span class="text-muted-themed small">Administradores</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-lg-3">
+                    <div class="glass-panel p-4 d-flex align-items-center gap-3">
+                        <div class="bg-success bg-opacity-25 text-success rounded-circle d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                            <i class="bi bi-person-check fs-3"></i>
+                        </div>
+                        <div>
+                            <h4 class="fw-bold text-themed mb-0" id="statRegular">0</h4>
+                            <span class="text-muted-themed small">Usuarios Regulares</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ==========================================
+         MODAL 1: PERFIL DETALLADO Y CAMBIO DE CONTRASEÑA
+         ========================================== -->
+    <div class="modal fade" id="perfilModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content glass-panel text-themed border-secondary border-opacity-25 shadow-lg rounded-4">
+                <div class="modal-header border-0 pb-0">
+                    <button type="button" class="btn-close ms-auto mt-2 me-2" data-bs-dismiss="modal" aria-label="Close" id="btnClosePerfil"></button>
+                </div>
+                <div class="modal-body text-center pt-0 pb-5 px-4 px-md-5">
+                    
+                    <div class="position-relative d-inline-block mb-3">
+                        <img id="detalleAvatar" src="" class="rounded-circle shadow-lg border border-4 border-secondary border-opacity-25" width="130" height="130" style="object-fit: cover;">
+                    </div>
+                    
+                    <h3 id="detalleNombre" class="fw-bold mb-2 text-themed">Cargando...</h3>
+                    <p id="detalleEmail" class="text-muted-themed fs-6 mb-2"><i class="bi bi-envelope me-2"></i> <span>correo@ejemplo.com</span></p>
+                    <p id="detalleTelefono" class="text-muted-themed fs-6 mb-3"><i class="bi bi-telephone me-2"></i> <span>No registrado</span></p>
+                    
+                    <div id="detalleRol" class="mb-4"></div>
+                    
+                    <div class="d-flex flex-column flex-sm-row justify-content-center gap-3 mb-4">
+                        <button class="btn btn-outline-info rounded-pill fw-bold shadow-sm py-2 px-4" onclick="editarDesdePerfil()">
+                            <i class="bi bi-pencil-square me-1"></i> Editar Info
+                        </button>
+                        <button class="btn btn-outline-danger rounded-pill fw-bold shadow-sm py-2 px-4" onclick="eliminarDesdePerfil()">
+                            <i class="bi bi-trash3-fill me-1"></i> Eliminar
+                        </button>
+                    </div>
+
+                    <!-- 🔐 SECCIÓN: CAMBIO DE CONTRASEÑA -->
+                    <div class="p-4 rounded-4 border border-secondary border-opacity-25 text-start" style="background: var(--input-bg);">
+                        <h6 class="fw-bold text-themed mb-3"><i class="bi bi-shield-lock text-info me-2"></i>Actualizar Contraseña</h6>
+                        
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Contraseña Actual</label>
+                            <div class="input-group-glass">
+                                <div class="icon-box-glass"><i class="bi bi-key"></i></div>
+                                <input type="password" class="form-control-glass" id="profPassActual" placeholder="••••••••" maxlength="15" minlength="8">
+                                <div class="icon-btn-glass" onclick="togglePassword('profPassActual', 'iconProfPass1')">
+                                    <i class="bi bi-eye" id="iconProfPass1"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row g-2 mb-4">
+                            <div class="col-sm-6">
+                                <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Nueva (8-15 carac.)</label>
+                                <div class="input-group-glass">
+                                    <div class="icon-box-glass"><i class="bi bi-key"></i></div>
+                                    <input type="password" class="form-control-glass" id="profPassNuevo" placeholder="Nueva" maxlength="15" minlength="8">
+                                    <div class="icon-btn-glass" onclick="togglePassword('profPassNuevo', 'iconProfPass2')">
+                                        <i class="bi bi-eye" id="iconProfPass2"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Confirmar</label>
+                                <div class="input-group-glass">
+                                    <div class="icon-box-glass"><i class="bi bi-key-fill"></i></div>
+                                    <input type="password" class="form-control-glass" id="profPassConf" placeholder="Confirmar" maxlength="15" minlength="8">
+                                    <div class="icon-btn-glass" onclick="togglePassword('profPassConf', 'iconProfPass3')">
+                                        <i class="bi bi-eye" id="iconProfPass3"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button class="btn btn-warning rounded-pill fw-bold shadow-sm w-100 py-2 d-flex align-items-center justify-content-center gap-2" id="btnVerificarDB" onclick="cambiarPasswordDesdePerfil()">
+                            <i class="bi bi-cloud-arrow-up-fill fs-5"></i> Empujar y Verificar en BD
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         MODAL 2: FORMULARIO GLASSMORPHIC (CREAR / EDITAR)
+         ========================================== -->
+    <div class="modal fade" id="formUsuarioModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content glass-panel text-themed border-secondary border-opacity-25 shadow-lg rounded-4">
+                
+                <div class="modal-header border-0 pb-0">
+                    <button type="button" class="btn-close ms-auto mt-2 me-2" data-bs-dismiss="modal" aria-label="Close" id="btnCloseForm"></button>
+                </div>
+                
+                <div class="modal-body pt-0 pb-4 px-4 px-md-5">
+                    
+                    <div class="text-center mb-4 mt-2">
+                        <h3 class="fw-bold mb-4 text-themed" id="modalTitle">
+                            <i class="bi bi-person-plus text-primary me-2"></i> Añadir Usuario
+                        </h3>
+                        <div class="position-relative d-inline-block avatar-upload-container cursor-pointer" onclick="document.getElementById('inputAvatarFile').click()">
+                            <img id="formAvatarPreview" src="https://ui-avatars.com/api/?name=Nuevo+Usuario&background=random" class="rounded-circle shadow-sm border border-4 border-secondary border-opacity-25" width="130" height="130" style="object-fit: cover; transition: all 0.3s;">
+                            <div class="avatar-upload-overlay position-absolute top-0 start-0 w-100 h-100 rounded-circle bg-dark bg-opacity-50 d-flex justify-content-center align-items-center" style="opacity: 0; transition: opacity 0.2s;">
+                                <i class="bi bi-camera-fill text-white fs-3"></i>
+                            </div>
+                            <input type="file" id="inputAvatarFile" class="d-none" accept="image/*" onchange="previsualizarAvatar(event)">
+                        </div>
+                        <div class="small fw-semibold text-muted-themed mt-2">Toque para cambiar foto</div>
+                    </div>
+
+                    <form id="formUsuario" class="text-start">
+                        <div class="mb-4">
+                            <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Nombres</label>
+                            <div class="input-group-glass">
+                                <div class="icon-box-glass"><i class="bi bi-person"></i></div>
+                                <input type="text" class="form-control-glass fw-semibold" id="inputNombres" placeholder="Ej. Juan Carlos" required onblur="formatearNombre(this)">
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-sm-6">
+                                <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Primer Apellido</label>
+                                <div class="input-group-glass">
+                                    <div class="icon-box-glass"><i class="bi bi-person-lines-fill"></i></div>
+                                    <input type="text" class="form-control-glass fw-semibold" id="inputApellido1" placeholder="Ej. Pérez" required onblur="formatearNombre(this)">
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Segundo Apellido</label>
+                                <div class="input-group-glass">
+                                    <div class="icon-box-glass"><i class="bi bi-person-lines-fill"></i></div>
+                                    <input type="text" class="form-control-glass fw-semibold" id="inputApellido2" placeholder="Ej. Silva (Opcional)" onblur="formatearNombre(this)">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Correo Electrónico</label>
+                            <div class="input-group-glass">
+                                <div class="icon-box-glass"><i class="bi bi-envelope"></i></div>
+                                <input type="email" class="form-control-glass fw-semibold" id="inputEmail" placeholder="juan.perez@correo.com" required>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Teléfono Celular (Exactamente 8 dígitos)</label>
+                            <div class="input-group-glass">
+                                <div class="icon-box-glass"><i class="bi bi-telephone"></i></div>
+                                <input type="text" class="form-control-glass fw-bold" id="inputTelefono" placeholder="12345678" maxlength="8" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 8)">
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-4" id="bloquePassword">
+                            <div class="col-sm-6">
+                                <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Contraseña <span class="fw-normal text-warning" id="txtOpcionalPass"></span></label>
+                                <div class="input-group-glass">
+                                    <div class="icon-box-glass"><i class="bi bi-key"></i></div>
+                                    <input type="password" class="form-control-glass" id="inputPass" placeholder="Máx 15 carac." maxlength="15" minlength="8">
+                                    <div class="icon-btn-glass" onclick="togglePassword('inputPass', 'iconPass1')">
+                                        <i class="bi bi-eye" id="iconPass1"></i>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Confirmar Contraseña</label>
+                                <div class="input-group-glass">
+                                    <div class="icon-box-glass"><i class="bi bi-key-fill"></i></div>
+                                    <input type="password" class="form-control-glass" id="inputPassConfirm" placeholder="Repita contraseña" maxlength="15" minlength="8">
+                                    <div class="icon-btn-glass" onclick="togglePassword('inputPassConfirm', 'iconPass2')">
+                                        <i class="bi bi-eye" id="iconPass2"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Nivel de Privilegios (Rol)</label>
+                            <div class="input-group-glass">
+                                <div class="icon-box-glass"><i class="bi bi-shield-lock"></i></div>
+                                <select class="form-select-glass fw-semibold" id="selectRol">
+                                    <option value="Usuario" selected>Usuario (Acceso Regular)</option>
+                                    <option value="Administrador">Administrador (Gestión Media)</option>
+                                    <option value="Superusuario">Superusuario (Acceso Total)</option>
+                                </select>
+                            </div>
+                            <div class="form-text text-warning mt-2 small px-2 lh-sm">Nota: Los Superusuarios se guardan en la bóveda estricta (_superusers). Su nombre, teléfono y avatar están aislados de la tabla principal.</div>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="modal-footer border-0 px-4 px-md-5 pb-5 pt-0 d-flex flex-column flex-sm-row justify-content-center gap-3">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill fw-bold shadow-sm py-2 px-4 w-100" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" id="btnGuardarUser" class="btn btn-primary rounded-pill fw-bold shadow-sm py-2 px-4 w-100" onclick="guardarUsuario()">
+                        <i class="bi bi-floppy me-2"></i> Guardar Registro
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- 🔥 NUEVO: MODAL TRIPLE CONFIRMACIÓN PARA BORRAR (GLASS)   -->
+    <!-- ========================================================= -->
+    <div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content glass-panel text-themed border-danger border-opacity-50 shadow-lg rounded-4" style="transition: all 0.3s ease;" id="deleteModalContent">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold text-danger fs-6" id="deleteModalTitle">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i> Confirmar
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="resetProcessDelete()"></button>
+                </div>
+                <div class="modal-body pt-3 pb-4 text-center px-4">
+                    <!-- Icono animado -->
+                    <i id="deleteModalIcon" class="bi bi-trash text-danger opacity-75 mb-3 d-block" style="font-size: 3.5rem; transition: all 0.3s ease;"></i>
+                    <!-- Mensaje dinámico -->
+                    <p id="deleteModalMessage" class="mb-0 text-themed fw-semibold" style="font-size: 0.95rem;"></p>
+                </div>
+                <div class="modal-footer border-0 pt-0 justify-content-center flex-column gap-2 px-4 pb-4">
+                    <button type="button" id="btnConfirmDelete" class="btn btn-warning text-dark w-100 rounded-pill fw-bold shadow-sm py-2" onclick="avanzarEliminacion()">
+                        Sí, continuar
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary w-100 rounded-pill fw-bold shadow-sm py-2" data-bs-dismiss="modal" onclick="resetProcessDelete()">
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE NOTIFICACIONES (SOBRESCRIBE EL ALERT NATIVO) -->
+    <div class="modal fade" id="appAlertModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content glass-panel text-themed border-secondary border-opacity-25 shadow-lg rounded-4">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold text-warning fs-6">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i> Notificación
+                    </h5>
+                </div>
+                <div class="modal-body pt-3 pb-4">
+                    <p id="appAlertMessage" class="mb-0 text-muted-themed fw-semibold" style="white-space: pre-wrap; font-size: 0.95rem;"></p>
+                </div>
+                <div class="modal-footer border-0 pt-0 justify-content-center">
+                    <button type="button" class="btn btn-primary w-100 rounded-pill fw-bold shadow-sm" data-bs-dismiss="modal">Aceptar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // ==========================================
+        // 🔮 SECUESTRO DEL ALERT NATIVO
+        // ==========================================
+        window.alert = function(message) {
+            document.getElementById('appAlertMessage').textContent = message;
+            const alertModalElement = document.getElementById('appAlertModal');
+            const modalInstance = bootstrap.Modal.getOrCreateInstance(alertModalElement);
+            modalInstance.show();
+        };
+
+        // ==========================================
+        // 🌓 LÓGICA DE CAMBIO DE TEMA (APP_THEME)
+        // ==========================================
+        const btnThemeToggle = document.getElementById('btnThemeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        const htmlElement = document.documentElement;
+
+        const savedTheme = localStorage.getItem('APP_THEME') || 'dark';
+        setTheme(savedTheme);
+
+        if(btnThemeToggle) {
+            btnThemeToggle.addEventListener('click', () => {
+                const currentTheme = htmlElement.getAttribute('data-bs-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                setTheme(newTheme);
+                localStorage.setItem('APP_THEME', newTheme);
+            });
+        }
+
+        function setTheme(theme) {
+            htmlElement.setAttribute('data-bs-theme', theme);
+            if(theme === 'dark') {
+                if(themeIcon) themeIcon.className = "bi bi-sun-fill fs-5 text-warning"; 
+                document.querySelectorAll('.btn-close').forEach(b => b.classList.add('btn-close-white'));
+            } else {
+                if(themeIcon) themeIcon.className = "bi bi-moon-stars-fill fs-5 text-dark"; 
+                document.querySelectorAll('.btn-close').forEach(b => b.classList.remove('btn-close-white'));
+            }
+        }
+
+        // ==========================================
+        // 🚀 CONEXIÓN REAL A LA BASE DE DATOS (POCKETBASE)
+        // ==========================================
+        let usuariosGlobales = [];
+        let perfilModalInstancia = null;
+        let formModalInstancia = null;
+        let deleteModalInstancia = null; // Instancia del nuevo modal
+        let modoEdicion = false;
+        let idUsuarioEditando = null;
+        let archivoAvatarTemp = null; 
+
+        function getApiUrl() {
+            const env = localStorage.getItem('APP_ENV') || 'dev';
+            return env === 'prod' 
+                ? localStorage.getItem('APP_PROD_URL') 
+                : (localStorage.getItem('APP_DEV_URL') || 'http://127.0.0.1:8090');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            perfilModalInstancia = new bootstrap.Modal(document.getElementById('perfilModal'));
+            formModalInstancia = new bootstrap.Modal(document.getElementById('formUsuarioModal'));
+            deleteModalInstancia = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+            
+            cargarUsuariosDesdeBD();
+            document.getElementById('buscadorUsuarios').addEventListener('input', filtrarUsuarios);
+        });
+
+        async function diagnosticarTablas(token, urlBase) {
+            try {
+                const res = await fetch(`${urlBase}/api/collections/users`, { headers: { 'Authorization': token } });
+                if(res.ok) {
+                    const data = await res.json();
+                    const fields = data.fields || data.schema || [];
+                    const tieneRol = fields.some(f => f.name === 'rol');
+                    const tieneTel = fields.some(f => f.name === 'telefono');
+
+                    const diagDiv = document.getElementById('diagnosticoBD');
+                    if(!tieneRol || !tieneTel) {
+                        diagDiv.innerHTML = `
+                            <div class="alert alert-danger glass-panel text-white border-danger d-flex flex-column flex-md-row align-items-start gap-3 shadow-lg">
+                                <i class="bi bi-exclamation-triangle-fill fs-1 text-warning"></i>
+                                <div class="flex-grow-1">
+                                    <h5 class="fw-bold mb-1">¡Faltan Columnas en PocketBase!</h5>
+                                    <p class="mb-2 small">La tabla <strong>users</strong> no tiene los campos personalizados necesarios.</p>
+                                    <ul class="small mb-3 fw-semibold">
+                                        ${!tieneTel ? '<li>Falta el campo: <span class="badge bg-dark text-white">telefono</span></li>' : ''}
+                                        ${!tieneRol ? '<li>Falta el campo: <span class="badge bg-dark text-white">rol</span></li>' : ''}
+                                    </ul>
+                                    <button id="btnAutoFix" onclick="autoRepararTablas()" class="btn btn-warning fw-bold text-dark rounded-pill px-4 shadow-sm">
+                                        <i class="bi bi-magic me-2"></i> Auto-Configurar Base de Datos
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                        diagDiv.classList.remove('d-none');
+                    } else {
+                        diagDiv.classList.add('d-none');
+                    }
+                }
+            } catch(e) { console.error("Error en diagnóstico:", e); }
+        }
+
+        async function autoRepararTablas() {
+            const token = localStorage.getItem('PB_ADMIN_TOKEN');
+            const urlBase = getApiUrl();
+            const btn = document.getElementById('btnAutoFix');
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Inyectando magia...';
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(`${urlBase}/api/collections/users`, { headers: { 'Authorization': token } });
+                const collection = await res.json();
+
+                const isV23 = Array.isArray(collection.fields);
+                let targetArray = isV23 ? collection.fields : collection.schema;
+
+                const hasTelefono = targetArray.some(f => f.name === 'telefono');
+                const hasRol = targetArray.some(f => f.name === 'rol');
+
+                const genFieldId = () => {
+                    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+                    let result = '';
+                    for (let i = 0; i < 8; i++) result += chars.charAt(Math.floor(Math.random() * chars.length));
+                    return result;
+                };
+
+                if (!hasTelefono) targetArray.push({ id: genFieldId(), name: 'telefono', type: 'text', system: false, required: false, presentable: false, hidden: false });
+                if (!hasRol) targetArray.push({ id: genFieldId(), name: 'rol', type: 'text', system: false, required: false, presentable: false, hidden: false });
+
+                if (isV23) collection.fields = targetArray;
+                else collection.schema = targetArray;
+                
+                const patchRes = await fetch(`${urlBase}/api/collections/${collection.id}`, {
+                    method: 'PATCH',
+                    headers: { 'Authorization': token, 'Content-Type': 'application/json' },
+                    body: JSON.stringify(collection)
+                });
+
+                if (!patchRes.ok) throw new Error("PocketBase rechazó la alteración.");
+                alert("¡BRUTAL! 🚀\n\nLas columnas se inyectaron automáticamente.");
+                await cargarUsuariosDesdeBD();
+            } catch(e) {
+                console.error(e);
+                alert("Por seguridad de tu BD, añade las columnas 'telefono' (Text) y 'rol' (Text) manualmente en la consola de PocketBase.");
+            }
+        }
+
+        async function cargarUsuariosDesdeBD() {
+            const token = localStorage.getItem('PB_ADMIN_TOKEN');
+            const urlBase = getApiUrl();
+            const tbody = document.getElementById('tablaUsuariosBody');
+            
+            if(!token || !urlBase) {
+                tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-danger"><i class="bi bi-shield-lock-fill fs-2 d-block mb-2"></i> Acceso Denegado.</td></tr>';
+                return;
+            }
+
+            diagnosticarTablas(token, urlBase);
+            tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-info"><span class="spinner-border spinner-border-sm me-2"></span> Sincronizando con la base de datos...</td></tr>';
+
+            try {
+                usuariosGlobales = []; 
+
+                // COMPATIBILIDAD V0.23 Y V0.22 PARA SUPERUSUARIOS
+                let resSuper = await fetch(`${urlBase}/api/collections/_superusers/records`, { headers: { 'Authorization': token } });
+                let isV22 = false;
+
+                if (!resSuper.ok && resSuper.status === 404) {
+                    resSuper = await fetch(`${urlBase}/api/admins`, { headers: { 'Authorization': token } });
+                    isV22 = true;
+                }
+
+                if (resSuper.ok) {
+                    const dataSuper = await resSuper.json();
+                    const itemsSuper = dataSuper.items || [];
+                    itemsSuper.forEach(u => {
+                        usuariosGlobales.push({
+                            id: u.id,
+                            nombre: 'Superusuario Maestro',
+                            email: u.email,
+                            telefono: '', 
+                            rol: 'Superusuario',
+                            collectionName: isV22 ? 'admins' : '_superusers',
+                            img: u.avatar ? `${urlBase}/api/files/_superusers/${u.id}/${u.avatar}` : `https://ui-avatars.com/api/?name=Super+Master&background=random`
+                        });
+                    });
+                }
+
+                // CARGAR USUARIOS REGULARES
+                const resUsers = await fetch(`${urlBase}/api/collections/users/records`, { headers: { 'Authorization': token } });
+                if (resUsers.ok) {
+                    const dataUsers = await resUsers.json();
+                    const itemsUsers = dataUsers.items || [];
+                    itemsUsers.forEach(u => {
+                        usuariosGlobales.push({
+                            id: u.id,
+                            nombre: u.name || u.username || 'Usuario Sin Nombre',
+                            email: u.email,
+                            telefono: u.telefono || '', 
+                            rol: u.rol || 'Usuario',    
+                            collectionName: 'users',
+                            img: u.avatar ? `${urlBase}/api/files/users/${u.id}/${u.avatar}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || u.username || 'Usuario')}&background=random`
+                        });
+                    });
+                } else {
+                    const errInfo = await resUsers.json().catch(()=>({}));
+                    throw new Error("Token inválido o permisos insuficientes. " + (errInfo.message || ""));
+                }
+
+                actualizarEstadisticas();
+                renderizarTabla(usuariosGlobales);
+
+            } catch (error) {
+                console.error(error);
+                tbody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-danger"><i class="bi bi-x-octagon-fill fs-3 d-block mb-2"></i> Error de Conexión: ${error.message}</td></tr>`;
+            }
+        }
+
+        function renderizarTabla(arregloUsuarios) {
+            const tbody = document.getElementById('tablaUsuariosBody');
+            const lblContador = document.getElementById('lblContadorTabla');
+            tbody.innerHTML = '';
+            
+            if(arregloUsuarios.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-muted-themed">No se encontraron registros.</td></tr>';
+                lblContador.innerText = "0 cuentas listadas";
+                return;
+            }
+
+            arregloUsuarios.forEach(u => {
+                let badgeHtml = '';
+                if(u.rol === 'Superusuario') badgeHtml = `<span class="badge bg-danger rounded-pill px-3 py-2 shadow-sm"><i class="bi bi-lightning-fill"></i> <span class="d-none d-sm-inline">Superusuario</span></span>`;
+                else if (u.rol === 'Administrador') badgeHtml = `<span class="badge bg-warning text-dark rounded-pill px-3 py-2 shadow-sm"><i class="bi bi-shield-fill-check"></i> <span class="d-none d-sm-inline">Administrador</span></span>`;
+                else badgeHtml = `<span class="badge bg-primary rounded-pill px-3 py-2 shadow-sm"><i class="bi bi-person-fill"></i> <span class="d-none d-sm-inline">Usuario</span></span>`;
+
+                const tr = document.createElement('tr');
+                tr.onclick = () => abrirPerfilUsuario(u.id);
+                tr.innerHTML = `
+                    <td><img src="${u.img}" class="rounded-circle shadow-sm" width="40" height="40" style="object-fit:cover;" alt="Avatar"></td>
+                    <td class="fw-bold text-themed">${u.nombre}</td>
+                    <td class="text-end">${badgeHtml}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+            lblContador.innerText = `${arregloUsuarios.length} cuentas listadas`;
+        }
+
+        function filtrarUsuarios(e) {
+            const term = e.target.value.toLowerCase().trim();
+            if(term === '') return renderizarTabla(usuariosGlobales);
+            const filtrados = usuariosGlobales.filter(u => 
+                u.nombre.toLowerCase().includes(term) || u.email.toLowerCase().includes(term) || u.rol.toLowerCase().includes(term) || (u.telefono && u.telefono.includes(term))
+            );
+            renderizarTabla(filtrados);
+        }
+
+        function actualizarEstadisticas() {
+            let total = usuariosGlobales.length;
+            let superUsr = 0, adminUsr = 0, regUsr = 0;
+            usuariosGlobales.forEach(u => {
+                if(u.rol === 'Superusuario') superUsr++;
+                else if(u.rol === 'Administrador') adminUsr++;
+                else regUsr++;
+            });
+            document.getElementById('statTotal').innerText = total;
+            document.getElementById('statSuper').innerText = superUsr;
+            document.getElementById('statAdmin').innerText = adminUsr;
+            document.getElementById('statRegular').innerText = regUsr;
+        }
+
+        function formatearNombre(inputEl) {
+            let val = inputEl.value;
+            val = val.replace(/\s+/g, ' ').trim();
+            val = val.toLowerCase().replace(/(?:^|\s)\w/g, function(match){return match.toUpperCase();});
+            inputEl.value = val;
+        }
+
+        function togglePassword(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            if (input.type === "password") {
+                input.type = "text";
+                icon.classList.replace("bi-eye", "bi-eye-slash");
+            } else {
+                input.type = "password";
+                icon.classList.replace("bi-eye-slash", "bi-eye");
+            }
+        }
+
+        function previsualizarAvatar(event) {
+            const file = event.target.files[0];
+            if (file) {
+                archivoAvatarTemp = file; 
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('formAvatarPreview').src = e.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function prellenarFormulario(nombreCompleto) {
+            const partes = (nombreCompleto || "").trim().split(' ');
+            const iNombres = document.getElementById('inputNombres');
+            const iApellido1 = document.getElementById('inputApellido1');
+            const iApellido2 = document.getElementById('inputApellido2');
+            
+            if(partes.length === 1) {
+                iNombres.value = partes[0] || "";
+                iApellido1.value = "";
+                iApellido2.value = "";
+            } else if (partes.length === 2) {
+                iNombres.value = partes[0];
+                iApellido1.value = partes[1];
+                iApellido2.value = "";
+            } else if (partes.length >= 3) {
+                iApellido2.value = partes.pop(); 
+                iApellido1.value = partes.pop(); 
+                iNombres.value = partes.join(' '); 
+            }
+        }
+
+        function abrirPerfilUsuario(idBuscado) {
+            const usuario = usuariosGlobales.find(u => u.id === idBuscado);
+            if(!usuario) return;
+            idUsuarioEditando = usuario.id;
+            
+            document.getElementById('detalleAvatar').src = usuario.img;
+            document.getElementById('detalleNombre').innerText = usuario.nombre;
+            document.getElementById('detalleEmail').querySelector('span').innerText = usuario.email;
+            document.getElementById('detalleTelefono').querySelector('span').innerText = usuario.telefono || "No registrado";
+            
+            let badgeHtml = '';
+            if(usuario.rol === 'Superusuario') badgeHtml = `<span class="badge bg-danger rounded-pill px-3 py-2 shadow-sm"><i class="bi bi-lightning-fill"></i> Superusuario</span>`;
+            else if (usuario.rol === 'Administrador') badgeHtml = `<span class="badge bg-warning text-dark rounded-pill px-3 py-2 shadow-sm"><i class="bi bi-shield-fill-check"></i> Administrador</span>`;
+            else badgeHtml = `<span class="badge bg-primary rounded-pill px-3 py-2 shadow-sm"><i class="bi bi-person-fill"></i> Usuario</span>`;
+            document.getElementById('detalleRol').innerHTML = badgeHtml;
+            
+            document.getElementById('profPassActual').value = "";
+            document.getElementById('profPassNuevo').value = "";
+            document.getElementById('profPassConf').value = "";
+
+            perfilModalInstancia.show();
+        }
+
+        async function cambiarPasswordDesdePerfil() {
+            const pActual = document.getElementById('profPassActual').value;
+            const pNuevo = document.getElementById('profPassNuevo').value;
+            const pConf = document.getElementById('profPassConf').value;
+            
+            if (!pActual || !pNuevo || !pConf) return alert("Completa los 3 campos de contraseña.");
+            if (pNuevo.length < 8 || pNuevo.length > 15) return alert("La nueva contraseña debe tener entre 8 y 15 caracteres.");
+            if (pNuevo !== pConf) return alert("Las contraseñas nuevas no coinciden.");
+
+            const btn = document.getElementById('btnVerificarDB');
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Empujando a Base de Datos...';
+            btn.disabled = true;
+
+            const token = localStorage.getItem('PB_ADMIN_TOKEN');
+            const urlBase = getApiUrl();
+            const usuario = usuariosGlobales.find(u => u.id === idUsuarioEditando);
+
+            try {
+                const formData = new FormData();
+                formData.append('oldPassword', pActual);
+                formData.append('password', pNuevo);
+                formData.append('passwordConfirm', pConf);
+
+                let targetUrl = `${urlBase}/api/collections/${usuario.collectionName}/records/${usuario.id}`;
+                if (usuario.collectionName === 'admins') {
+                    targetUrl = `${urlBase}/api/admins/${usuario.id}`;
+                }
+
+                const res = await fetch(targetUrl, {
+                    method: 'PATCH',
+                    headers: { 'Authorization': token },
+                    body: formData
+                });
+
+                if(!res.ok) {
+                    const errorData = await res.json();
+                    throw new Error("Verifica que tu contraseña actual sea correcta.");
+                }
+
+                let verifUrl = `${urlBase}/api/collections/${usuario.collectionName}/records/${usuario.id}`;
+                if (usuario.collectionName === 'admins') {
+                    verifUrl = `${urlBase}/api/admins/${usuario.id}`;
+                }
+                const verificacion = await fetch(verifUrl, { 
+                    headers: { 'Authorization': token }
+                });
+                
+                if(!verificacion.ok) throw new Error("Fallo en la confirmación de datos.");
+
+                btn.classList.replace('btn-warning', 'btn-success');
+                btn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>¡Verificado y Actualizado!';
+                
+                setTimeout(() => {
+                    btn.classList.replace('btn-success', 'btn-warning');
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                    document.getElementById('profPassActual').value = '';
+                    document.getElementById('profPassNuevo').value = '';
+                    document.getElementById('profPassConf').value = '';
+                }, 3500);
+
+            } catch (e) {
+                alert("Error al actualizar la contraseña:\n" + e.message);
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+        }
+
+        function prepararModalCrear() {
+            modoEdicion = false;
+            idUsuarioEditando = null;
+            archivoAvatarTemp = null; 
+            
+            document.getElementById('modalTitle').innerHTML = '<i class="bi bi-person-plus text-primary me-2"></i> Añadir Usuario';
+            document.getElementById('formUsuario').reset();
+            document.getElementById('txtOpcionalPass').innerText = ""; 
+            
+            document.getElementById('inputPass').required = true;
+            document.getElementById('inputPassConfirm').required = true;
+
+            document.getElementById('formAvatarPreview').src = "https://ui-avatars.com/api/?name=Nuevo+Usuario&background=random";
+            
+            document.getElementById('inputNombres').disabled = false;
+            document.getElementById('inputApellido1').disabled = false;
+            document.getElementById('inputApellido2').disabled = false;
+            document.getElementById('inputTelefono').disabled = false;
+
+            document.getElementById('inputPass').type = "password";
+            document.getElementById('inputPassConfirm').type = "password";
+            document.getElementById('iconPass1').className = "bi bi-eye";
+            document.getElementById('iconPass2').className = "bi bi-eye";
+
+            formModalInstancia.show();
+        }
+
+        function editarDesdePerfil() {
+            perfilModalInstancia.hide(); 
+            modoEdicion = true;
+            archivoAvatarTemp = null; 
+            
+            const usuario = usuariosGlobales.find(u => u.id === idUsuarioEditando);
+            if(!usuario) return;
+
+            document.getElementById('modalTitle').innerHTML = '<i class="bi bi-pencil-square text-info me-2"></i> Editar Usuario';
+            
+            document.getElementById('formAvatarPreview').src = usuario.img;
+            document.getElementById('inputEmail').value = usuario.email;
+            document.getElementById('selectRol').value = usuario.rol;
+            
+            document.getElementById('inputPass').value = "";
+            document.getElementById('inputPassConfirm').value = "";
+            document.getElementById('inputPass').required = false;
+            document.getElementById('inputPassConfirm').required = false;
+            document.getElementById('txtOpcionalPass').innerText = "(Opcional)";
+
+            const iNombres = document.getElementById('inputNombres');
+            const iApellido1 = document.getElementById('inputApellido1');
+            const iApellido2 = document.getElementById('inputApellido2');
+            const iTelefono = document.getElementById('inputTelefono');
+            
+            if (usuario.rol === 'Superusuario') {
+                iNombres.value = "Superusuario";
+                iApellido1.value = "Maestro";
+                iApellido2.value = "";
+                iNombres.disabled = true;
+                iApellido1.disabled = true;
+                iApellido2.disabled = true;
+                iTelefono.value = "";
+                iTelefono.disabled = true;
+                iTelefono.placeholder = "No soportado en Superusuario";
+            } else {
+                prellenarFormulario(usuario.nombre);
+                iNombres.disabled = false;
+                iApellido1.disabled = false;
+                iApellido2.disabled = false;
+                iTelefono.value = usuario.telefono || "";
+                iTelefono.disabled = false;
+                iTelefono.placeholder = "12345678";
+            }
+
+            document.getElementById('inputPass').type = "password";
+            document.getElementById('inputPassConfirm').type = "password";
+            document.getElementById('iconPass1').className = "bi bi-eye";
+            document.getElementById('iconPass2').className = "bi bi-eye";
+
+            setTimeout(() => { formModalInstancia.show(); }, 400);
+        }
+
+        // ==============================================================================
+        // 🔥 SISTEMA DE TRIPLE CONFIRMACIÓN PARA BORRAR
+        // ==============================================================================
+        let deleteStep = 1;
+        let usuarioABorrar = null;
+
+        function eliminarDesdePerfil() {
+            const usuario = usuariosGlobales.find(u => u.id === idUsuarioEditando);
+            
+            if(usuario.rol === 'Superusuario' || usuario.collectionName === '_superusers' || usuario.collectionName === 'admins') {
+                alert("🛑 ACCIÓN DENEGADA:\n\nLos Superusuarios Maestros no pueden ser eliminados desde esta aplicación por seguridad.");
+                return;
+            }
+
+            // Ocultar tarjeta de perfil y comenzar el proceso destructivo
+            perfilModalInstancia.hide();
+            usuarioABorrar = usuario;
+            deleteStep = 1;
+            
+            actualizarUIDeleteModal();
+            deleteModalInstancia.show();
+        }
+
+        function resetProcessDelete() {
+            deleteStep = 1;
+            usuarioABorrar = null;
+        }
+
+        function actualizarUIDeleteModal() {
+            const title = document.getElementById('deleteModalTitle');
+            const icon = document.getElementById('deleteModalIcon');
+            const msg = document.getElementById('deleteModalMessage');
+            const btn = document.getElementById('btnConfirmDelete');
+            const modalContent = document.getElementById('deleteModalContent');
+
+            if (deleteStep === 1) {
+                // PASO 1: Advertencia Amarilla
+                title.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-2"></i> PASO 1/3 - PELIGRO';
+                title.className = "modal-title fw-bold text-warning fs-6";
+                modalContent.className = "modal-content glass-panel text-themed border-warning border-opacity-50 shadow-lg rounded-4";
+                icon.className = 'bi bi-trash text-warning opacity-75 mb-3 d-block';
+                msg.innerHTML = `¿Estás seguro de que deseas eliminar permanentemente a <br><strong class="fs-5 text-warning">${usuarioABorrar.nombre}</strong>?`;
+                btn.className = 'btn btn-warning text-dark w-100 rounded-pill fw-bold shadow-sm py-2';
+                btn.innerHTML = 'Sí, deseo eliminarlo';
+            } 
+            else if (deleteStep === 2) {
+                // PASO 2: Advertencia Roja Fuerte
+                title.innerHTML = '<i class="bi bi-shield-exclamation me-2"></i> PASO 2/3 - ADVERTENCIA';
+                title.className = "modal-title fw-bold text-danger fs-6";
+                modalContent.className = "modal-content glass-panel text-themed border-danger border-opacity-50 shadow-lg rounded-4";
+                icon.className = 'bi bi-exclamation-octagon text-danger opacity-75 mb-3 d-block';
+                msg.innerHTML = `Esta acción <strong class="text-danger">NO se puede deshacer</strong>.<br><br>¿Realmente quieres borrar absolutamente todos los datos de <strong>${usuarioABorrar.nombre}</strong> de la base de datos?`;
+                btn.className = 'btn btn-danger w-100 rounded-pill fw-bold shadow-sm py-2';
+                btn.innerHTML = 'Estoy completamente seguro';
+            } 
+            else if (deleteStep === 3) {
+                // PASO 3: Modo Fuego (Animado)
+                title.innerHTML = '<i class="bi bi-fire me-2"></i> PASO 3/3 - DESTRUCCIÓN';
+                title.className = "modal-title fw-bold text-danger fs-6 pulse-danger";
+                icon.className = 'bi bi-fire text-danger mb-3 d-block pulse-danger';
+                msg.innerHTML = `Estás a punto de borrar a <strong class="text-danger">${usuarioABorrar.nombre}</strong> para siempre de tu ecosistema.<br><br><span class="text-danger small fw-bold">ESTA ES TU ÚLTIMA OPORTUNIDAD PARA CANCELAR.</span>`;
+                btn.className = 'btn btn-dark border border-danger text-danger w-100 rounded-pill fw-bold shadow-lg py-2 pulse-danger';
+                btn.innerHTML = '<i class="bi bi-skull-fill me-2"></i> ELIMINAR AHORA';
+            }
+        }
+
+        async function avanzarEliminacion() {
+            if (deleteStep < 3) {
+                deleteStep++;
+                actualizarUIDeleteModal();
+            } else {
+                await ejecutarDestruccionBD();
+            }
+        }
+
+        async function ejecutarDestruccionBD() {
+            const btn = document.getElementById('btnConfirmDelete');
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Destruyendo datos...';
+            btn.disabled = true;
+
+            const token = localStorage.getItem('PB_ADMIN_TOKEN');
+            const urlBase = getApiUrl();
+            
+            try {
+                const res = await fetch(`${urlBase}/api/collections/${usuarioABorrar.collectionName}/records/${usuarioABorrar.id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': token }
+                });
+
+                if(!res.ok) throw new Error("La base de datos rechazó la eliminación.");
+                
+                deleteModalInstancia.hide();
+                resetProcessDelete();
+                
+                // Usamos nuestro alert de cristal para notificar el éxito
+                alert("🗑️ ELIMINACIÓN EXITOSA:\n\nEl usuario fue borrado permanentemente de la base de datos.");
+                
+                await cargarUsuariosDesdeBD();
+
+            } catch (error) {
+                alert("Error crítico: No se pudo eliminar de la base de datos. Verifica tu conexión.");
+                btn.disabled = false;
+                deleteModalInstancia.hide();
+                resetProcessDelete();
+            }
+        }
+
+
+        // ==============================================================================
+        // GUARDAR O EDITAR (MANTENIDO)
+        // ==============================================================================
+        async function guardarUsuario() {
+            const iNombres = document.getElementById('inputNombres');
+            const iApellido1 = document.getElementById('inputApellido1');
+            const iApellido2 = document.getElementById('inputApellido2');
+            
+            formatearNombre(iNombres);
+            formatearNombre(iApellido1);
+            formatearNombre(iApellido2);
+            
+            const nombreCompleto = `${iNombres.value} ${iApellido1.value} ${iApellido2.value}`.replace(/\s+/g, ' ').trim();
+            const email = document.getElementById('inputEmail').value.trim();
+            const telefono = document.getElementById('inputTelefono').value;
+            const pass = document.getElementById('inputPass').value;
+            const passConf = document.getElementById('inputPassConfirm').value;
+            const rol = document.getElementById('selectRol').value;
+
+            if(!email) return alert("Por favor, completa el correo.");
+            
+            if(email.toLowerCase() === 'kenth1977@gmail.com' && rol !== 'Superusuario') {
+                return alert("🛑 GUARDADO DENEGADO:\n\nEl correo 'kenth1977@gmail.com' está estrictamente reservado para el Superusuario Maestro. No puedes asignarlo a un Usuario regular o Administrador.");
+            }
+
+            if(rol !== 'Superusuario') {
+                if(!iNombres.value || !iApellido1.value) return alert("Por favor, completa el Nombre y el Primer Apellido.");
+                if(telefono && telefono.length !== 8) return alert("El teléfono debe tener exactamente 8 números.");
+            }
+            if(!modoEdicion && !pass) return alert("La contraseña es obligatoria para usuarios nuevos.");
+            
+            if(pass || passConf) {
+                if(pass.length < 8 || pass.length > 15) return alert("La contraseña debe tener entre 8 y 15 caracteres.");
+                if(pass !== passConf) return alert("Las contraseñas no coinciden. Por favor verifique.");
+            }
+
+            const token = localStorage.getItem('PB_ADMIN_TOKEN');
+            const urlBase = getApiUrl();
+            let collectionTarget = (rol === 'Superusuario') ? '_superusers' : 'users';
+
+            if (rol !== 'Superusuario') {
+                try {
+                    let filterQuery = `email='${email}'`;
+                    if (telefono) filterQuery += ` || telefono='${telefono}'`;
+                    
+                    if (modoEdicion && idUsuarioEditando) {
+                        filterQuery = `id != '${idUsuarioEditando}' && (${filterQuery})`;
+                    }
+
+                    const checkRes = await fetch(`${urlBase}/api/collections/${collectionTarget}/records?filter=(${encodeURIComponent(filterQuery)})`, {
+                        headers: { 'Authorization': token }
+                    });
+                    
+                    if (checkRes.ok) {
+                        const checkData = await checkRes.json();
+                        if (checkData.items && checkData.items.length > 0) {
+                            const duplicado = checkData.items[0];
+                            if (duplicado.email === email) {
+                                return alert("🛑 GUARDADO DENEGADO:\n\nEl correo electrónico ingresado ya pertenece a otra cuenta existente.");
+                            }
+                            if (telefono && duplicado.telefono === telefono) {
+                                return alert("🛑 GUARDADO DENEGADO:\n\nEl número de teléfono ingresado ya está siendo usado por otro usuario.");
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.warn("No se pudo realizar el pre-flight check de duplicados", e);
+                }
+            }
+
+            const btn = document.getElementById('btnGuardarUser');
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Guardando...';
+            btn.disabled = true;
+
+            const formData = new FormData();
+            formData.append('email', email);
+            
+            if(pass) {
+                formData.append('password', pass);
+                formData.append('passwordConfirm', passConf);
+            }
+
+            if (rol !== 'Superusuario') {
+                formData.append('name', nombreCompleto);
+                formData.append('telefono', telefono);
+                formData.append('rol', rol);
+                if (!modoEdicion) formData.append('username', "user_" + Date.now());
+            }
+
+            if (archivoAvatarTemp) formData.append('avatar', archivoAvatarTemp);
+
+            try {
+                let res;
+                let finalTargetUrl = `${urlBase}/api/collections/${collectionTarget}/records`;
+                
+                // Si es modo edicion y es admin V0.22
+                if (modoEdicion && idUsuarioEditando) {
+                    const usrEdit = usuariosGlobales.find(u => u.id === idUsuarioEditando);
+                    if (usrEdit && usrEdit.collectionName === 'admins') {
+                        collectionTarget = 'admins';
+                        finalTargetUrl = `${urlBase}/api/admins`;
+                    }
+                }
+
+                if(modoEdicion && idUsuarioEditando) {
+                    res = await fetch(`${finalTargetUrl}/${idUsuarioEditando}`, {
+                        method: 'PATCH',
+                        headers: { 'Authorization': token }, 
+                        body: formData
+                    });
+                } else {
+                    res = await fetch(finalTargetUrl, {
+                        method: 'POST',
+                        headers: { 'Authorization': token },
+                        body: formData
+                    });
+                    
+                    // Si intentó crear un _superusers y dio 404 (V0.22 fallback)
+                    if(!res.ok && res.status === 404 && collectionTarget === '_superusers') {
+                        res = await fetch(`${urlBase}/api/admins`, {
+                            method: 'POST',
+                            headers: { 'Authorization': token },
+                            body: formData
+                        });
+                    }
+                }
+
+                if(!res.ok) {
+                    const errorData = await res.json();
+                    throw new Error(JSON.stringify(errorData.data) || "Error al escribir en la BD.");
+                }
+
+                formModalInstancia.hide();
+                await cargarUsuariosDesdeBD();
+
+            } catch (error) {
+                console.error(error);
+                alert(`Error crítico al guardar:\n\n${error.message}`);
+            } finally {
+                btn.innerHTML = originalHTML;
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>

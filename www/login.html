@@ -147,15 +147,6 @@
             transform: scale(1.1);
         }
 
-        /* Utilidad para la Bottom Nav */
-        .nav-item-glass {
-            transition: all 0.2s ease-in-out;
-        }
-        .nav-item-glass:hover {
-            opacity: 1 !important;
-            transform: scale(1.1);
-        }
-
         /* Contenedor SPA */
         #app-root {
             flex-grow: 1;
@@ -175,7 +166,7 @@
         }
     </style>
 </head>
-<body class="pb-5 mb-5"> <!-- Espacio añadido para que la Bottom Nav no tape el contenido -->
+<body>
 
     <!-- ============================================================================== -->
     <!-- BOTÓN DE TEMA (Flotante) -->
@@ -216,11 +207,11 @@
                     <div class="mb-3">
                         <div class="d-flex justify-content-between align-items-center mb-1 px-2">
                             <label class="form-label fw-semibold text-muted-themed small m-0">Contraseña</label>
-                            <!-- 🔥 ENLACE DE OLVIDÉ MI CONTRASEÑA -->
-                            <span role="button" class="text-info small text-decoration-underline fw-semibold cursor-pointer" data-bs-toggle="modal" data-bs-target="#recuperarPassModal">¿Olvidaste?</span>
+                            <a href="#" class="text-info small text-decoration-none fw-semibold">¿Olvidaste?</a>
                         </div>
                         <div class="input-group-glass">
                             <div class="icon-box-glass"><i class="bi bi-lock"></i></div>
+                            <!-- APLICADO: Máximo de 15 caracteres en Login -->
                             <input type="password" id="loginPass" class="form-control-glass" placeholder="Máx 15 carac." maxlength="15" required>
                             <div class="icon-btn-glass" onclick="togglePassword('loginPass', 'iconLoginPass')">
                                 <i class="bi bi-eye" id="iconLoginPass"></i>
@@ -228,6 +219,7 @@
                         </div>
                     </div>
 
+                    <!-- APLICADO: Opción de Recordar Contraseña/Correo -->
                     <div class="d-flex justify-content-between align-items-center mb-4 px-2">
                         <div class="form-check">
                             <input class="form-check-input border-secondary" type="checkbox" id="rememberMe">
@@ -257,6 +249,7 @@
                 <div class="text-center mb-4">
                     <h2 class="fw-bold text-themed mb-4"><i class="bi bi-person-badge text-primary me-2"></i>Únete a La Tribu</h2>
                     
+                    <!-- Avatar Upload Enorme -->
                     <div class="position-relative d-inline-block avatar-upload-container cursor-pointer" onclick="document.getElementById('inputAvatarFile').click()">
                         <img id="formAvatarPreview" src="https://ui-avatars.com/api/?name=Nuevo+Usuario&background=random" class="rounded-circle shadow-lg border border-4 border-secondary border-opacity-25" width="130" height="130" style="object-fit: cover; transition: all 0.3s;">
                         <div class="avatar-upload-overlay position-absolute top-0 start-0 w-100 h-100 rounded-circle bg-dark bg-opacity-50 d-flex justify-content-center align-items-center" style="opacity: 0; transition: opacity 0.2s;">
@@ -269,19 +262,24 @@
 
                 <form id="formRegistro" class="text-start mt-4">
                     
+                    <!-- Nombres -->
                     <div class="mb-4">
                         <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Nombres</label>
                         <div class="input-group-glass">
                             <div class="icon-box-glass"><i class="bi bi-person"></i></div>
+                            <!-- APLICADO: Validación estricta y Title Case desde validaciones.js -->
                             <input type="text" class="form-control-glass fw-semibold" id="regNombres" placeholder="Ej. Juan Carlos" required oninput="validarNombres(this)" onblur="trimEspacios(this)">
                         </div>
                     </div>
 
+                    <!-- Apellidos -->
                     <div class="row g-3 mb-4">
+                        <!-- APLICADO: col-12 en movil (se apilan verticalmente), col-md-6 en escritorio -->
                         <div class="col-12 col-md-6">
                             <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Primer Apellido</label>
                             <div class="input-group-glass">
                                 <div class="icon-box-glass"><i class="bi bi-person-lines-fill"></i></div>
+                                <!-- APLICADO: Validación estricta sin espacios -->
                                 <input type="text" class="form-control-glass fw-semibold" id="regApellido1" placeholder="Ej. Pérez" required oninput="validarApellidos(this)" onblur="trimEspacios(this)">
                             </div>
                         </div>
@@ -289,11 +287,13 @@
                             <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Segundo Apellido</label>
                             <div class="input-group-glass">
                                 <div class="icon-box-glass"><i class="bi bi-person-lines-fill"></i></div>
+                                <!-- APLICADO: Validación estricta sin espacios -->
                                 <input type="text" class="form-control-glass fw-semibold" id="regApellido2" placeholder="Ej. Silva (Opcional)" oninput="validarApellidos(this)" onblur="trimEspacios(this)">
                             </div>
                         </div>
                     </div>
 
+                    <!-- Correo -->
                     <div class="mb-4">
                         <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Correo Electrónico</label>
                         <div class="input-group-glass">
@@ -302,6 +302,7 @@
                         </div>
                     </div>
 
+                    <!-- Teléfono -->
                     <div class="mb-4">
                         <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Teléfono Celular (Exactamente 8 dígitos)</label>
                         <div class="input-group-glass">
@@ -310,11 +311,14 @@
                         </div>
                     </div>
 
+                    <!-- Contraseñas (8 a 15 Caracteres) -->
                     <div class="row g-3 mb-5">
+                        <!-- APLICADO: col-12 en movil (se apilan verticalmente), col-md-6 en escritorio -->
                         <div class="col-12 col-md-6">
                             <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Crear Contraseña</label>
                             <div class="input-group-glass">
                                 <div class="icon-box-glass"><i class="bi bi-key"></i></div>
+                                <!-- APLICADO: Límite extendido a 15 -->
                                 <input type="password" class="form-control-glass" id="regPass" placeholder="De 8 a 15 carac." maxlength="15" minlength="8" required>
                                 <div class="icon-btn-glass" onclick="togglePassword('regPass', 'iconRegPass1')">
                                     <i class="bi bi-eye" id="iconRegPass1"></i>
@@ -325,6 +329,7 @@
                             <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Confirmar Contraseña</label>
                             <div class="input-group-glass">
                                 <div class="icon-box-glass"><i class="bi bi-shield-lock-fill"></i></div>
+                                <!-- APLICADO: Límite extendido a 15 -->
                                 <input type="password" class="form-control-glass" id="regPassConf" placeholder="Repita contraseña" maxlength="15" minlength="8" required>
                                 <div class="icon-btn-glass" onclick="togglePassword('regPassConf', 'iconRegPass2')">
                                     <i class="bi bi-eye" id="iconRegPass2"></i>
@@ -333,6 +338,7 @@
                         </div>
                     </div>
 
+                    <!-- Botonera -->
                     <div class="d-flex flex-column flex-sm-row justify-content-center gap-3 pt-3 border-top border-secondary border-opacity-25">
                         <button type="button" class="btn btn-outline-secondary rounded-pill fw-bold shadow-sm py-3 px-4 w-100" onclick="cambiarVista('login')">
                             <i class="bi bi-arrow-left me-1"></i> Volver al Login
@@ -349,106 +355,21 @@
     </main>
 
     <!-- ============================================================================== -->
-    <!-- 📱 BARRA DE NAVEGACIÓN INFERIOR (BOTTOM NAV DE LADO A LADO) -->
+    <!-- BOTÓN DISIMULADO (HACIA DASHBOARD/CPANEL) -->
     <!-- ============================================================================== -->
-    <div class="fixed-bottom w-100" style="z-index: 1030;">
-        <div class="glass-panel d-flex justify-content-around align-items-center pt-2 px-2 shadow-lg border-top border-secondary border-opacity-25" 
-             style="border-radius: 1.5rem 1.5rem 0 0; border-left: none; border-right: none; border-bottom: none; padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));">
-            
-            <a href="base.html" class="text-themed text-decoration-none d-flex flex-column align-items-center p-2 opacity-75 nav-item-glass">
-                <i class="bi bi-house-door fs-4 mb-1"></i>
-                <span style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px;">INICIO</span>
-            </a>
-            
-            <!-- Botón disimulado hacia el Dashboard (CPanel de la vista vieja) -->
-            <a href="dashboard.html" class="text-themed text-decoration-none d-flex flex-column align-items-center p-2 opacity-25 nav-item-glass" id="adminSecretBtn" title="Ir al Dashboard Administrativo">
-                <i class="bi bi-shield-lock-fill fs-4 mb-1"></i>
-                <span style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px;">PANEL</span>
-            </a>
-
-            <a href="#" class="text-primary text-decoration-none d-flex flex-column align-items-center p-2 nav-item-glass" onclick="cambiarVista('login')">
-                <i class="bi bi-person-fill fs-4 mb-1"></i>
-                <span style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px;">LOGIN</span>
-            </a>
-
-        </div>
-    </div>
+    <a href="dashboard.html" class="position-fixed bottom-0 end-0 m-3 btn-disimulado text-themed text-decoration-none" id="adminSecretBtn" title="Ir al Dashboard Administrativo">
+        <i class="bi bi-shield-lock-fill fs-2"></i>
+    </a>
 
     <!-- ========================================================= -->
-    <!-- 🔥 MODAL RECUPERACIÓN DE EMERGENCIA (HACK DIRETO A BD)    -->
+    <!-- MODAL REEMPLAZO DE ALERT() NATIVO                         -->
     <!-- ========================================================= -->
-    <div class="modal fade" id="recuperarPassModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-        <div class="modal-dialog modal-dialog-centered modal-sm">
-            <div class="modal-content glass-panel text-themed border-secondary border-opacity-25 shadow-lg rounded-4">
-                <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title fw-bold text-info fs-6">
-                        <i class="bi bi-unlock-fill me-2"></i> Recuperación Directa
-                    </h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="resetearModalRecuperacion()"></button>
-                </div>
-                
-                <div class="modal-body pt-3 pb-4 text-start">
-                    
-                    <!-- PASO 1: VERIFICAR CORREO -->
-                    <div id="step1-recuperacion">
-                        <p class="small text-muted-themed mb-3 fw-semibold">
-                            Modo de Emergencia: Ingresa tu correo para buscarlo en la base de datos y forzar el cambio de contraseña.
-                        </p>
-                        <div class="input-group-glass mb-4">
-                            <div class="icon-box-glass"><i class="bi bi-envelope"></i></div>
-                            <input type="email" id="recuperarEmailHack" class="form-control-glass" placeholder="correo@ejemplo.com" required>
-                        </div>
-                        <button type="button" id="btnVerificarHack" class="btn btn-info text-dark w-100 rounded-pill fw-bold shadow-sm py-2" onclick="verificarCorreoHack()">
-                            Verificar Existencia
-                        </button>
-                    </div>
-
-                    <!-- PASO 2: CAMBIAR CONTRASEÑA (Oculto al inicio) -->
-                    <div id="step2-recuperacion" class="d-none">
-                        <div class="alert bg-success bg-opacity-10 border border-success border-opacity-25 text-success small py-2 d-flex align-items-center gap-2 mb-3 rounded-3">
-                            <i class="bi bi-check-circle-fill fs-5"></i>
-                            <div class="lh-sm"><strong>¡Cuenta encontrada!</strong><br>Por favor, asigna tu nueva clave.</div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Nueva Contraseña</label>
-                            <div class="input-group-glass">
-                                <div class="icon-box-glass"><i class="bi bi-key"></i></div>
-                                <input type="password" id="recupNewPass" class="form-control-glass" placeholder="Máx 15 carac." maxlength="15">
-                                <div class="icon-btn-glass" onclick="togglePassword('recupNewPass', 'iconRecup1')">
-                                    <i class="bi bi-eye" id="iconRecup1"></i>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="mb-4">
-                            <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Confirmar</label>
-                            <div class="input-group-glass">
-                                <div class="icon-box-glass"><i class="bi bi-key-fill"></i></div>
-                                <input type="password" id="recupConfPass" class="form-control-glass" placeholder="Repita contraseña" maxlength="15">
-                                <div class="icon-btn-glass" onclick="togglePassword('recupConfPass', 'iconRecup2')">
-                                    <i class="bi bi-eye" id="iconRecup2"></i>
-                                </div>
-                            </div>
-                        </div>
-
-                        <button type="button" id="btnEjecutarReset" class="btn btn-warning text-dark w-100 rounded-pill fw-bold shadow-sm py-2" onclick="ejecutarResetHack()">
-                            Cambiar Contraseña
-                        </button>
-                    </div>
-
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL REEMPLAZO DE ALERT() NATIVO -->
     <div class="modal fade" id="appAlertModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
         <div class="modal-dialog modal-dialog-centered modal-sm">
             <div class="modal-content glass-panel text-themed border-secondary border-opacity-25 shadow-lg rounded-4">
                 <div class="modal-header border-0 pb-0">
                     <h5 class="modal-title fw-bold text-warning fs-6">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i> Notificación
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i> Notificación del Sistema
                     </h5>
                 </div>
                 <div class="modal-body pt-3 pb-4">
@@ -464,7 +385,7 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
-    <!-- LIBRERÍA MODULARIZADA DE VALIDACIONES -->
+    <!-- APLICADO: LIBRERÍA MODULARIZADA DE VALIDACIONES -->
     <script src="js/validaciones.js"></script>
 
     <!-- Scripts de la App -->
@@ -519,7 +440,7 @@
         });
 
         // ==============================================================================
-        // LÓGICA: Utilidades del Formulario
+        // LÓGICA: Utilidades del Formulario de la Interfaz
         // ==============================================================================
         function cambiarVista(vista) {
             const vLogin = document.getElementById('vista-login');
@@ -534,8 +455,23 @@
             }
         }
 
+        function actualizarAvatarIniciales() {
+            const preview = document.getElementById('formAvatarPreview');
+            // Evitar sobrescribir si el usuario ya cargó una foto manualmente
+            if (preview.src.startsWith('data:image')) return; 
+
+            const nombres = document.getElementById('regNombres').value;
+            const apellido1 = document.getElementById('regApellido1').value;
+            
+            let queryName = "Nuevo+Usuario";
+            if (nombres || apellido1) {
+                queryName = encodeURIComponent(`${nombres} ${apellido1}`.trim());
+            }
+            preview.src = `https://ui-avatars.com/api/?name=${queryName}&background=random&size=130`;
+        }
+
         // ==============================================================================
-        // 🚀 LÓGICA CORE: CONEXIÓN REAL A POCKETBASE (LOGIN MULTI-MOTOR)
+        // 🚀 LÓGICA CORE: CONEXIÓN REAL A POCKETBASE
         // ==============================================================================
         function getApiUrl() {
             const env = localStorage.getItem('APP_ENV') || 'dev';
@@ -545,7 +481,7 @@
         }
 
         async function loginUsuario() {
-            const email = document.getElementById('loginEmail').value.trim();
+            const email = document.getElementById('loginEmail').value;
             const pass = document.getElementById('loginPass').value;
             const rememberMe = document.getElementById('rememberMe').checked;
 
@@ -559,56 +495,19 @@
             const urlBase = getApiUrl();
 
             try {
-                // Intento 1: Como usuario regular (Tabla 'users')
-                let res = await fetch(`${urlBase}/api/collections/users/auth-with-password`, {
+                const res = await fetch(`${urlBase}/api/collections/users/auth-with-password`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ identity: email, password: pass })
                 });
 
-                let data = await res.json().catch(() => ({}));
+                const data = await res.json();
 
-                // Intento 2: Si falla, probamos si es el Superusuario Maestro en versión nueva (_superusers)
-                if(!res.ok) {
-                    res = await fetch(`${urlBase}/api/collections/_superusers/auth-with-password`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ identity: email, password: pass })
-                    });
-                    
-                    data = await res.json().catch(() => ({}));
-                    
-                    // Intento 3: Si vuelve a fallar, probamos si es el Superusuario en versión vieja (admins)
-                    if(!res.ok) {
-                        res = await fetch(`${urlBase}/api/admins/auth-with-password`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ identity: email, password: pass })
-                        });
-                        
-                        data = await res.json().catch(() => ({}));
-                        
-                        // Si falla aquí, la contraseña de verdad es incorrecta
-                        if(!res.ok) throw new Error("Las credenciales ingresadas son incorrectas o el usuario no existe.");
-                    }
-                    
-                    // Si llegó aquí por el Intento 2 o 3, inyectamos la info del admin
-                    if (!data.record && data.admin) {
-                        data.record = data.admin; // Para que el código mantenga la misma estructura si es v0.22
-                    }
-                    if (data.record) {
-                        data.record.rol = 'Superusuario';
-                    }
-                }
+                if(!res.ok) throw new Error("Las credenciales ingresadas son incorrectas o el usuario no existe.");
 
-                // Guardar la sesión general
+                // Guardar la sesión
                 localStorage.setItem('PB_USER_TOKEN', data.token);
                 localStorage.setItem('PB_USER_DATA', JSON.stringify(data.record));
-
-                // Si detectamos que es Superusuario, guardamos también el token de Admin
-                if (data.record.rol === 'Superusuario') {
-                    localStorage.setItem('PB_ADMIN_TOKEN', data.token);
-                }
 
                 // Guardar/Olvidar correo según el check
                 if(rememberMe) {
@@ -620,12 +519,12 @@
                 btn.classList.replace('btn-primary', 'btn-success');
                 btn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i> ¡Bienvenido!';
                 
-                // GUARDIA DIRECCIONAL
+                // APLICADO: GUARDIA DIRECCIONAL
                 setTimeout(() => {
                     if (data.record.rol === 'Superusuario' || data.record.email.toLowerCase() === 'kenth1977@gmail.com') {
                         window.location.href = 'dashboard.html';
                     } else {
-                        window.location.href = 'index.html';
+                        window.location.href = 'base.html';
                     }
                 }, 1500);
 
@@ -641,12 +540,10 @@
             const iApellido1 = document.getElementById('regApellido1');
             const iApellido2 = document.getElementById('regApellido2');
             
-            // Garantizar limpieza final de espacios si cargó la librería
-            if (typeof trimEspacios === "function") {
-                trimEspacios(iNombres);
-                trimEspacios(iApellido1);
-                trimEspacios(iApellido2);
-            }
+            // Garantizar limpieza final de espacios periféricos
+            trimEspacios(iNombres);
+            trimEspacios(iApellido1);
+            trimEspacios(iApellido2);
             
             const nombreCompleto = `${iNombres.value} ${iApellido1.value} ${iApellido2.value}`.replace(/\s+/g, ' ').trim();
             const email = document.getElementById('regEmail').value.trim();
@@ -656,6 +553,7 @@
 
             if(!iNombres.value || !iApellido1.value || !email) return alert("Nombres, Primer Apellido y Correo son obligatorios.");
             
+            // 🛑 CANDADO DE TITANIO
             if(email.toLowerCase() === 'kenth1977@gmail.com') {
                 return alert("🛑 REGISTRO DENEGADO:\n\nEste correo electrónico está reservado por el sistema. Por favor, utiliza otro correo.");
             }
@@ -690,6 +588,8 @@
 
                 if(!res.ok) {
                     const errorData = await res.json();
+                    console.error("Detalle PB:", errorData);
+                    
                     let errMsg = "Ocurrió un error en el servidor. Verifica tus datos o intenta más tarde.";
                     
                     // --- 🛑 CAPTURA DE ERROR 400 DE POCKETBASE PARA APP PÚBLICA ---
@@ -708,6 +608,7 @@
                 btn.classList.replace('btn-primary', 'btn-success');
                 btn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i> ¡Cuenta Creada Exitosamente!';
                 
+                // Limpieza post-registro
                 setTimeout(() => {
                     btn.classList.replace('btn-success', 'btn-primary');
                     btn.innerHTML = originalHTML;
@@ -719,165 +620,6 @@
                 }, 3000);
 
             } catch (error) {
-                alert(error.message);
-                btn.innerHTML = originalHTML;
-                btn.disabled = false;
-            }
-        }
-
-        // ==============================================================================
-        // 🔓 RECUPERACIÓN DE EMERGENCIA (HACK MAESTRO MULTI-VERSIÓN)
-        // ==============================================================================
-        let tempRecoveryData = null; // Guardará temporalmente a quién le vamos a cambiar la clave
-
-        function resetearModalRecuperacion() {
-            document.getElementById('step1-recuperacion').classList.remove('d-none');
-            document.getElementById('step2-recuperacion').classList.add('d-none');
-            document.getElementById('recuperarEmailHack').value = '';
-            document.getElementById('recupNewPass').value = '';
-            document.getElementById('recupConfPass').value = '';
-            
-            const btn1 = document.getElementById('btnVerificarHack');
-            btn1.innerHTML = 'Verificar Existencia';
-            btn1.disabled = false;
-            
-            const btn2 = document.getElementById('btnEjecutarReset');
-            btn2.classList.replace('btn-success', 'btn-warning');
-            btn2.innerHTML = 'Cambiar Contraseña';
-            btn2.disabled = false;
-        }
-
-        async function verificarCorreoHack() {
-            const emailTarget = document.getElementById('recuperarEmailHack').value.trim();
-            if(!emailTarget) return alert("Por favor ingresa un correo para buscar.");
-
-            const btn = document.getElementById('btnVerificarHack');
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Buscando en BD...';
-            btn.disabled = true;
-
-            const urlBase = getApiUrl();
-
-            try {
-                // 1. INICIAR SESIÓN COMO DIOS (Soporte V0.23 y V0.22)
-                let authRes = await fetch(`${urlBase}/api/collections/_superusers/auth-with-password`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ identity: 'kenth1977@gmail.com', password: 'CR129x7848n' })
-                });
-                
-                let adminData = await authRes.json().catch(() => ({}));
-
-                if(!authRes.ok) {
-                    // Intento Legacy V0.22
-                    authRes = await fetch(`${urlBase}/api/admins/auth-with-password`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ identity: 'kenth1977@gmail.com', password: 'CR129x7848n' })
-                    });
-                    adminData = await authRes.json().catch(() => ({}));
-
-                    if(!authRes.ok) {
-                        throw new Error("Fallo la Autenticación Maestra interna. Verifica que la contraseña del Superusuario sea CR129x7848n y el correo kenth1977@gmail.com.");
-                    }
-                }
-                
-                const adminToken = adminData.token;
-                const isV22 = !!adminData.admin;
-
-                // 2. BUSCAR AL USUARIO EN LA TABLA NORMAL
-                let checkRes = await fetch(`${urlBase}/api/collections/users/records?filter=(email='${emailTarget}')`, {
-                    headers: { 'Authorization': adminToken }
-                });
-                let checkData = await checkRes.json().catch(() => ({}));
-                
-                let foundUser = (checkData.items && checkData.items.length > 0) ? checkData.items[0] : null;
-                let collection = 'users';
-
-                // 3. SI NO ESTÁ, BUSCAR EN LA BÓVEDA DE SUPERUSUARIOS
-                if(!foundUser) {
-                    if(!isV22) {
-                        checkRes = await fetch(`${urlBase}/api/collections/_superusers/records?filter=(email='${emailTarget}')`, {
-                            headers: { 'Authorization': adminToken }
-                        });
-                        checkData = await checkRes.json().catch(() => ({}));
-                        foundUser = (checkData.items && checkData.items.length > 0) ? checkData.items[0] : null;
-                        collection = '_superusers';
-                    } else {
-                        // Búsqueda en V0.22 Legacy Admins
-                        checkRes = await fetch(`${urlBase}/api/admins`, {
-                            headers: { 'Authorization': adminToken }
-                        });
-                        checkData = await checkRes.json().catch(() => ({}));
-                        foundUser = (checkData.items || []).find(a => a.email === emailTarget);
-                        collection = 'admins';
-                    }
-                }
-
-                // SI NO EXISTE EN NINGÚN LADO
-                if(!foundUser) throw new Error("El correo ingresado NO EXISTE en la base de datos.");
-
-                // Si lo encontramos, guardamos los datos mágicos
-                tempRecoveryData = {
-                    id: foundUser.id,
-                    collection: collection,
-                    token: adminToken
-                };
-
-                // Mostrar el Paso 2
-                document.getElementById('step1-recuperacion').classList.add('d-none');
-                document.getElementById('step2-recuperacion').classList.remove('d-none');
-
-            } catch (error) {
-                alert(error.message);
-                btn.innerHTML = 'Verificar Existencia';
-                btn.disabled = false;
-            }
-        }
-
-        async function ejecutarResetHack() {
-            const passNuevo = document.getElementById('recupNewPass').value;
-            const passConf = document.getElementById('recupConfPass').value;
-
-            if (passNuevo.length < 8 || passNuevo.length > 15) return alert("La contraseña debe tener entre 8 y 15 caracteres.");
-            if (passNuevo !== passConf) return alert("Las contraseñas no coinciden. Verifícalas.");
-
-            const btn = document.getElementById('btnEjecutarReset');
-            const originalHTML = btn.innerHTML;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Empujando Datos...';
-            btn.disabled = true;
-
-            try {
-                // Definir la ruta correcta de parcheo basada en la versión/colección
-                let patchUrl = `${getApiUrl()}/api/collections/${tempRecoveryData.collection}/records/${tempRecoveryData.id}`;
-                if (tempRecoveryData.collection === 'admins') {
-                    patchUrl = `${getApiUrl()}/api/admins/${tempRecoveryData.id}`;
-                }
-
-                // Forzar actualización
-                const res = await fetch(patchUrl, {
-                    method: 'PATCH',
-                    headers: { 
-                        'Authorization': tempRecoveryData.token,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ 
-                        password: passNuevo, 
-                        passwordConfirm: passConf 
-                    })
-                });
-
-                if(!res.ok) throw new Error("PocketBase rechazó el cambio forzado de contraseña.");
-
-                btn.classList.replace('btn-warning', 'btn-success');
-                btn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i> ¡Contraseña Cambiada!';
-
-                setTimeout(() => {
-                    bootstrap.Modal.getInstance(document.getElementById('recuperarPassModal')).hide();
-                    alert("✅ RECUPERACIÓN EXITOSA\n\nSe ha forzado el cambio de contraseña correctamente.\n\nYa puedes iniciar sesión con tu nueva clave.");
-                    resetearModalRecuperacion();
-                }, 2000);
-
-            } catch(error) {
                 alert(error.message);
                 btn.innerHTML = originalHTML;
                 btn.disabled = false;

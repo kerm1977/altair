@@ -4,30 +4,93 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CPanel Enterprise - Modo Dios</title>
-    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #121418; }
-        .glass-card { background-color: rgba(33, 37, 41, 0.9); border: 1px solid rgba(255, 255, 255, 0.05); }
+        /* ==========================================
+           🎨 MOTOR DE TEMAS (SIN ALTERAR TU HTML)
+           ========================================== */
+        :root {
+            /* Tema Light (Blanco Hueso Premium) */
+            --bg-gradient: linear-gradient(135deg, #fdfbf7 0%, #f0ebe1 100%);
+            --glass-bg: rgba(255, 255, 255, 0.65);
+            --glass-border: rgba(255, 255, 255, 0.6);
+            --text-main: #2c2b2a;
+            --text-muted: #6c6a66;
+            --input-bg: rgba(255, 255, 255, 0.8);
+            --hover-bg: rgba(0, 0, 0, 0.04);
+            --modal-bg: rgba(255, 255, 255, 0.3);
+            --code-text: #0dcaf0;
+        }
+
+        [data-bs-theme="dark"] {
+            /* Tema Dark (Teal/Dark Blue) */
+            --bg-gradient: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+            --glass-bg: rgba(33, 37, 41, 0.9);
+            --glass-border: rgba(255, 255, 255, 0.05);
+            --text-main: #f8f9fa;
+            --text-muted: #adb5bd;
+            --input-bg: #212529; 
+            --hover-bg: rgba(255, 255, 255, 0.05);
+            --modal-bg: rgba(0, 0, 0, 0.5);
+            --code-text: #0dcaf0;
+        }
+
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: var(--bg-gradient); 
+            color: var(--text-main);
+            transition: background 0.5s ease, color 0.3s ease; 
+            min-height: 100vh;
+        }
+
+        /* 💡 SECUESTRO DE TUS CLASES ORIGINALES PARA QUE ADAPTEN AL TEMA LUZ/OSCURO */
+        .glass-card { background-color: var(--glass-bg); border: 1px solid var(--glass-border); transition: all 0.3s ease; backdrop-filter: blur(10px); }
+        .text-light { color: var(--text-main) !important; }
+        .text-secondary { color: var(--text-muted) !important; }
+        .bg-dark { background-color: var(--input-bg) !important; color: var(--text-main) !important; }
+        .border-secondary { border-color: var(--glass-border) !important; }
+        .bg-black { background-color: rgba(0,0,0,0.8) !important; } 
+
         .clickable-card { cursor: pointer; transition: all 0.2s ease; }
-        .clickable-card:hover { filter: brightness(1.2); }
-        pre { scrollbar-width: thin; }
-        .discreet-btn { opacity: 0.3; transition: opacity 0.3s; font-size: 0.8rem; }
+        .clickable-card:hover { filter: brightness(1.1); background-color: var(--hover-bg); }
+        pre { scrollbar-width: thin; color: var(--code-text) !important; }
+        .discreet-btn { opacity: 0.3; transition: opacity 0.3s; font-size: 0.8rem; color: var(--text-muted); }
         .discreet-btn:hover { opacity: 1; }
-        /* Estilos nuevos para los Backups */
+        
+        /* Estilos nuevos para los Backups y Tablas */
         .backup-item { transition: background 0.2s; }
-        .backup-item:hover { background-color: rgba(255,255,255,0.05); }
+        .backup-item:hover { background-color: var(--hover-bg); }
         .locked-section { opacity: 0.5; pointer-events: none; filter: grayscale(100%); transition: all 0.3s; }
         .unlocked-section { opacity: 1; pointer-events: auto; filter: grayscale(0%); transition: all 0.3s; }
+        
+        /* Estilos para las pestañas del tutorial */
+        .nav-pills .nav-link { color: var(--text-muted); border: 1px solid transparent; }
+        .nav-pills .nav-link.active { background-color: #0dcaf0; color: #000; font-weight: bold; border-color: #0dcaf0 !important; }
+        
+        /* Animación suave para hover de las tablas */
+        .table-card { transition: transform 0.2s ease, box-shadow 0.2s ease; background-color: var(--glass-bg); border: 1px solid var(--glass-border); }
+        .table-card:hover { transform: translateY(-3px); box-shadow: 0 .5rem 1rem rgba(0,0,0,.5)!important; border-color: rgba(13, 202, 240, 0.5) !important; }
+
+        .modal-backdrop.show { opacity: 1 !important; background-color: var(--modal-bg) !important; backdrop-filter: blur(5px); }
     </style>
 </head>
 <body class="py-4 py-md-5">
 
+    <!-- GUARDIA DE SEGURIDAD (SOLO KENTH O SUPERUSER) -->
+    <script>
+        (function() {
+            const user = JSON.parse(localStorage.getItem('PB_USER_DATA') || '{}');
+            const superEmail = 'kenth1977@gmail.com';
+            // Si no es el correo maestro ni tiene rol de Superusuario, fuera
+            if (user.email !== superEmail && user.rol !== 'Superusuario') {
+                window.location.href = 'index.html';
+            }
+        })();
+    </script>
+
     <div class="container" style="max-width: 1000px;">
         
-        <!-- Header -->
         <div class="card glass-card shadow-lg mb-4 rounded-4">
             <div class="card-body p-4 d-flex flex-column flex-md-row justify-content-between align-items-center gap-3">
                 <div>
@@ -36,17 +99,24 @@
                     </h1>
                     <p class="text-secondary mb-0">Gestor de Entornos, Base de Datos y Backups</p>
                 </div>
-                <div id="statusBadge" class="badge bg-secondary p-2 fs-6 fw-normal d-flex align-items-center gap-2">
-                    <i class="bi bi-circle-fill text-light"></i> Estado: Desconocido
+                
+                <div class="d-flex align-items-center gap-3">
+                    <!-- BOTÓN DE TEMA AGREGADO -->
+                    <button class="btn btn-sm btn-outline-info rounded-circle d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;" id="btnThemeToggle" title="Cambiar Tema">
+                        <i class="bi bi-sun-fill" id="themeIcon"></i>
+                    </button>
+
+                    <!-- AQUÍ ESTÁ EL BADGE QUE AHORA ES INTELIGENTE -->
+                    <div id="statusBadge" class="badge bg-secondary p-2 fs-6 fw-normal d-flex align-items-center gap-2 transition">
+                        <span class="spinner-border spinner-border-sm" style="width: 14px; height: 14px;"></span> Inicializando...
+                    </div>
                 </div>
             </div>
         </div>
 
         <div class="row g-4">
-            <!-- Columna Izquierda: Controles y Backups -->
             <div class="col-md-6 d-flex flex-column gap-4">
                 
-                <!-- Selector de Entorno -->
                 <div class="card glass-card shadow rounded-4">
                     <div class="card-body p-4">
                         <h5 class="card-title fw-bold border-bottom border-secondary pb-3 mb-4">
@@ -58,7 +128,7 @@
                                 <input class="form-check-input ms-1 me-3 fs-5 mt-0" type="radio" name="envSwitch" value="dev">
                                 <div>
                                     <span class="d-block fw-bold text-primary">Desarrollo (DEV)</span>
-                                    <span class="text-secondary small">Tailscale o Localhost. Para probar.</span>
+                                    <span class="text-secondary small">Tailscale/Headscale o Localhost. Para probar.</span>
                                 </div>
                             </label>
 
@@ -73,16 +143,20 @@
                     </div>
                 </div>
 
-                <!-- Configuración de URLs -->
                 <div class="card glass-card shadow rounded-4">
                     <div class="card-body p-4">
-                        <h5 class="card-title fw-bold border-bottom border-secondary pb-3 mb-4">
-                            <i class="bi bi-link-45deg text-primary"></i> URLs de Servidores
-                        </h5>
+                        <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-3 mb-4">
+                            <h5 class="card-title fw-bold m-0">
+                                <i class="bi bi-link-45deg text-primary"></i> URLs de Servidores
+                            </h5>
+                            <button onclick="resetDefaults()" class="btn btn-sm btn-outline-secondary" title="Restaurar valores de fábrica">
+                                <i class="bi bi-arrow-counterclockwise"></i> Reset
+                            </button>
+                        </div>
                         
                         <div class="mb-3">
-                            <label class="form-label text-secondary small mb-1">URL Entorno DEV</label>
-                            <input type="text" id="devUrl" class="form-control bg-dark text-primary font-monospace border-secondary focus-ring" placeholder="http://127.0.0.1:8090">
+                            <label class="form-label text-secondary small mb-1">URL Entorno DEV (Túnel por defecto)</label>
+                            <input type="text" id="devUrl" class="form-control bg-dark text-primary font-monospace border-secondary focus-ring" placeholder="https://desktop-71uhcug.tailb81e5f.ts.net">
                         </div>
                         <div class="mb-4">
                             <label class="form-label text-secondary small mb-1">URL Entorno PROD</label>
@@ -95,7 +169,6 @@
                     </div>
                 </div>
 
-                <!-- GESTOR DE BACKUPS -->
                 <div class="card glass-card shadow rounded-4 border-info border-opacity-50">
                     <div class="card-body p-4">
                         <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-3 mb-3">
@@ -107,12 +180,10 @@
                             </button>
                         </div>
                         
-                        <!-- Mensaje de bloqueo si no hay sesión -->
                         <div id="backupLockMessage" class="alert bg-danger bg-opacity-10 border border-danger text-danger small py-2 d-flex align-items-center gap-2">
                             <i class="bi bi-lock-fill"></i> Inicia sesión Master (panel derecho) para usar los respaldos.
                         </div>
 
-                        <!-- Controles de Backup -->
                         <div id="backupControls" class="locked-section">
                             <p class="text-secondary small mb-3">
                                 <i class="bi bi-info-circle text-info"></i> Exporta o importa tu BD (.db) y configuración (.json) en formato .zip.
@@ -140,10 +211,8 @@
 
             </div>
 
-            <!-- Columna Derecha: Acciones, Login e Info -->
             <div class="col-md-6 d-flex flex-column gap-4">
                 
-                <!-- Acciones del Servidor -->
                 <div class="card glass-card shadow rounded-4">
                     <div class="card-body p-4">
                         <h5 class="card-title fw-bold border-bottom border-secondary pb-3 mb-4">
@@ -156,8 +225,8 @@
                         </div>
 
                         <div class="d-grid gap-3">
-                            <button onclick="testConnection()" class="btn btn-outline-light py-2 fw-semibold">
-                                <i class="bi bi-wifi me-2"></i> Probar Conexión (Ping)
+                            <button onclick="testConnection(true)" class="btn btn-outline-light py-2 fw-semibold">
+                                <i class="bi bi-wifi me-2"></i> Probar Conexión Manual (Ping)
                             </button>
                             <button onclick="openAdminUI()" class="btn btn-light py-2 fw-bold shadow-sm">
                                 <i class="bi bi-database-fill-gear me-2"></i> Abrir Panel PocketBase (/_/)
@@ -166,14 +235,12 @@
                     </div>
                 </div>
 
-                <!-- Login PocketBase (Superuser) -->
                 <div class="card glass-card shadow rounded-4 border-danger border-opacity-50" style="background-color: rgba(220, 53, 69, 0.05);">
                     <div class="card-body p-4">
                         <div class="d-flex justify-content-between align-items-start border-bottom border-secondary pb-3 mb-4">
                             <h5 class="card-title fw-bold mb-0">
                                 <i class="bi bi-shield-lock-fill text-danger"></i> Login Master
                             </h5>
-                            <!-- BOTÓN DISIMULADO (S.O.S) -->
                             <button id="btnRescue" class="btn btn-link text-secondary text-decoration-none discreet-btn p-0" data-bs-toggle="modal" data-bs-target="#dummyModal" title="¿Problemas fatales? Reinstalar todo">
                                 <i class="bi bi-life-preserver"></i> S.O.S
                             </button>
@@ -196,7 +263,6 @@
                     </div>
                 </div>
 
-                <!-- Instrucciones de Integración -->
                 <div class="card shadow rounded-4 border-warning border-opacity-50" style="background-color: rgba(255, 193, 7, 0.05);">
                     <div class="card-body p-4">
                         <h6 class="card-title fw-bold text-warning mb-2">
@@ -208,9 +274,9 @@
                         
                         <div class="position-relative">
                             <pre class="bg-dark p-3 rounded-3 text-light font-monospace" style="font-size: 0.75rem; overflow-x: auto; border: 1px solid rgba(255,255,255,0.1);">
-// 1. Leer configuración del CPANEL
+// 1. Leer configuración del CPANEL (o usar la de fábrica)
 const savedEnv = localStorage.getItem('APP_ENV') || 'dev';
-const devUrl = localStorage.getItem('APP_DEV_URL') || 'http://127.0.0.1:8090';
+const devUrl = localStorage.getItem('APP_DEV_URL') || 'https://desktop-71uhcug.tailb81e5f.ts.net';
 const prodUrl = localStorage.getItem('APP_PROD_URL') || 'https://api.tu-app.com';
 
 // 2. Asignar URL dinámica
@@ -231,18 +297,74 @@ console.log("📡 Conectando:", POCKETBASE_URL);
 
             </div>
         </div>
+
+        <!-- ========================================================= -->
+        <!-- NUEVO: EXPLORADOR DE TABLAS POCKETBASE CON SEPARADORES    -->
+        <!-- ========================================================= -->
+        <div class="row g-4 mt-1">
+            <div class="col-12">
+                <div class="card glass-card shadow rounded-4 border-info border-opacity-50">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center border-bottom border-secondary pb-3 mb-4">
+                            <h5 class="card-title fw-bold text-info mb-0">
+                                <i class="bi bi-table"></i> Explorador de Tablas (Esquema)
+                            </h5>
+                            <div>
+                                <button id="btnCollapseTables" class="btn btn-sm btn-outline-secondary me-2" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTables" aria-expanded="true" aria-controls="collapseTables" title="Colapsar/Expandir Sección">
+                                    <i class="bi bi-arrows-collapse"></i>
+                                </button>
+                                <button onclick="loadCollections()" class="btn btn-sm btn-outline-info" title="Refrescar Tablas">
+                                    <i class="bi bi-arrow-clockwise"></i> Refrescar
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- SECCIÓN COLAPSABLE -->
+                        <div class="collapse show" id="collapseTables">
+                            <div id="dbLockMessage" class="alert bg-danger bg-opacity-10 border border-danger text-danger small py-2 d-flex align-items-center gap-2">
+                                <i class="bi bi-lock-fill"></i> Inicia sesión Master (panel derecho) para explorar las tablas.
+                            </div>
+
+                            <div id="dbControls" class="locked-section">
+                                <div class="row g-3" id="collectionsList">
+                                    <!-- Las tarjetas de tablas y separadores se dibujan aquí mediante JS -->
+                                    <div class="col-12 text-center text-secondary small p-3">Esperando autenticación...</div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
         
-        <!-- Volver a la app -->
-        <div class="text-center mt-5">
-            <a href="base.html" class="text-decoration-none text-secondary custom-link">
-                <i class="bi bi-arrow-left"></i> Volver al inicio de la App (base.html)
+        <div class="text-center mt-5 mb-4">
+            <a href="index.html" class="text-decoration-none text-secondary custom-link">
+                <i class="bi bi-arrow-left"></i> Volver al inicio de la App (index.html)
             </a>
         </div>
     </div>
 
-    <!-- ========================================================= -->
-    <!-- MODAL MODO DIOS: INSTALACIÓN PARA DUMMIES DESDE CERO      -->
-    <!-- ========================================================= -->
+    <!-- MODAL DE NOTIFICACIONES (SOBRESCRIBE EL ALERT) -->
+    <div class="modal fade" id="appAlertModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content glass-card text-light border border-secondary border-opacity-50 shadow-lg rounded-4">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold text-warning fs-6">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i> Notificación del Sistema
+                    </h5>
+                </div>
+                <div class="modal-body pt-3 pb-4">
+                    <p id="appAlertMessage" class="mb-0 text-secondary" style="white-space: pre-wrap; font-size: 0.95rem;"></p>
+                </div>
+                <div class="modal-footer border-0 pt-0 justify-content-center">
+                    <button type="button" class="btn btn-primary w-100 rounded-pill fw-bold shadow-sm" data-bs-dismiss="modal">Aceptar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL S.O.S (REINSTALACIÓN) -->
     <div class="modal fade" id="dummyModal" tabindex="-1" aria-labelledby="dummyModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content bg-dark text-light border-secondary">
@@ -253,59 +375,52 @@ console.log("📡 Conectando:", POCKETBASE_URL);
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body p-4" style="font-family: 'Segoe UI', sans-serif;">
-                    
                     <div class="alert alert-danger border-danger bg-danger bg-opacity-10">
                         <i class="bi bi-exclamation-triangle-fill me-2"></i> <strong>¿Base de datos corrupta? ¿No arranca?</strong> Sigue estos pasos exactos en tu terminal CMD o Cmder para reconstruir todo el ecosistema.
                     </div>
-
                     <h6 class="text-info fw-bold mt-4 border-bottom border-secondary pb-2">FASE 1: LIMPIEZA NUCLEAR ☢️</h6>
                     <p class="small text-secondary mb-1">Cierra todas las consolas abiertas. Ve a la carpeta de tu proyecto y elimina la base de datos corrupta:</p>
                     <pre class="bg-black p-3 rounded border border-secondary text-light font-monospace small user-select-all">rmdir /s /q pb_data
 del pb_migrations\*.js</pre>
                     <p class="text-muted" style="font-size: 0.8rem;">* Nota: Esto borrará TODOS los usuarios y registros. Solo hazlo si quieres empezar de cero.</p>
-
-                    <h6 class="text-info fw-bold mt-4 border-bottom border-secondary pb-2">FASE 2: REINSTALAR POCKETBASE 📦</h6>
-                    <p class="small text-secondary mb-1">Abre tu CMD o Cmder en la carpeta del proyecto y ejecuta el servidor de nuevo. Esto creará una base de datos virgen.</p>
-                    <pre class="bg-black p-3 rounded border border-secondary text-warning font-monospace small user-select-all">.\pocketbase.exe serve</pre>
-                    
-                    <div class="bg-secondary bg-opacity-25 p-3 rounded mt-2 mb-3 border border-secondary">
-                        <strong class="d-block text-white mb-2"><i class="bi bi-1-circle-fill text-info"></i> Crear el Superusuario Master:</strong>
-                        <ol class="small text-light mb-0 ps-3 space-y-1">
-                            <li>Abre tu navegador y entra a: <a href="http://127.0.0.1:8090/_/" target="_blank" class="text-info">http://127.0.0.1:8090/_/</a></li>
-                            <li>Te pedirá crear el primer administrador.</li>
-                            <li>Pon tu email master y una contraseña segura.</li>
-                            <li>¡Listo! Tu BD ha revivido. Cierra la consola con <kbd>Ctrl+C</kbd> para seguir al siguiente paso.</li>
-                        </ol>
-                    </div>
-
-                    <h6 class="text-info fw-bold mt-4 border-bottom border-secondary pb-2">FASE 3: INICIAR EL ORQUESTADOR Y TÚNEL 🌐</h6>
-                    <p class="small text-secondary mb-1">Para arrancar PocketBase + Tailscale juntos automáticamente:</p>
-                    <pre class="bg-black p-3 rounded border border-secondary text-success font-monospace small user-select-all">npm run start-global</pre>
-                    <p class="text-muted" style="font-size: 0.8rem;">* Minimiza esta consola. El servidor está vivo y publicado en internet.</p>
-
-                    <h6 class="text-info fw-bold mt-4 border-bottom border-secondary pb-2">FASE 4: SINCRONIZAR Y COMPILAR LA APP (CAPACITOR) 📱</h6>
-                    <p class="small text-secondary mb-1">Abre OTRA consola nueva en la carpeta de tu proyecto. Inyecta el código al contenedor nativo:</p>
-                    <pre class="bg-black p-3 rounded border border-secondary text-light font-monospace small user-select-all">npx cap sync</pre>
-                    <p class="small text-secondary mb-1 mt-3">Luego, entra a la carpeta Android, limpia la caché vieja y compila el APK final:</p>
-                    <pre class="bg-black p-3 rounded border border-secondary text-light font-monospace small user-select-all">cd android
-gradlew clean
-construir.bat</pre>
-                    
-                    <div class="alert alert-success mt-4 mb-0 border-success bg-success bg-opacity-10">
-                        <i class="bi bi-check-circle-fill me-2"></i> <strong>¡Sistema Restaurado!</strong> Ahora vuelve al CPanel y prueba el Login de nuevo.
-                    </div>
-                </div>
-                <div class="modal-footer border-secondary">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Entendido, cerrar</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
+        // ==========================================
+        // 🌓 LÓGICA DE TEMA UNIFICADO (APP_THEME)
+        // ==========================================
+        const btnThemeToggle = document.getElementById('btnThemeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        const htmlElement = document.documentElement;
+
+        const savedTheme = localStorage.getItem('APP_THEME') || 'dark';
+        setTheme(savedTheme);
+
+        if(btnThemeToggle) {
+            btnThemeToggle.addEventListener('click', () => {
+                const currentTheme = htmlElement.getAttribute('data-bs-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                setTheme(newTheme);
+                localStorage.setItem('APP_THEME', newTheme);
+            });
+        }
+
+        function setTheme(theme) {
+            htmlElement.setAttribute('data-bs-theme', theme);
+            if(theme === 'dark') {
+                if(themeIcon) themeIcon.className = "bi bi-sun-fill fs-5 text-warning"; 
+                document.querySelectorAll('.btn-close').forEach(b => b.classList.add('btn-close-white'));
+            } else {
+                if(themeIcon) themeIcon.className = "bi bi-moon-stars-fill fs-5 text-dark"; 
+                document.querySelectorAll('.btn-close').forEach(b => b.classList.remove('btn-close-white'));
+            }
+        }
+
         // Variables Globales
         const radios = document.getElementsByName('envSwitch');
         const devUrlInput = document.getElementById('devUrl');
@@ -318,31 +433,57 @@ construir.bat</pre>
         const saveBtn = document.getElementById('saveBtn');
         const copyBtn = document.getElementById('copyBtn');
 
-        // Variables de Backup
+        // Variables de Data Privada (Backups y BD)
         const backupsList = document.getElementById('backupsList');
         const backupControls = document.getElementById('backupControls');
         const backupLockMessage = document.getElementById('backupLockMessage');
+        const dbControls = document.getElementById('dbControls');
+        const dbLockMessage = document.getElementById('dbLockMessage');
+        const collectionsList = document.getElementById('collectionsList');
 
-        // Valores por defecto
-        const DEFAULT_DEV_URL = "http://127.0.0.1:8090";
+        // ==========================================
+        // 🔥 VALORES DE FÁBRICA
+        // ==========================================
+        const DEFAULT_ENV = "dev"; 
+        const DEFAULT_DEV_URL = "https://desktop-71uhcug.tailb81e5f.ts.net";
         const DEFAULT_PROD_URL = "https://api.tu-servidor-premium.com";
 
         // Inicialización
         function init() {
-            const savedEnv = localStorage.getItem('APP_ENV') || 'dev';
-            const devUrl = localStorage.getItem('APP_DEV_URL') || DEFAULT_DEV_URL;
-            const prodUrl = localStorage.getItem('APP_PROD_URL') || DEFAULT_PROD_URL;
-
-            devUrlInput.value = devUrl;
-            prodUrlInput.value = prodUrl;
+            const savedEnv = localStorage.getItem('APP_ENV') || DEFAULT_ENV;
+            
+            devUrlInput.value = localStorage.getItem('APP_DEV_URL') || DEFAULT_DEV_URL;
+            prodUrlInput.value = localStorage.getItem('APP_PROD_URL') || DEFAULT_PROD_URL;
 
             radios.forEach(radio => {
                 if(radio.value === savedEnv) radio.checked = true;
                 radio.addEventListener('change', handleEnvChange);
             });
 
+            // Eventos para cambiar el icono del botón de colapsar
+            const collapseTablesEl = document.getElementById('collapseTables');
+            const btnCollapseTables = document.getElementById('btnCollapseTables');
+            if (collapseTablesEl && btnCollapseTables) {
+                collapseTablesEl.addEventListener('show.bs.collapse', () => {
+                    btnCollapseTables.innerHTML = '<i class="bi bi-arrows-collapse"></i>';
+                });
+                collapseTablesEl.addEventListener('hide.bs.collapse', () => {
+                    btnCollapseTables.innerHTML = '<i class="bi bi-arrows-expand"></i>';
+                });
+            }
+
             updateUI();
-            checkAuthAndLoadBackups();
+            checkAuthAndLoadAdminData();
+            testConnection(false); 
+        }
+
+        function resetDefaults() {
+            if(confirm("¿Restaurar las URLs a sus valores por defecto?")) {
+                devUrlInput.value = DEFAULT_DEV_URL;
+                prodUrlInput.value = DEFAULT_PROD_URL;
+                document.querySelector(`input[name="envSwitch"][value="${DEFAULT_ENV}"]`).checked = true;
+                saveSettings();
+            }
         }
 
         function handleEnvChange() {
@@ -358,7 +499,7 @@ construir.bat</pre>
 
         function getActiveUrl() {
             let url = getActiveEnv() === 'dev' ? devUrlInput.value : prodUrlInput.value;
-            return url.replace(/\/$/, ""); // Remover slash al final
+            return url.replace(/\/$/, ""); 
         }
 
         function updateUI() {
@@ -368,34 +509,26 @@ construir.bat</pre>
             currentUrlDisplay.textContent = activeUrl || "URL no definida";
 
             if(activeEnv === 'dev') {
-                // UI Desarrollo
                 cardDev.classList.add('border-primary', 'bg-primary', 'bg-opacity-10');
                 cardDev.classList.remove('border-secondary');
                 cardProd.classList.remove('border-success', 'bg-success', 'bg-opacity-10');
                 cardProd.classList.add('border-secondary');
                 currentUrlDisplay.className = 'font-monospace fs-6 text-break text-primary mt-1';
             } else {
-                // UI Producción
                 cardProd.classList.add('border-success', 'bg-success', 'bg-opacity-10');
                 cardProd.classList.remove('border-secondary');
                 cardDev.classList.remove('border-primary', 'bg-primary', 'bg-opacity-10');
                 cardDev.classList.add('border-secondary');
                 currentUrlDisplay.className = 'font-monospace fs-6 text-break text-success mt-1';
             }
-
-            // Resetear estado
-            statusBadge.className = "badge bg-secondary p-2 fs-6 fw-normal d-flex align-items-center gap-2";
-            statusBadge.innerHTML = `<i class="bi bi-circle-fill text-light"></i> Estado: Listo para probar`;
         }
 
         function saveSettings() {
             const activeEnv = getActiveEnv();
-            
             localStorage.setItem('APP_ENV', activeEnv);
             localStorage.setItem('APP_DEV_URL', devUrlInput.value);
             localStorage.setItem('APP_PROD_URL', prodUrlInput.value);
 
-            // Efecto visual en el botón
             const originalHTML = saveBtn.innerHTML;
             saveBtn.innerHTML = '<i class="bi bi-check-circle-fill me-1"></i> ¡Guardado!';
             saveBtn.classList.replace('btn-primary', 'btn-success');
@@ -406,44 +539,46 @@ construir.bat</pre>
             }, 2000);
 
             updateUI();
-            checkAuthAndLoadBackups();
+            checkAuthAndLoadAdminData();
+            testConnection(false); 
         }
 
-        async function testConnection() {
+        async function testConnection(showManualAlert = true) {
             const targetUrl = getActiveUrl();
-
             if(!targetUrl) {
-                alert("Por favor, ingresa una URL válida primero.");
+                if(showManualAlert) alert("Por favor, ingresa una URL válida primero.");
                 return;
             }
 
-            // Estado: Cargando
             statusBadge.className = "badge bg-warning text-dark p-2 fs-6 fw-normal d-flex align-items-center gap-2";
-            statusBadge.innerHTML = `<span class="spinner-border spinner-border-sm" aria-hidden="true"></span> Conectando...`;
+            statusBadge.innerHTML = `<span class="spinner-border spinner-border-sm" style="width: 14px; height: 14px;"></span> Comprobando...`;
 
             try {
-                const response = await fetch(`${targetUrl}/api/health`, { method: 'GET', mode: 'cors' });
-                const data = await response.json();
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 5000); 
 
-                if(response.ok && data.code === 200) {
-                    // Estado: Éxito
-                    statusBadge.className = "badge bg-success p-2 fs-6 fw-normal d-flex align-items-center gap-2";
-                    statusBadge.innerHTML = `<i class="bi bi-check-circle-fill"></i> Conexión Exitosa`;
+                const response = await fetch(`${targetUrl}/api/health`, { 
+                    method: 'GET', 
+                    mode: 'cors',
+                    signal: controller.signal
+                });
+                clearTimeout(timeoutId);
+
+                if(response.ok) {
+                    statusBadge.className = "badge bg-success p-2 fs-6 fw-normal d-flex align-items-center gap-2 shadow-sm";
+                    statusBadge.innerHTML = `<i class="bi bi-check-circle-fill"></i> En Línea`;
+                    if(showManualAlert) alert(`¡Conexión Exitosa!\nEl servidor en ${targetUrl} está respondiendo perfectamente.`);
                 } else {
                     throw new Error("Respuesta inválida del servidor");
                 }
             } catch (error) {
-                console.error("Error de conexión:", error);
-                // Estado: Error
-                statusBadge.className = "badge bg-danger p-2 fs-6 fw-normal d-flex align-items-center gap-2";
-                statusBadge.innerHTML = `<i class="bi bi-x-circle-fill"></i> Error de Conexión`;
-                alert(`No se pudo conectar a: ${targetUrl}\n\nAsegúrate de que:\n1. El servidor esté encendido.\n2. La URL no termine en barra diagonal (/).`);
+                let errorMsg = "Desconectado";
+                statusBadge.className = "badge bg-danger p-2 fs-6 fw-normal d-flex align-items-center gap-2 shadow-sm";
+                statusBadge.innerHTML = `<i class="bi bi-x-circle-fill"></i> ${errorMsg}`;
+                if(showManualAlert) alert(`No se pudo conectar a: ${targetUrl}`);
             }
         }
 
-        // ==========================================
-        // 🔐 AUTENTICACIÓN POCKETBASE
-        // ==========================================
         async function loginPocketBase() {
             const targetUrl = getActiveUrl();
             const email = document.getElementById('adminEmail').value;
@@ -477,7 +612,7 @@ construir.bat</pre>
                     document.getElementById('adminPass').value = ''; 
                     
                     localStorage.setItem('PB_ADMIN_TOKEN', data.token);
-                    checkAuthAndLoadBackups();
+                    checkAuthAndLoadAdminData();
                 } else {
                     throw new Error(data.message || "Credenciales inválidas");
                 }
@@ -492,32 +627,45 @@ construir.bat</pre>
         }
 
         // ==========================================
-        // 📦 SISTEMA DE RESPALDOS (BACKUPS)
+        // 🔐 SISTEMA DE DATOS ADMINISTRATIVOS
+        // Controla Backups y Explorador de Tablas
         // ==========================================
-        function checkAuthAndLoadBackups() {
+        function checkAuthAndLoadAdminData() {
             const token = localStorage.getItem('PB_ADMIN_TOKEN');
             if(token) {
+                // Desbloquear UI de Backups
                 backupLockMessage.classList.add('d-none');
                 backupControls.classList.replace('locked-section', 'unlocked-section');
+                // Desbloquear UI de Explorador de DB
+                dbLockMessage.classList.add('d-none');
+                dbControls.classList.replace('locked-section', 'unlocked-section');
+                
+                // Cargar la información
                 loadBackups();
+                loadCollections();
             } else {
+                // Bloquear UI
                 backupLockMessage.classList.remove('d-none');
                 backupControls.classList.replace('unlocked-section', 'locked-section');
                 backupsList.innerHTML = '<li class="p-3 text-center text-secondary small">Esperando autenticación...</li>';
+                
+                dbLockMessage.classList.remove('d-none');
+                dbControls.classList.replace('unlocked-section', 'locked-section');
+                collectionsList.innerHTML = '<div class="col-12 text-center text-secondary small p-3">Esperando autenticación...</div>';
             }
         }
 
+        // --- LÓGICA DE BACKUPS ---
         async function loadBackups() {
             const token = localStorage.getItem('PB_ADMIN_TOKEN');
             if(!token) return;
-            
             backupsList.innerHTML = '<li class="p-3 text-center text-info"><span class="spinner-border spinner-border-sm"></span> Cargando...</li>';
             
             try {
                 const res = await fetch(`${getActiveUrl()}/api/backups`, { headers: { 'Authorization': token } });
                 if(res.status === 401) {
-                    localStorage.removeItem('PB_ADMIN_TOKEN'); // Token expirado
-                    checkAuthAndLoadBackups();
+                    localStorage.removeItem('PB_ADMIN_TOKEN'); 
+                    checkAuthAndLoadAdminData();
                     return;
                 }
                 const data = await res.json();
@@ -535,7 +683,6 @@ construir.bat</pre>
                             <div class="text-secondary" style="font-size: 0.7rem; margin-left: 24px;">${(b.size / 1024 / 1024).toFixed(2)} MB</div>
                         </div>
                         <div class="d-flex gap-1">
-                            <!-- AQUI ESTÁ EL CAMBIO PARA FORZAR LA DESCARGA -->
                             <button onclick="downloadBackup('${b.key}', this)" class="btn btn-sm btn-outline-light py-0 px-2" title="Descargar">
                                 <i class="bi bi-download"></i>
                             </button>
@@ -546,7 +693,7 @@ construir.bat</pre>
                     </li>
                 `).join('');
             } catch (e) {
-                backupsList.innerHTML = '<li class="p-3 text-center text-danger">Error de red.</li>';
+                backupsList.innerHTML = '<li class="p-3 text-center text-danger">Error de red al cargar backups.</li>';
             }
         }
 
@@ -568,84 +715,120 @@ construir.bat</pre>
             btn.disabled = false;
         }
 
-        async function uploadBackup(input) {
-            if(!input.files.length) return;
-            const formData = new FormData();
-            formData.append('file', input.files[0]);
-
+        // --- LÓGICA DE EXPLORADOR DE TABLAS (ACTUALIZADO CON FILTRO INTELIGENTE) ---
+        async function loadCollections() {
+            const token = localStorage.getItem('PB_ADMIN_TOKEN');
+            if(!token) return;
+            
+            collectionsList.innerHTML = '<div class="col-12 text-center text-info py-4"><span class="spinner-border spinner-border-sm me-2"></span> Analizando Base de Datos...</div>';
+            
             try {
-                const res = await fetch(`${getActiveUrl()}/api/backups/upload`, { 
-                    method: 'POST', 
-                    headers: { 'Authorization': localStorage.getItem('PB_ADMIN_TOKEN') },
-                    body: formData
+                const res = await fetch(`${getActiveUrl()}/api/collections?perPage=500`, { 
+                    headers: { 'Authorization': token } 
                 });
-                if(res.ok) { alert("¡Respaldo importado correctamente!"); loadBackups(); } 
-                else throw new Error();
-            } catch(e) { alert("Error al subir el archivo."); }
-            input.value = "";
-        }
-
-        // ==========================================
-        // 🚀 DESCARGA NATIVA SEGURA (FILE TOKEN METHOD)
-        // ==========================================
-        async function downloadBackup(key, btnElement) {
-            const originalHTML = btnElement.innerHTML;
-            btnElement.innerHTML = '<span class="spinner-border spinner-border-sm" style="width: 1rem; height: 1rem;"></span>';
-            btnElement.disabled = true;
-
-            try {
-                const authToken = localStorage.getItem('PB_ADMIN_TOKEN');
-                const targetUrl = getActiveUrl();
                 
-                // 1. POCKETBASE REQUIERE UN "FILE TOKEN" PARA DESCARGAS
-                // No permite usar el Token Master en la URL por seguridad. Pedimos uno de un solo uso.
-                const tokenRes = await fetch(`${targetUrl}/api/files/token`, {
-                    method: 'POST',
-                    headers: { 'Authorization': authToken }
+                if(res.status === 401) {
+                    localStorage.removeItem('PB_ADMIN_TOKEN'); 
+                    checkAuthAndLoadAdminData();
+                    return;
+                }
+                
+                const data = await res.json();
+                
+                if(!data.items || data.items.length === 0) {
+                    collectionsList.innerHTML = '<div class="col-12 text-center text-secondary py-3">No hay tablas creadas.</div>';
+                    return;
+                }
+
+                // 1. Filtrar y separar colecciones (Sistema vs Registros Personalizados)
+                const systemTables = [];
+                const customTables = [];
+
+                data.items.forEach(c => {
+                    // FILTRO INTELIGENTE: Ocultar tablas internas puras de PocketBase, excepto las de administrador (_superusers)
+                    if (c.name.startsWith('_') && c.name !== '_superusers') {
+                        return; // Ocultamos esta tabla del CPanel
+                    }
+
+                    // Detectar tablas de sistema vitales (Usuarios y Admins)
+                    if (c.name === 'users' || c.name === '_superusers' || c.type === 'auth') {
+                        systemTables.push({ ...c, displayName: c.name });
+                    } else {
+                        // Formateo automático: Si se llama "contactos", se mostrará "Registro de Contactos"
+                        const capitalized = c.name.charAt(0).toUpperCase() + c.name.slice(1);
+                        customTables.push({ ...c, displayName: `Registro de ${capitalized}` });
+                    }
                 });
 
-                if (!tokenRes.ok) throw new Error(`Fallo al obtener File Token (Status: ${tokenRes.status})`);
-                
-                const tokenData = await tokenRes.json();
-                const fileToken = tokenData.token;
-                
-                // 2. Generamos la URL de descarga nativa inyectando el File Token desechable
-                const downloadUrl = `${targetUrl}/api/backups/${key}?token=${fileToken}`;
-                
-                // 3. Forzamos al navegador a descargar el archivo sin abrir ventanas nuevas
-                const a = document.createElement('a');
-                a.style.display = 'none';
-                a.href = downloadUrl;
-                a.download = key; // Sugiere el nombre del archivo
-                
-                document.body.appendChild(a);
-                a.click(); 
-                document.body.removeChild(a);
+                // 2. Función auxiliar para dibujar tarjetas
+                const generateCardHtml = (c) => {
+                    const camposCount = c.fields ? c.fields.length : (c.schema ? c.schema.length : 0);
+                    let badgeColor = 'bg-primary';
+                    if (c.type === 'auth') badgeColor = 'bg-danger';
+                    if (c.type === 'view') badgeColor = 'bg-info text-dark';
+
+                    return `
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card bg-dark border border-secondary h-100 table-card">
+                            <div class="card-body p-3">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <strong class="text-light fs-6 text-truncate pe-2" title="${c.displayName}">${c.displayName}</strong>
+                                    <span class="badge ${badgeColor} bg-opacity-75" style="font-size: 0.65rem;">${c.type.toUpperCase()}</span>
+                                </div>
+                                <div class="text-secondary mb-3" style="font-size: 0.8rem;">
+                                    <i class="bi bi-columns-gap"></i> ${camposCount} Columnas<br>
+                                    <span style="font-size: 0.7rem; opacity: 0.7; font-family: monospace;">TB: ${c.name}</span>
+                                </div>
+                                <button onclick="openTableRecords('${c.id}')" class="btn btn-sm btn-outline-info w-100 fw-semibold shadow-sm" style="font-size: 0.8rem;">
+                                    <i class="bi bi-list-ul"></i> Ver Registros
+                                </button>
+                            </div>
+                        </div>
+                    </div>`;
+                };
+
+                let finalHtml = '';
+
+                // 3. Renderizar Bloque 1: Sistema (Solo las relevantes a la app)
+                if (systemTables.length > 0) {
+                    finalHtml += `
+                        <div class="col-12 mt-2 mb-1">
+                            <h6 class="text-secondary border-bottom border-secondary pb-2">
+                                <i class="bi bi-shield-lock-fill"></i> Tablas de Sistema (Usuarios y Admin)
+                            </h6>
+                        </div>`;
+                    finalHtml += systemTables.map(generateCardHtml).join('');
+                }
+
+                // 4. Renderizar Bloque 2: Registros Creados
+                if (customTables.length > 0) {
+                    finalHtml += `
+                        <div class="col-12 mt-4 mb-1">
+                            <h6 class="text-info border-bottom border-info border-opacity-25 pb-2">
+                                <i class="bi bi-folder2-open"></i> Registros y Vistas Creadas
+                            </h6>
+                        </div>`;
+                    finalHtml += customTables.map(generateCardHtml).join('');
+                }
+
+                collectionsList.innerHTML = finalHtml;
 
             } catch (e) {
-                console.error("Error al descargar:", e);
-                alert(`Error al descargar: ${e.message}\nRevisa la consola para más detalles.`);
-            } finally {
-                // Restaurar el botón pasado 1 segundo
-                setTimeout(() => {
-                    btnElement.innerHTML = originalHTML;
-                    btnElement.disabled = false;
-                }, 1000);
+                console.error(e);
+                collectionsList.innerHTML = '<div class="col-12 text-center text-danger py-3">Error al conectar con la base de datos para extraer tablas.</div>';
             }
         }
 
-        async function restoreBackup(key) {
-            if(!confirm(`⚠️ PELIGRO: Restaurar la base de datos a "${key}" reemplazará TODOS los datos actuales.\n\n¿Deseas continuar?`)) return;
-            try {
-                const res = await fetch(`${getActiveUrl()}/api/backups/${key}/restore`, { 
-                    method: 'POST', 
-                    headers: { 'Authorization': localStorage.getItem('PB_ADMIN_TOKEN') } 
-                });
-                if(res.ok || res.status === 204) alert("¡Restauración exitosa!\nEl servidor PocketBase se ha reiniciado con los datos del backup.");
-                else throw new Error();
-            } catch(e) { alert("Error al intentar restaurar."); }
+        // Abre directamente los registros de la tabla seleccionada en una pestaña nueva
+        function openTableRecords(collectionId) {
+            const targetUrl = getActiveUrl();
+            if(!targetUrl) return;
+            window.open(`${targetUrl}/_/#/collections?collectionId=${collectionId}`, '_blank');
         }
 
+        // ==========================================
+        // MÉTODOS GENERALES (Copiados y Alertas)
+        // ==========================================
         function openAdminUI() {
             const targetUrl = getActiveUrl();
             if(!targetUrl) return alert("Guarda una URL primero");
@@ -664,6 +847,17 @@ construir.bat</pre>
                 }, 2000);
             });
         }
+
+        window.alert = function(message) {
+            if(!document.getElementById('appAlertMessage')) {
+                console.warn("Alerta nativa:", message);
+                return;
+            }
+            document.getElementById('appAlertMessage').textContent = message;
+            const alertModalElement = document.getElementById('appAlertModal');
+            const modalInstance = bootstrap.Modal.getOrCreateInstance(alertModalElement);
+            modalInstance.show();
+        };
 
         window.onload = init;
     </script>

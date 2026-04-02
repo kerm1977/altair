@@ -6,6 +6,11 @@ C:\Users\MINIOS\Desktop\altair\www <-- PARA EJECUTAR EL SERVIDOR
 λ npx http-server
 
 
+Ejecutar estos 2 comandos en dos pestañas diferentes
+node runserver.js (Ejecuta tailscale, u)
+npx http-server www -c-1
+
+
 
 
 

@@ -1,0 +1,650 @@
+<div class="container-fluid px-4 fade-view pt-4 pb-5 mb-5" style="max-width: 1200px;">
+        
+    <!-- Encabezado con Botón de Volver -->
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+        <div class="d-flex align-items-center gap-3">
+            <button class="btn glass-panel text-themed rounded-circle d-flex align-items-center justify-content-center p-0 shadow-sm" style="width: 45px; height: 45px; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)';" onmouseout="this.style.transform='scale(1)';" onclick="cambiarVista('dashboard')" title="Volver al Menú">
+                <i class="bi bi-arrow-left fs-5"></i>
+            </button>
+            <div>
+                <h2 class="fw-bold text-themed mb-0"><i class="bi bi-people-fill text-primary me-2"></i> Gestión de Usuarios</h2>
+                <p class="text-muted-themed mb-0 small">Directorio conectado en tiempo real a la base de datos.</p>
+            </div>
+        </div>
+        <button class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow" onclick="prepararModalCrear()">
+            <i class="bi bi-person-plus-fill me-1"></i> Añadir Nuevo Usuario
+        </button>
+    </div>
+
+    <div id="diagnosticoBD" class="d-none mb-4"></div>
+
+    <!-- Tabla Principal -->
+    <div class="glass-panel p-4 overflow-hidden mb-5">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3 gap-3">
+            <h5 class="fw-bold text-themed m-0">Directorio de Cuentas</h5>
+            <div class="input-group-glass" style="max-width: 400px; flex-grow: 1;">
+                <div class="icon-box-glass"><i class="bi bi-search"></i></div>
+                <input type="text" id="buscadorUsuarios" class="form-control-glass" placeholder="Buscar por nombre, email, teléfono, rol...">
+            </div>
+        </div>
+        
+        <div class="table-responsive" style="overflow-x: hidden;"> 
+            <table class="table table-glass table-interactive align-middle">
+                <thead>
+                    <tr>
+                        <th scope="col" style="width: 50px;">Img</th>
+                        <th scope="col">Usuario</th>
+                        <th scope="col" class="text-end">Rol</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaUsuariosBody">
+                    <tr>
+                        <td colspan="3" class="text-center py-4 text-muted-themed">
+                            <span class="spinner-border spinner-border-sm me-2"></span> Conectando a la base de datos...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top border-secondary border-opacity-25">
+            <span id="lblContadorTabla" class="text-muted-themed small fw-semibold">0 cuentas listadas</span>
+            <button onclick="cargarUsuariosDesdeBD()" class="btn btn-sm btn-outline-info rounded-pill px-3">
+                <i class="bi bi-arrow-clockwise"></i> Refrescar
+            </button>
+        </div>
+    </div>
+
+    <!-- Estadísticas Inferiores -->
+    <div id="estadisticas">
+        <h5 class="fw-bold text-themed mb-3 mt-4"><i class="bi bi-graph-up-arrow text-info me-2"></i> Resumen del Sistema</h5>
+        <div class="row g-4 mb-4">
+            <div class="col-sm-6 col-lg-3">
+                <div class="glass-panel p-3 d-flex align-items-center gap-3">
+                    <div class="bg-primary bg-opacity-25 text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
+                        <i class="bi bi-people fs-4"></i>
+                    </div>
+                    <div>
+                        <h4 class="fw-bold text-themed mb-0" id="statTotal">0</h4>
+                        <span class="text-muted-themed small">Totales</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="glass-panel p-3 d-flex align-items-center gap-3">
+                    <div class="bg-danger bg-opacity-25 text-danger rounded-circle d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
+                        <i class="bi bi-lightning-charge fs-4"></i>
+                    </div>
+                    <div>
+                        <h4 class="fw-bold text-themed mb-0" id="statSuper">0</h4>
+                        <span class="text-muted-themed small">Superusuarios</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="glass-panel p-3 d-flex align-items-center gap-3">
+                    <div class="bg-warning bg-opacity-25 text-warning rounded-circle d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
+                        <i class="bi bi-shield-check fs-4"></i>
+                    </div>
+                    <div>
+                        <h4 class="fw-bold text-themed mb-0" id="statAdmin">0</h4>
+                        <span class="text-muted-themed small">Admins</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="glass-panel p-3 d-flex align-items-center gap-3">
+                    <div class="bg-success bg-opacity-25 text-success rounded-circle d-flex align-items-center justify-content-center" style="width: 45px; height: 45px;">
+                        <i class="bi bi-person-check fs-4"></i>
+                    </div>
+                    <div>
+                        <h4 class="fw-bold text-themed mb-0" id="statRegular">0</h4>
+                        <span class="text-muted-themed small">Regulares</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ============================================================================== -->
+<!-- MODAL 1: PERFIL DETALLADO -->
+<!-- ============================================================================== -->
+<div class="modal fade" id="perfilModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content glass-panel text-themed border-secondary border-opacity-25 shadow-lg rounded-4">
+            <div class="modal-header border-0 pb-0">
+                <button type="button" class="btn-close ms-auto mt-2 me-2" data-bs-dismiss="modal" aria-label="Close" id="btnClosePerfil"></button>
+            </div>
+            <div class="modal-body text-center pt-0 pb-5 px-4 px-md-5">
+                
+                <div class="position-relative d-inline-block mb-3">
+                    <img id="detalleAvatar" src="" class="rounded-circle shadow-lg border border-4 border-secondary border-opacity-25" width="130" height="130" style="object-fit: cover;">
+                </div>
+                
+                <h3 id="detalleNombre" class="fw-bold mb-2 text-themed">Cargando...</h3>
+                <p id="detalleEmail" class="text-muted-themed fs-6 mb-2"><i class="bi bi-envelope me-2"></i> <span>correo@ejemplo.com</span></p>
+                <p id="detalleTelefono" class="text-muted-themed fs-6 mb-3"><i class="bi bi-telephone me-2"></i> <span>No registrado</span></p>
+                
+                <div id="detalleRol" class="mb-4"></div>
+                
+                <div class="d-flex flex-column flex-sm-row justify-content-center gap-3 mb-4">
+                    <button class="btn btn-outline-info rounded-pill fw-bold shadow-sm py-2 px-4" onclick="editarDesdePerfil()">
+                        <i class="bi bi-pencil-square me-1"></i> Editar Info
+                    </button>
+                    <button class="btn btn-outline-danger rounded-pill fw-bold shadow-sm py-2 px-4" onclick="eliminarDesdePerfil()">
+                        <i class="bi bi-trash3-fill me-1"></i> Eliminar
+                    </button>
+                </div>
+
+                <div class="p-4 rounded-4 border border-secondary border-opacity-25 text-start" style="background: var(--input-bg);">
+                    <h6 class="fw-bold text-themed mb-3"><i class="bi bi-shield-lock text-info me-2"></i>Actualizar Contraseña</h6>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Contraseña Actual</label>
+                        <div class="input-group-glass">
+                            <div class="icon-box-glass"><i class="bi bi-key"></i></div>
+                            <input type="password" class="form-control-glass" id="profPassActual" placeholder="••••••••" maxlength="15" minlength="8">
+                            <div class="icon-btn-glass" onclick="typeof togglePassword === 'function' && togglePassword('profPassActual', 'iconProfPass1')"><i class="bi bi-eye" id="iconProfPass1"></i></div>
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-4">
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Nueva (8-15 carac.)</label>
+                            <div class="input-group-glass">
+                                <div class="icon-box-glass"><i class="bi bi-key"></i></div>
+                                <input type="password" class="form-control-glass" id="profPassNuevo" placeholder="Nueva" maxlength="15" minlength="8">
+                                <div class="icon-btn-glass" onclick="typeof togglePassword === 'function' && togglePassword('profPassNuevo', 'iconProfPass2')"><i class="bi bi-eye" id="iconProfPass2"></i></div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Confirmar</label>
+                            <div class="input-group-glass">
+                                <div class="icon-box-glass"><i class="bi bi-key-fill"></i></div>
+                                <input type="password" class="form-control-glass" id="profPassConf" placeholder="Confirmar" maxlength="15" minlength="8">
+                                <div class="icon-btn-glass" onclick="typeof togglePassword === 'function' && togglePassword('profPassConf', 'iconProfPass3')"><i class="bi bi-eye" id="iconProfPass3"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn btn-warning rounded-pill fw-bold shadow-sm w-100 py-2 d-flex align-items-center justify-content-center gap-2" id="btnVerificarDB" onclick="cambiarPasswordDesdePerfil()">
+                        <i class="bi bi-cloud-arrow-up-fill fs-5"></i> Empujar y Verificar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================================== -->
+<!-- MODAL 2: FORMULARIO DE CREAR/EDITAR -->
+<!-- ============================================================================== -->
+<div class="modal fade" id="formUsuarioModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content glass-panel text-themed border-secondary border-opacity-25 shadow-lg rounded-4">
+            <div class="modal-header border-0 pb-0">
+                <button type="button" class="btn-close ms-auto mt-2 me-2" data-bs-dismiss="modal" aria-label="Close" id="btnCloseForm"></button>
+            </div>
+            <div class="modal-body pt-0 pb-4 px-4 px-md-5">
+                <div class="text-center mb-4 mt-2">
+                    <h3 class="fw-bold mb-4 text-themed" id="modalTitle"><i class="bi bi-person-plus text-primary me-2"></i> Añadir Usuario</h3>
+                    <div class="position-relative d-inline-block avatar-upload-container cursor-pointer" onclick="document.getElementById('inputAvatarFile').click()">
+                        <img id="formAvatarPreview" src="https://ui-avatars.com/api/?name=Nuevo+Usuario&background=random" class="rounded-circle shadow-sm border border-4 border-secondary border-opacity-25" width="130" height="130" style="object-fit: cover; transition: all 0.3s;">
+                        <div class="avatar-upload-overlay position-absolute top-0 start-0 w-100 h-100 rounded-circle bg-dark bg-opacity-50 d-flex justify-content-center align-items-center" style="opacity: 0; transition: opacity 0.2s;">
+                            <i class="bi bi-camera-fill text-white fs-3"></i>
+                        </div>
+                        <input type="file" id="inputAvatarFile" class="d-none" accept="image/*" onchange="typeof previsualizarAvatar === 'function' && previsualizarAvatar(event, 'formAvatarPreview')">
+                    </div>
+                    <div class="small fw-semibold text-muted-themed mt-2">Toque para cambiar foto</div>
+                </div>
+
+                <form id="formUsuario" class="text-start">
+                    <div class="mb-4">
+                        <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Nombres</label>
+                        <div class="input-group-glass">
+                            <div class="icon-box-glass"><i class="bi bi-person"></i></div>
+                            <input type="text" class="form-control-glass fw-semibold" id="inputNombres" placeholder="Ej. Juan Carlos" required oninput="typeof validarNombres==='function'&&validarNombres(this)" onblur="typeof trimEspacios==='function'&&trimEspacios(this)">
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-4">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Primer Apellido</label>
+                            <div class="input-group-glass">
+                                <div class="icon-box-glass"><i class="bi bi-person-lines-fill"></i></div>
+                                <input type="text" class="form-control-glass fw-semibold" id="inputApellido1" placeholder="Ej. Pérez" required oninput="typeof validarApellidos==='function'&&validarApellidos(this)" onblur="typeof trimEspacios==='function'&&trimEspacios(this)">
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Segundo Apellido</label>
+                            <div class="input-group-glass">
+                                <div class="icon-box-glass"><i class="bi bi-person-lines-fill"></i></div>
+                                <input type="text" class="form-control-glass fw-semibold" id="inputApellido2" placeholder="Ej. Silva" oninput="typeof validarApellidos==='function'&&validarApellidos(this)" onblur="typeof trimEspacios==='function'&&trimEspacios(this)">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Correo Electrónico</label>
+                        <div class="input-group-glass">
+                            <div class="icon-box-glass"><i class="bi bi-envelope"></i></div>
+                            <input type="email" class="form-control-glass fw-semibold" id="inputEmail" placeholder="juan@correo.com" required>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Teléfono Celular</label>
+                        <div class="input-group-glass">
+                            <div class="icon-box-glass"><i class="bi bi-telephone"></i></div>
+                            <input type="text" class="form-control-glass fw-bold" id="inputTelefono" placeholder="12345678" maxlength="8" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 8)">
+                        </div>
+                    </div>
+                    <div class="row g-3 mb-4" id="bloquePassword">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Contraseña <span class="fw-normal text-warning" id="txtOpcionalPass"></span></label>
+                            <div class="input-group-glass">
+                                <div class="icon-box-glass"><i class="bi bi-key"></i></div>
+                                <input type="password" class="form-control-glass" id="inputPass" placeholder="Máx 15 carac." maxlength="15" minlength="8">
+                                <div class="icon-btn-glass" onclick="typeof togglePassword === 'function' && togglePassword('inputPass', 'iconPass1')"><i class="bi bi-eye" id="iconPass1"></i></div>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Confirmar Contraseña</label>
+                            <div class="input-group-glass">
+                                <div class="icon-box-glass"><i class="bi bi-key-fill"></i></div>
+                                <input type="password" class="form-control-glass" id="inputPassConfirm" placeholder="Repita contraseña" maxlength="15" minlength="8">
+                                <div class="icon-btn-glass" onclick="typeof togglePassword === 'function' && togglePassword('inputPassConfirm', 'iconPass2')"><i class="bi bi-eye" id="iconPass2"></i></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Nivel de Privilegios</label>
+                        <div class="input-group-glass">
+                            <div class="icon-box-glass"><i class="bi bi-shield-lock"></i></div>
+                            <select class="form-select-glass fw-semibold" id="selectRol">
+                                <option value="Usuario" selected>Usuario (Acceso Regular)</option>
+                                <option value="Administrador">Administrador (Gestión Media)</option>
+                                <option value="Superusuario">Superusuario (Acceso Total)</option>
+                            </select>
+                        </div>
+                        <div class="form-text text-warning mt-2 small px-2 lh-sm">Nota: Los Superusuarios se guardan en la bóveda estricta.</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-0 px-4 px-md-5 pb-5 pt-0 d-flex flex-column flex-sm-row justify-content-center gap-3">
+                <button type="button" class="btn btn-outline-secondary rounded-pill fw-bold shadow-sm py-2 px-4 w-100" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" id="btnGuardarUser" class="btn btn-primary rounded-pill fw-bold shadow-sm py-2 px-4 w-100" onclick="guardarUsuario()"><i class="bi bi-floppy me-2"></i> Guardar Registro</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================================== -->
+<!-- MODAL TRIPLE CONFIRMACIÓN -->
+<!-- ============================================================================== -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content glass-panel text-themed border-danger border-opacity-50 shadow-lg rounded-4" style="transition: all 0.3s ease;" id="deleteModalContent">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-danger fs-6" id="deleteModalTitle"><i class="bi bi-exclamation-triangle-fill me-2"></i> Confirmar</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="resetProcessDelete()"></button>
+            </div>
+            <div class="modal-body pt-3 pb-4 text-center px-4">
+                <i id="deleteModalIcon" class="bi bi-trash text-danger opacity-75 mb-3 d-block" style="font-size: 3.5rem; transition: all 0.3s ease;"></i>
+                <p id="deleteModalMessage" class="mb-0 text-themed fw-semibold" style="font-size: 0.95rem;"></p>
+            </div>
+            <div class="modal-footer border-0 pt-0 justify-content-center flex-column gap-2 px-4 pb-4">
+                <button type="button" id="btnConfirmDelete" class="btn btn-warning text-dark w-100 rounded-pill fw-bold shadow-sm py-2" onclick="avanzarEliminacion()">Sí, continuar</button>
+                <button type="button" class="btn btn-outline-secondary w-100 rounded-pill fw-bold shadow-sm py-2" data-bs-dismiss="modal" onclick="resetProcessDelete()">Cancelar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================================================== -->
+<!-- SCRIPTS LOCALES DEL FRAGMENTO USUARIOS -->
+<!-- ============================================================================== -->
+<script>
+    // Variables limpiadas de "let/const" a "var" para evitar choques al inyectar múltiples veces en la SPA
+    var usuariosGlobales = [];
+    var perfilModalInstancia = null;
+    var formModalInstancia = null;
+    var deleteModalInstancia = null; 
+    var modoEdicion = false;
+    var idUsuarioEditando = null;
+    var deleteStep = 1;
+    var usuarioABorrar = null;
+
+    setTimeout(function() {
+        // --- FIX EFECTO BLUR (Z-INDEX) ---
+        // Extraemos los modales de la prisión del fade-view y los mandamos al body principal de index.html
+        var vistaD = document.getElementById('vista-dinamica');
+        if (vistaD) {
+            ['perfilModal', 'formUsuarioModal', 'deleteConfirmModal'].forEach(function(id) {
+                var nuevoModal = vistaD.querySelector('#' + id);
+                if (nuevoModal) {
+                    var viejoModal = document.body.querySelector('body > #' + id);
+                    if (viejoModal) viejoModal.remove(); 
+                    document.body.appendChild(nuevoModal); 
+                }
+            });
+        }
+
+        // Inicializamos modales tras reubicarlos
+        perfilModalInstancia = new bootstrap.Modal(document.getElementById('perfilModal'));
+        formModalInstancia = new bootstrap.Modal(document.getElementById('formUsuarioModal'));
+        deleteModalInstancia = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+        
+        cargarUsuariosDesdeBD();
+        
+        var buscador = document.getElementById('buscadorUsuarios');
+        if(buscador) buscador.addEventListener('input', filtrarUsuarios);
+    }, 100);
+
+    async function diagnosticarTablas(token, urlBase) {
+        try {
+            const res = await fetch(`${urlBase}/api/collections/users`, { headers: { 'Authorization': token } });
+            if(res.ok) {
+                const data = await res.json();
+                const fields = data.fields || data.schema || [];
+                const tieneRol = fields.some(f => f.name === 'rol');
+                const tieneTel = fields.some(f => f.name === 'telefono');
+
+                const diagDiv = document.getElementById('diagnosticoBD');
+                if(!tieneRol || !tieneTel) {
+                    diagDiv.innerHTML = `
+                        <div class="alert alert-danger glass-panel text-white border-danger d-flex flex-column flex-md-row align-items-start gap-3 shadow-lg">
+                            <i class="bi bi-exclamation-triangle-fill fs-1 text-warning"></i>
+                            <div class="flex-grow-1">
+                                <h5 class="fw-bold mb-1">¡Faltan Columnas en PocketBase!</h5>
+                                <p class="mb-2 small">La tabla <strong>users</strong> no tiene los campos personalizados necesarios.</p>
+                                <button id="btnAutoFix" onclick="autoRepararTablas()" class="btn btn-warning fw-bold text-dark rounded-pill px-4 shadow-sm mt-2">
+                                    <i class="bi bi-magic me-2"></i> Auto-Configurar Base de Datos
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    diagDiv.classList.remove('d-none');
+                } else {
+                    diagDiv.classList.add('d-none');
+                }
+            }
+        } catch(e) { console.error(e); }
+    }
+
+    async function autoRepararTablas() {
+        const token = localStorage.getItem('PB_ADMIN_TOKEN');
+        const urlBase = typeof getApiUrl === 'function' ? getApiUrl() : 'http://127.0.0.1:8090';
+        const btn = document.getElementById('btnAutoFix');
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Inyectando magia...';
+        btn.disabled = true;
+        try {
+            const res = await fetch(`${urlBase}/api/collections/users`, { headers: { 'Authorization': token } });
+            const collection = await res.json();
+            const isV23 = Array.isArray(collection.fields);
+            let targetArray = isV23 ? collection.fields : collection.schema;
+            const hasTelefono = targetArray.some(f => f.name === 'telefono');
+            const hasRol = targetArray.some(f => f.name === 'rol');
+            const genFieldId = () => { let r=''; const c='abcdefghijklmnopqrstuvwxyz0123456789'; for(let i=0;i<8;i++)r+=c.charAt(Math.floor(Math.random()*c.length)); return r; };
+
+            if (!hasTelefono) targetArray.push({ id: genFieldId(), name: 'telefono', type: 'text', system: false, required: false });
+            if (!hasRol) targetArray.push({ id: genFieldId(), name: 'rol', type: 'text', system: false, required: false });
+
+            if (isV23) collection.fields = targetArray; else collection.schema = targetArray;
+            
+            const patchRes = await fetch(`${urlBase}/api/collections/${collection.id}`, {
+                method: 'PATCH', headers: { 'Authorization': token, 'Content-Type': 'application/json' }, body: JSON.stringify(collection)
+            });
+
+            if (!patchRes.ok) throw new Error("PocketBase rechazó la alteración.");
+            alert("¡BRUTAL! 🚀\n\nLas columnas se inyectaron automáticamente.");
+            await cargarUsuariosDesdeBD();
+        } catch(e) {
+            alert("Por seguridad de tu BD, añade las columnas 'telefono' y 'rol' manualmente.");
+        }
+    }
+
+    async function cargarUsuariosDesdeBD() {
+        const token = localStorage.getItem('PB_ADMIN_TOKEN');
+        const urlBase = typeof getApiUrl === 'function' ? getApiUrl() : 'http://127.0.0.1:8090';
+        const tbody = document.getElementById('tablaUsuariosBody');
+        
+        if(!token || !urlBase) {
+            tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-danger"><i class="bi bi-shield-lock-fill fs-2 d-block mb-2"></i> Acceso Denegado. Inicia sesión en el CPanel primero.</td></tr>';
+            return;
+        }
+
+        diagnosticarTablas(token, urlBase);
+        tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-info"><span class="spinner-border spinner-border-sm me-2"></span> Sincronizando BD...</td></tr>';
+
+        try {
+            usuariosGlobales = []; 
+            let resSuper = await fetch(`${urlBase}/api/collections/_superusers/records`, { headers: { 'Authorization': token } });
+            let isV22 = false;
+
+            if (!resSuper.ok && resSuper.status === 404) {
+                resSuper = await fetch(`${urlBase}/api/admins`, { headers: { 'Authorization': token } });
+                isV22 = true;
+            }
+
+            if (resSuper.ok) {
+                const dataSuper = await resSuper.json();
+                const itemsSuper = dataSuper.items || [];
+                itemsSuper.forEach(u => {
+                    usuariosGlobales.push({
+                        id: u.id, nombre: 'Superusuario Maestro', email: u.email, telefono: '', rol: 'Superusuario',
+                        collectionName: isV22 ? 'admins' : '_superusers',
+                        img: u.avatar ? `${urlBase}/api/files/_superusers/${u.id}/${u.avatar}` : `https://ui-avatars.com/api/?name=Super+Master&background=random`
+                    });
+                });
+            }
+
+            const resUsers = await fetch(`${urlBase}/api/collections/users/records`, { headers: { 'Authorization': token } });
+            if (resUsers.ok) {
+                const dataUsers = await resUsers.json();
+                const itemsUsers = dataUsers.items || [];
+                itemsUsers.forEach(u => {
+                    usuariosGlobales.push({
+                        id: u.id, nombre: u.name || u.username || 'Usuario Sin Nombre', email: u.email, telefono: u.telefono || '', rol: u.rol || 'Usuario', collectionName: 'users',
+                        img: u.avatar ? `${urlBase}/api/files/users/${u.id}/${u.avatar}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(u.name || u.username || 'Usuario')}&background=random`
+                    });
+                });
+            } else {
+                const errInfo = await resUsers.json().catch(()=>({}));
+                throw new Error("Token inválido o permisos insuficientes. " + (errInfo.message || ""));
+            }
+
+            actualizarEstadisticas();
+            renderizarTabla(usuariosGlobales);
+
+        } catch (error) {
+            tbody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-danger"><i class="bi bi-x-octagon-fill fs-3 d-block mb-2"></i> Error: ${error.message}</td></tr>`;
+        }
+    }
+
+    function renderizarTabla(arreglo) {
+        const tbody = document.getElementById('tablaUsuariosBody');
+        tbody.innerHTML = '';
+        if(arreglo.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" class="text-center py-4 text-muted-themed">No se encontraron registros.</td></tr>';
+            document.getElementById('lblContadorTabla').innerText = "0 cuentas";
+            return;
+        }
+        arreglo.forEach(u => {
+            let b = `<span class="badge bg-primary rounded-pill px-3 py-2 shadow-sm"><i class="bi bi-person-fill"></i> <span class="d-none d-sm-inline">Usuario</span></span>`;
+            if(u.rol === 'Superusuario') b = `<span class="badge bg-danger rounded-pill px-3 py-2 shadow-sm"><i class="bi bi-lightning-fill"></i> <span class="d-none d-sm-inline">Superusuario</span></span>`;
+            else if (u.rol === 'Administrador') b = `<span class="badge bg-warning text-dark rounded-pill px-3 py-2 shadow-sm"><i class="bi bi-shield-fill-check"></i> <span class="d-none d-sm-inline">Admin</span></span>`;
+
+            const tr = document.createElement('tr');
+            tr.onclick = () => abrirPerfilUsuario(u.id);
+            tr.innerHTML = `<td><img src="${u.img}" class="rounded-circle shadow-sm" width="40" height="40" style="object-fit:cover;"></td><td class="fw-bold text-themed">${u.nombre}</td><td class="text-end">${b}</td>`;
+            tbody.appendChild(tr);
+        });
+        document.getElementById('lblContadorTabla').innerText = `${arreglo.length} cuentas listadas`;
+    }
+
+    function filtrarUsuarios(e) {
+        const t = e.target.value.toLowerCase().trim();
+        if(t === '') return renderizarTabla(usuariosGlobales);
+        renderizarTabla(usuariosGlobales.filter(u => u.nombre.toLowerCase().includes(t) || u.email.toLowerCase().includes(t) || u.rol.toLowerCase().includes(t) || (u.telefono && u.telefono.includes(t))));
+    }
+
+    function actualizarEstadisticas() {
+        let sup = 0, adm = 0, reg = 0;
+        usuariosGlobales.forEach(u => { if(u.rol==='Superusuario') sup++; else if(u.rol==='Administrador') adm++; else reg++; });
+        document.getElementById('statTotal').innerText = usuariosGlobales.length;
+        document.getElementById('statSuper').innerText = sup;
+        document.getElementById('statAdmin').innerText = adm;
+        document.getElementById('statRegular').innerText = reg;
+    }
+
+    function abrirPerfilUsuario(id) {
+        const u = usuariosGlobales.find(x => x.id === id);
+        if(!u) return;
+        idUsuarioEditando = u.id;
+        document.getElementById('detalleAvatar').src = u.img;
+        document.getElementById('detalleNombre').innerText = u.nombre;
+        document.getElementById('detalleEmail').querySelector('span').innerText = u.email;
+        document.getElementById('detalleTelefono').querySelector('span').innerText = u.telefono || "No registrado";
+        
+        let b = `<span class="badge bg-primary rounded-pill px-3 py-2 shadow-sm"><i class="bi bi-person-fill"></i> Usuario</span>`;
+        if(u.rol === 'Superusuario') b = `<span class="badge bg-danger rounded-pill px-3 py-2 shadow-sm"><i class="bi bi-lightning-fill"></i> Superusuario</span>`;
+        else if (u.rol === 'Administrador') b = `<span class="badge bg-warning text-dark rounded-pill px-3 py-2 shadow-sm"><i class="bi bi-shield-fill-check"></i> Administrador</span>`;
+        document.getElementById('detalleRol').innerHTML = b;
+        document.getElementById('profPassActual').value = ""; document.getElementById('profPassNuevo').value = ""; document.getElementById('profPassConf').value = "";
+        perfilModalInstancia.show();
+    }
+
+    async function cambiarPasswordDesdePerfil() {
+        const pActual = document.getElementById('profPassActual').value, pNuevo = document.getElementById('profPassNuevo').value, pConf = document.getElementById('profPassConf').value;
+        if (!pActual || !pNuevo || !pConf) return alert("Completa los 3 campos de contraseña.");
+        if (pNuevo.length < 8 || pNuevo.length > 15) return alert("La nueva contraseña debe tener entre 8 y 15 caracteres.");
+        if (pNuevo !== pConf) return alert("Las contraseñas no coinciden.");
+
+        const btn = document.getElementById('btnVerificarDB');
+        const oHtml = btn.innerHTML; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Empujando...'; btn.disabled = true;
+
+        const token = localStorage.getItem('PB_ADMIN_TOKEN');
+        const urlBase = typeof getApiUrl === 'function' ? getApiUrl() : 'http://127.0.0.1:8090';
+        const u = usuariosGlobales.find(x => x.id === idUsuarioEditando);
+
+        try {
+            const formData = new FormData(); formData.append('oldPassword', pActual); formData.append('password', pNuevo); formData.append('passwordConfirm', pConf);
+            let tUrl = `${urlBase}/api/collections/${u.collectionName}/records/${u.id}`;
+            if (u.collectionName === 'admins') tUrl = `${urlBase}/api/admins/${u.id}`;
+            
+            const res = await fetch(tUrl, { method: 'PATCH', headers: { 'Authorization': token }, body: formData });
+            if(!res.ok) throw new Error("Verifica tu contraseña actual.");
+            
+            btn.classList.replace('btn-warning', 'btn-success'); btn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i>¡Actualizado!';
+            setTimeout(() => { btn.classList.replace('btn-success', 'btn-warning'); btn.innerHTML = oHtml; btn.disabled = false; document.getElementById('profPassActual').value = ''; document.getElementById('profPassNuevo').value = ''; document.getElementById('profPassConf').value = ''; }, 3500);
+        } catch (e) { alert("Error: " + e.message); btn.innerHTML = oHtml; btn.disabled = false; }
+    }
+
+    function prepararModalCrear() {
+        modoEdicion = false; idUsuarioEditando = null; window.archivoAvatarTemp = null; 
+        document.getElementById('modalTitle').innerHTML = '<i class="bi bi-person-plus text-primary me-2"></i> Añadir Usuario';
+        document.getElementById('formUsuario').reset();
+        document.getElementById('txtOpcionalPass').innerText = ""; 
+        document.getElementById('inputPass').required = true; document.getElementById('inputPassConfirm').required = true;
+        document.getElementById('formAvatarPreview').src = "https://ui-avatars.com/api/?name=Nuevo+Usuario&background=random";
+        document.getElementById('inputNombres').disabled = false; document.getElementById('inputApellido1').disabled = false; document.getElementById('inputApellido2').disabled = false; document.getElementById('inputTelefono').disabled = false;
+        formModalInstancia.show();
+    }
+
+    function prellenarFormulario(nc) {
+        const p = (nc||"").trim().split(' ');
+        const iN = document.getElementById('inputNombres'), iA1 = document.getElementById('inputApellido1'), iA2 = document.getElementById('inputApellido2');
+        if(p.length===1) { iN.value=p[0]||""; iA1.value=""; iA2.value=""; }
+        else if(p.length===2) { iN.value=p[0]; iA1.value=p[1]; iA2.value=""; }
+        else if(p.length>=3) { iA2.value=p.pop(); iA1.value=p.pop(); iN.value=p.join(' '); }
+    }
+
+    function editarDesdePerfil() {
+        perfilModalInstancia.hide(); modoEdicion = true; window.archivoAvatarTemp = null; 
+        const u = usuariosGlobales.find(x => x.id === idUsuarioEditando);
+        if(!u) return;
+
+        document.getElementById('modalTitle').innerHTML = '<i class="bi bi-pencil-square text-info me-2"></i> Editar Usuario';
+        document.getElementById('formAvatarPreview').src = u.img;
+        document.getElementById('inputEmail').value = u.email; document.getElementById('selectRol').value = u.rol;
+        document.getElementById('inputPass').value = ""; document.getElementById('inputPassConfirm').value = "";
+        document.getElementById('inputPass').required = false; document.getElementById('inputPassConfirm').required = false;
+        document.getElementById('txtOpcionalPass').innerText = "(Opcional)";
+
+        const iN = document.getElementById('inputNombres'), iA1 = document.getElementById('inputApellido1'), iA2 = document.getElementById('inputApellido2'), iT = document.getElementById('inputTelefono');
+        if (u.rol === 'Superusuario') {
+            iN.value = "Superusuario"; iA1.value = "Maestro"; iA2.value = "";
+            iN.disabled = true; iA1.disabled = true; iA2.disabled = true;
+            iT.value = ""; iT.disabled = true; iT.placeholder = "No soportado";
+        } else {
+            prellenarFormulario(u.nombre);
+            iN.disabled = false; iA1.disabled = false; iA2.disabled = false;
+            iT.value = u.telefono || ""; iT.disabled = false; iT.placeholder = "12345678";
+        }
+        setTimeout(() => { formModalInstancia.show(); }, 400);
+    }
+
+    function eliminarDesdePerfil() {
+        const u = usuariosGlobales.find(x => x.id === idUsuarioEditando);
+        if(u.rol === 'Superusuario' || u.collectionName === '_superusers' || u.collectionName === 'admins') return alert("🛑 DENEGADO: El Maestro es intocable.");
+        perfilModalInstancia.hide(); usuarioABorrar = u; deleteStep = 1; actualizarUIDeleteModal(); deleteModalInstancia.show();
+    }
+    
+    function resetProcessDelete() { deleteStep = 1; usuarioABorrar = null; }
+
+    function actualizarUIDeleteModal() {
+        const title = document.getElementById('deleteModalTitle'), icon = document.getElementById('deleteModalIcon'), msg = document.getElementById('deleteModalMessage'), btn = document.getElementById('btnConfirmDelete'), mc = document.getElementById('deleteModalContent');
+        if (deleteStep === 1) {
+            title.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-2"></i> PASO 1/3 - PELIGRO'; title.className = "modal-title fw-bold text-warning fs-6"; mc.className = "modal-content glass-panel border-warning border-opacity-50 shadow-lg rounded-4";
+            icon.className = 'bi bi-trash text-warning opacity-75 mb-3 d-block'; msg.innerHTML = `¿Eliminar a <br><strong class="fs-5 text-warning">${usuarioABorrar.nombre}</strong>?`;
+            btn.className = 'btn btn-warning text-dark w-100 rounded-pill fw-bold shadow-sm py-2'; btn.innerHTML = 'Sí, deseo eliminarlo';
+        } else if (deleteStep === 2) {
+            title.innerHTML = '<i class="bi bi-shield-exclamation me-2"></i> PASO 2/3 - ADVERTENCIA'; title.className = "modal-title fw-bold text-danger fs-6"; mc.className = "modal-content glass-panel border-danger border-opacity-50 shadow-lg rounded-4";
+            icon.className = 'bi bi-exclamation-octagon text-danger opacity-75 mb-3 d-block'; msg.innerHTML = `Esto <strong class="text-danger">NO se deshace</strong>. ¿Continuar?`;
+            btn.className = 'btn btn-danger w-100 rounded-pill fw-bold shadow-sm py-2'; btn.innerHTML = 'Estoy seguro';
+        } else if (deleteStep === 3) {
+            title.innerHTML = '<i class="bi bi-fire me-2"></i> PASO 3/3 - DESTRUCCIÓN'; title.className = "modal-title fw-bold text-danger fs-6 pulse-danger";
+            icon.className = 'bi bi-fire text-danger mb-3 d-block pulse-danger'; msg.innerHTML = `<span class="text-danger small fw-bold">ÚLTIMA OPORTUNIDAD PARA CANCELAR.</span>`;
+            btn.className = 'btn btn-dark border border-danger text-danger w-100 rounded-pill fw-bold shadow-lg py-2 pulse-danger'; btn.innerHTML = '<i class="bi bi-skull-fill me-2"></i> ELIMINAR';
+        }
+    }
+    
+    async function avanzarEliminacion() { if (deleteStep < 3) { deleteStep++; actualizarUIDeleteModal(); } else { await ejecutarDestruccionBD(); } }
+    
+    async function ejecutarDestruccionBD() {
+        const btn = document.getElementById('btnConfirmDelete'); btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Destruyendo...'; btn.disabled = true;
+        const urlBase = typeof getApiUrl === 'function' ? getApiUrl() : 'http://127.0.0.1:8090';
+        try {
+            const res = await fetch(`${urlBase}/api/collections/${usuarioABorrar.collectionName}/records/${usuarioABorrar.id}`, { method: 'DELETE', headers: { 'Authorization': localStorage.getItem('PB_ADMIN_TOKEN') } });
+            if(!res.ok) throw new Error();
+            deleteModalInstancia.hide(); resetProcessDelete(); alert("🗑️ ELIMINACIÓN EXITOSA"); await cargarUsuariosDesdeBD();
+        } catch (error) { alert("Error crítico."); btn.disabled = false; deleteModalInstancia.hide(); resetProcessDelete(); }
+    }
+
+    async function guardarUsuario() {
+        const iN = document.getElementById('inputNombres'), iA1 = document.getElementById('inputApellido1'), iA2 = document.getElementById('inputApellido2');
+        if(typeof trimEspacios==="function"){ trimEspacios(iN); trimEspacios(iA1); trimEspacios(iA2); }
+        const nc = `${iN.value} ${iA1.value} ${iA2.value}`.replace(/\s+/g, ' ').trim(), em = document.getElementById('inputEmail').value.trim(), tel = document.getElementById('inputTelefono').value, p1 = document.getElementById('inputPass').value, p2 = document.getElementById('inputPassConfirm').value, rol = document.getElementById('selectRol').value;
+
+        if(!em) return alert("Completa el correo.");
+        if(em.toLowerCase() === 'kenth1977@gmail.com' && rol !== 'Superusuario') return alert("🛑 GUARDADO DENEGADO: Correo reservado.");
+        if(rol !== 'Superusuario') { if(!iN.value || !iA1.value) return alert("Nombre y Primer Apellido obligatorios."); if(tel && tel.length !== 8) return alert("Teléfono debe ser de 8 números."); }
+        if(!modoEdicion && !p1) return alert("Contraseña obligatoria.");
+        if(p1 || p2) { if(p1.length<8 || p1.length>15) return alert("De 8 a 15 caracteres."); if(p1!==p2) return alert("Contraseñas no coinciden."); }
+
+        const token = localStorage.getItem('PB_ADMIN_TOKEN'); let colTarget = (rol === 'Superusuario') ? '_superusers' : 'users';
+
+        const btn = document.getElementById('btnGuardarUser'), oHtml = btn.innerHTML; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Guardando...'; btn.disabled = true;
+        const fd = new FormData(); fd.append('email', em); if(p1){ fd.append('password', p1); fd.append('passwordConfirm', p2); }
+        if (rol !== 'Superusuario') { fd.append('name', nc); fd.append('telefono', tel); fd.append('rol', rol); if (!modoEdicion) fd.append('username', "user_" + Date.now()); }
+        if (window.archivoAvatarTemp) fd.append('avatar', window.archivoAvatarTemp);
+
+        const urlBase = typeof getApiUrl === 'function' ? getApiUrl() : 'http://127.0.0.1:8090';
+
+        try {
+            let res, finalUrl = `${urlBase}/api/collections/${colTarget}/records`;
+            if (modoEdicion && idUsuarioEditando && usuariosGlobales.find(u=>u.id===idUsuarioEditando).collectionName==='admins') { colTarget = 'admins'; finalUrl = `${urlBase}/api/admins`; }
+            if(modoEdicion) { res = await fetch(`${finalUrl}/${idUsuarioEditando}`, { method: 'PATCH', headers: { 'Authorization': token }, body: fd }); } 
+            else { res = await fetch(finalUrl, { method: 'POST', headers: { 'Authorization': token }, body: fd }); }
+            if(!res.ok) throw new Error("Error en BD.");
+            formModalInstancia.hide(); await cargarUsuariosDesdeBD();
+        } catch (e) { alert(e.message); } finally { btn.innerHTML = oHtml; btn.disabled = false; }
+    }
+</script>

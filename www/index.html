@@ -10,8 +10,16 @@
     <title>La Tribu - App</title>
     
     <link rel="icon" href="data:,">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <!-- ========================================== -->
+    <!-- 📦 LIBRERÍAS LOCALES (SIN INTERNET/CDNS)   -->
+    <!-- ========================================== -->
+    <!-- Bootstrap 5 CSS Local -->
+    <link rel="stylesheet" href="css/bootstrap.css">
+    <!-- Bootstrap Icons Local -->
+    <link rel="stylesheet" href="css/bootstrap-icons.css">
+    <!-- CSS Principal Unificado (Opcional, si tienes estilos extra aquí) -->
+    <link rel="stylesheet" href="css/main.css">
 
     <style>
         /* ==========================================
@@ -144,7 +152,7 @@
                         <div class="input-group-glass">
                             <div class="icon-box-glass"><i class="bi bi-lock"></i></div>
                             <input type="password" id="loginPass" class="form-control-glass" placeholder="Máx 15 carac." maxlength="15" required>
-                            <div class="icon-btn-glass" onclick="togglePassword('loginPass', 'iconLoginPass')">
+                            <div class="icon-btn-glass" onclick="typeof togglePassword === 'function' ? togglePassword('loginPass', 'iconLoginPass') : null">
                                 <i class="bi bi-eye" id="iconLoginPass"></i>
                             </div>
                         </div>
@@ -178,7 +186,7 @@
                         <div class="avatar-upload-overlay position-absolute top-0 start-0 w-100 h-100 rounded-circle bg-dark bg-opacity-50 d-flex justify-content-center align-items-center" style="opacity: 0; transition: opacity 0.2s;">
                             <i class="bi bi-camera-fill text-white fs-1"></i>
                         </div>
-                        <input type="file" id="inputAvatarFile" class="d-none" accept="image/*" onchange="previsualizarAvatar(event, 'formAvatarPreview')">
+                        <input type="file" id="inputAvatarFile" class="d-none" accept="image/*" onchange="typeof previsualizarAvatar === 'function' ? previsualizarAvatar(event, 'formAvatarPreview') : null">
                     </div>
                     <div class="small fw-semibold text-muted-themed mt-2">Toque para añadir su foto</div>
                 </div>
@@ -215,7 +223,7 @@
                         </div>
                     </div>
                     <div class="mb-4">
-                        <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Teléfono Celular (8 dígitos)</label>
+                        <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Teléfono Celular (Exactamente 8 dígitos)</label>
                         <div class="input-group-glass">
                             <div class="icon-box-glass"><i class="bi bi-telephone"></i></div>
                             <input type="text" class="form-control-glass fw-bold" id="regTelefono" placeholder="12345678" maxlength="8" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 8)" required>
@@ -227,7 +235,7 @@
                             <div class="input-group-glass">
                                 <div class="icon-box-glass"><i class="bi bi-key"></i></div>
                                 <input type="password" class="form-control-glass" id="regPass" placeholder="De 8 a 15 carac." maxlength="15" minlength="8" required>
-                                <div class="icon-btn-glass" onclick="togglePassword('regPass', 'iconRegPass1')">
+                                <div class="icon-btn-glass" onclick="typeof togglePassword === 'function' ? togglePassword('regPass', 'iconRegPass1') : null">
                                     <i class="bi bi-eye" id="iconRegPass1"></i>
                                 </div>
                             </div>
@@ -237,7 +245,7 @@
                             <div class="input-group-glass">
                                 <div class="icon-box-glass"><i class="bi bi-shield-lock-fill"></i></div>
                                 <input type="password" class="form-control-glass" id="regPassConf" placeholder="Repita contraseña" maxlength="15" minlength="8" required>
-                                <div class="icon-btn-glass" onclick="togglePassword('regPassConf', 'iconRegPass2')">
+                                <div class="icon-btn-glass" onclick="typeof togglePassword === 'function' ? togglePassword('regPassConf', 'iconRegPass2') : null">
                                     <i class="bi bi-eye" id="iconRegPass2"></i>
                                 </div>
                             </div>
@@ -245,7 +253,7 @@
                     </div>
                     <div class="d-flex flex-column flex-sm-row justify-content-center gap-3 pt-3 border-top border-secondary border-opacity-25">
                         <button type="button" class="btn btn-outline-secondary rounded-pill fw-bold shadow-sm py-3 px-4 w-100" onclick="cambiarVista('login')">
-                            <i class="bi bi-arrow-left me-1"></i> Volver
+                            <i class="bi bi-arrow-left me-1"></i> Volver al Login
                         </button>
                         <button type="button" id="btnGuardarRegistro" class="btn btn-primary rounded-pill fw-bold shadow-sm py-3 px-4 w-100" onclick="registrarUsuario()">
                             Crear Cuenta VIP <i class="bi bi-stars ms-1"></i>
@@ -255,13 +263,13 @@
             </div>
         </div>
 
-        <!-- 🔥 VISTA DINÁMICA: AQUÍ SE INYECTAN LOS MÓDULOS (home.html, dashboard.html, CPANEL.html) -->
+        <!-- 🔥 VISTA DINÁMICA: AQUÍ SE INYECTAN LOS MÓDULOS COMO FRAGMENTOS -->
         <div id="vista-dinamica" class="w-100 d-none fade-view"></div>
 
     </main>
 
     <!-- ============================================================================== -->
-    <!-- 📱 BARRA DE NAVEGACIÓN INFERIOR (SPA GLOBAL - ÚNICA) -->
+    <!-- 📱 BARRA DE NAVEGACIÓN INFERIOR (SPA GLOBAL - ÚNICA - SIEMPRE VISIBLE) -->
     <!-- ============================================================================== -->
     <div id="bottom-nav" class="fixed-bottom w-100" style="z-index: 1030;">
         <div class="glass-panel d-flex justify-content-around align-items-center pt-2 px-2 shadow-lg border-top border-secondary border-opacity-25" 
@@ -272,15 +280,10 @@
                 <span style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px;">INICIO</span>
             </a>
             
-            <!-- Ocultos por defecto. JS los activa si es Superusuario -->
-            <a href="#" onclick="cambiarVista('dashboard')" id="navBtnDashboard" class="d-none text-themed text-decoration-none d-flex flex-column align-items-center p-2 opacity-75 nav-item-glass" title="Panel Administrativo">
-                <i class="bi bi-shield-lock-fill fs-4 mb-1 text-warning"></i>
-                <span class="text-warning" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px;">PANEL</span>
-            </a>
-
-            <a href="#" onclick="cambiarVista('CPANEL')" id="navBtnCpanel" class="d-none text-themed text-decoration-none d-flex flex-column align-items-center p-2 opacity-50 nav-item-glass" title="Base de Datos">
-                <i class="bi bi-gear-wide-connected fs-4 mb-1"></i>
-                <span style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px;">CPANEL</span>
+            <!-- 🔥 BOTÓN AJUSTES: Reemplaza a Panel y Cpanel -->
+            <a href="#" onclick="cambiarVista('dashboard')" id="navBtnAjustes" class="d-none text-themed text-decoration-none flex-column align-items-center p-2 opacity-75 nav-item-glass" title="Ajustes del Sistema">
+                <i class="bi bi-gear-fill fs-4 mb-1 text-warning"></i>
+                <span class="text-warning" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px;">AJUSTES</span>
             </a>
 
             <!-- Dinámico: Dice LOGIN o SALIR dependiendo de la sesión -->
@@ -302,16 +305,16 @@
             <div class="modal-content glass-panel text-themed border-secondary border-opacity-25 shadow-lg rounded-4">
                 <div class="modal-header border-0 pb-0">
                     <h5 class="modal-title fw-bold text-info fs-6"><i class="bi bi-unlock-fill me-2"></i> Recuperación Directa</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="resetearModalRecuperacion()"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="typeof resetearModalRecuperacion === 'function' ? resetearModalRecuperacion() : null"></button>
                 </div>
                 <div class="modal-body pt-3 pb-4 text-start">
                     <div id="step1-recuperacion">
-                        <p class="small text-muted-themed mb-3 fw-semibold">Modo de Emergencia: Ingresa tu correo para forzar el cambio de contraseña en la BD.</p>
+                        <p class="small text-muted-themed mb-3 fw-semibold">Modo de Emergencia: Ingresa tu correo para forzar el cambio en la BD.</p>
                         <div class="input-group-glass mb-4">
                             <div class="icon-box-glass"><i class="bi bi-envelope"></i></div>
                             <input type="email" id="recuperarEmailHack" class="form-control-glass" placeholder="correo@ejemplo.com" required>
                         </div>
-                        <button type="button" id="btnVerificarHack" class="btn btn-info text-dark w-100 rounded-pill fw-bold shadow-sm py-2" onclick="verificarCorreoHack()">Verificar Existencia</button>
+                        <button type="button" id="btnVerificarHack" class="btn btn-info text-dark w-100 rounded-pill fw-bold shadow-sm py-2" onclick="typeof verificarCorreoHack === 'function' ? verificarCorreoHack() : null">Verificar Existencia</button>
                     </div>
                     <div id="step2-recuperacion" class="d-none">
                         <div class="alert bg-success bg-opacity-10 border border-success border-opacity-25 text-success small py-2 d-flex align-items-center gap-2 mb-3 rounded-3">
@@ -322,7 +325,7 @@
                             <div class="input-group-glass">
                                 <div class="icon-box-glass"><i class="bi bi-key"></i></div>
                                 <input type="password" id="recupNewPass" class="form-control-glass" placeholder="Máx 15 carac." maxlength="15">
-                                <div class="icon-btn-glass" onclick="togglePassword('recupNewPass', 'iconRecup1')"><i class="bi bi-eye" id="iconRecup1"></i></div>
+                                <div class="icon-btn-glass" onclick="typeof togglePassword === 'function' ? togglePassword('recupNewPass', 'iconRecup1') : null"><i class="bi bi-eye" id="iconRecup1"></i></div>
                             </div>
                         </div>
                         <div class="mb-4">
@@ -330,22 +333,24 @@
                             <div class="input-group-glass">
                                 <div class="icon-box-glass"><i class="bi bi-key-fill"></i></div>
                                 <input type="password" id="recupConfPass" class="form-control-glass" placeholder="Repita contraseña" maxlength="15">
-                                <div class="icon-btn-glass" onclick="togglePassword('recupConfPass', 'iconRecup2')"><i class="bi bi-eye" id="iconRecup2"></i></div>
+                                <div class="icon-btn-glass" onclick="typeof togglePassword === 'function' ? togglePassword('recupConfPass', 'iconRecup2') : null"><i class="bi bi-eye" id="iconRecup2"></i></div>
                             </div>
                         </div>
-                        <button type="button" id="btnEjecutarReset" class="btn btn-warning text-dark w-100 rounded-pill fw-bold shadow-sm py-2" onclick="ejecutarResetHack()">Cambiar Contraseña</button>
+                        <button type="button" id="btnEjecutarReset" class="btn btn-warning text-dark w-100 rounded-pill fw-bold shadow-sm py-2" onclick="typeof ejecutarResetHack === 'function' ? ejecutarResetHack() : null">Cambiar Contraseña</button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- MODAL REEMPLAZO DE ALERT() -->
+    <!-- MODAL REEMPLAZO DE ALERT() NATIVO -->
     <div class="modal fade" id="appAlertModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
         <div class="modal-dialog modal-dialog-centered modal-sm">
             <div class="modal-content glass-panel text-themed border-secondary border-opacity-25 shadow-lg rounded-4">
                 <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title fw-bold text-warning fs-6"><i class="bi bi-exclamation-triangle-fill me-2"></i> Notificación</h5>
+                    <h5 class="modal-title fw-bold text-warning fs-6">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i> Notificación
+                    </h5>
                 </div>
                 <div class="modal-body pt-3 pb-4">
                     <p id="appAlertMessage" class="mb-0 text-muted-themed fw-semibold" style="white-space: pre-wrap; font-size: 0.95rem;"></p>
@@ -357,427 +362,17 @@
         </div>
     </div>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- ========================================== -->
+    <!-- 📦 SCRIPTS LOCALES (SIN INTERNET/CDNS)     -->
+    <!-- ========================================== -->
+    <!-- Bootstrap JS Local -->
+    <script src="js/bootstrap.js"></script>
 
-    <!-- Librería Validaciones Globales -->
+    <!-- Librerías de la App -->
+    <script src="js/api_db.js"></script>
+    <script src="js/index.js"></script>
     <script src="js/validaciones.js"></script>
+    <script src="js/imageEditor.js"></script>
 
-    <!-- ============================================================================== -->
-    <!-- 🚀 SPA ROUTER Y LÓGICA PRINCIPAL                                               -->
-    <!-- ============================================================================== -->
-    <script>
-        // 🔮 Secuestro Global de Alertas
-        window.alert = function(message) {
-            document.getElementById('appAlertMessage').textContent = message;
-            const alertModalElement = document.getElementById('appAlertModal');
-            const modalInstance = bootstrap.Modal.getOrCreateInstance(alertModalElement);
-            modalInstance.show();
-        };
-
-        // 🌓 Lógica de Tema
-        const htmlElement = document.documentElement;
-        const themeIcon = document.getElementById('themeIcon');
-        const savedTheme = localStorage.getItem('APP_THEME') || 'dark';
-        setTheme(savedTheme);
-
-        document.getElementById('btnThemeToggle').addEventListener('click', () => {
-            const currentTheme = htmlElement.getAttribute('data-bs-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            setTheme(newTheme);
-            localStorage.setItem('APP_THEME', newTheme);
-        });
-
-        function setTheme(theme) {
-            htmlElement.setAttribute('data-bs-theme', theme);
-            if(theme === 'dark') {
-                themeIcon.className = "bi bi-sun-fill fs-5 text-warning"; 
-            } else {
-                themeIcon.className = "bi bi-moon-stars-fill fs-5 text-dark"; 
-            }
-        }
-
-        function getApiUrl() {
-            const env = localStorage.getItem('APP_ENV') || 'dev';
-            return env === 'prod' ? localStorage.getItem('APP_PROD_URL') : (localStorage.getItem('APP_DEV_URL') || 'http://127.0.0.1:8090');
-        }
-
-        // ==========================================
-        // 🔄 ROUTER SPA: GESTOR DE VISTAS Y FRAGMENTOS
-        // ==========================================
-        async function cambiarVista(vista) {
-            const vLogin = document.getElementById('vista-login');
-            const vRegistro = document.getElementById('vista-registro');
-            const vDinamica = document.getElementById('vista-dinamica');
-            const appRoot = document.getElementById('app-root');
-
-            const user = JSON.parse(localStorage.getItem('PB_USER_DATA') || '{}');
-
-            // 1. Configurar barra inferior de acuerdo a la sesión
-            const btnAuth = document.getElementById('navBtnAuth');
-            if (user.id) {
-                btnAuth.innerHTML = `<i class="bi bi-box-arrow-right fs-4 mb-1"></i><span style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px;">SALIR</span>`;
-                btnAuth.onclick = cerrarSesion;
-                btnAuth.classList.replace('text-primary', 'text-danger');
-            } else {
-                btnAuth.innerHTML = `<i class="bi bi-person-fill fs-4 mb-1"></i><span style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px;">LOGIN</span>`;
-                btnAuth.onclick = () => cambiarVista('login');
-                btnAuth.classList.replace('text-danger', 'text-primary');
-            }
-
-            const btnDash = document.getElementById('navBtnDashboard');
-            const btnCpanel = document.getElementById('navBtnCpanel');
-            if (user.id && (user.rol === 'Superusuario' || user.email?.toLowerCase() === 'kenth1977@gmail.com')) {
-                if(btnDash) btnDash.classList.remove('d-none');
-                if(btnCpanel) btnCpanel.classList.remove('d-none');
-            } else {
-                if(btnDash) btnDash.classList.add('d-none');
-                if(btnCpanel) btnCpanel.classList.add('d-none');
-            }
-
-            // 2. Vistas Estáticas (Login/Registro)
-            if (vista === 'login' || vista === 'registro') {
-                vDinamica.innerHTML = ''; 
-                vDinamica.classList.add('d-none');
-                
-                vLogin.classList.toggle('d-none', vista !== 'login');
-                vRegistro.classList.toggle('d-none', vista !== 'registro');
-                
-                // Alineación centrada para login
-                appRoot.style.alignItems = 'center';
-                appRoot.style.justifyContent = 'center';
-                return;
-            }
-
-            // 3. Vistas Dinámicas: Verificación de sesión
-            if(!user.id) {
-                cambiarVista('login');
-                return;
-            }
-
-            // Alineación superior para módulos (Home, Dashboard, Cpanel)
-            appRoot.style.alignItems = 'stretch';
-            appRoot.style.justifyContent = 'flex-start';
-
-            vLogin.classList.add('d-none');
-            vRegistro.classList.add('d-none');
-            vDinamica.classList.remove('d-none');
-
-            // Loader
-            vDinamica.innerHTML = `
-                <div class="d-flex flex-column justify-content-center align-items-center mt-5 pt-5 text-themed">
-                    <div class="spinner-border text-info" style="width: 3rem; height: 3rem;" role="status"></div>
-                    <h5 class="mt-3 fw-bold opacity-75">Conectando módulo...</h5>
-                </div>
-            `;
-
-            // 4. Inyectar Fragmento (AJAX Fetch)
-            try {
-                const res = await fetch(`${vista}.html`);
-                if(!res.ok) throw new Error("Archivo de módulo no encontrado.");
-                const htmlRaw = await res.text();
-                
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(htmlRaw, 'text/html');
-                const fragmentContent = doc.body ? doc.body.innerHTML : htmlRaw;
-
-                vDinamica.innerHTML = fragmentContent;
-                
-                // Extraer y ejecutar scripts del fragmento
-                Array.from(vDinamica.querySelectorAll("script")).forEach(oldScript => {
-                    const newScript = document.createElement("script");
-                    Array.from(oldScript.attributes).forEach(attr => newScript.setAttribute(attr.name, attr.value));
-                    if(oldScript.innerHTML) {
-                        let scriptContent = oldScript.innerHTML;
-                        // Convertimos DOMContentLoaded en ejecución directa diferida
-                        scriptContent = scriptContent.replace(/document\.addEventListener\(['"`]DOMContentLoaded['"`]\s*,\s*(\(\)\s*=>\s*\{|function\s*\(\)\s*\{)/g, "setTimeout($1");
-                        newScript.appendChild(document.createTextNode(scriptContent));
-                    }
-                    oldScript.parentNode.replaceChild(newScript, oldScript);
-                });
-
-            } catch (error) {
-                vDinamica.innerHTML = `
-                    <div class="text-center mt-5 p-4 mx-3 glass-panel border-danger">
-                        <i class="bi bi-exclamation-octagon-fill text-danger" style="font-size: 4rem;"></i>
-                        <h4 class="mt-3 fw-bold text-themed">Error de Módulo</h4>
-                        <p class="text-muted-themed">${error.message}</p>
-                    </div>
-                `;
-            }
-        }
-
-        function cerrarSesion() {
-            localStorage.removeItem('PB_USER_TOKEN');
-            localStorage.removeItem('PB_USER_DATA');
-            localStorage.removeItem('PB_ADMIN_TOKEN');
-            cambiarVista('login');
-        }
-
-        // ==========================================
-        // AUTO-ARRANQUE DE LA SPA
-        // ==========================================
-        document.addEventListener('DOMContentLoaded', () => {
-            const savedEmail = localStorage.getItem('APP_SAVED_EMAIL');
-            if(savedEmail) {
-                document.getElementById('loginEmail').value = savedEmail;
-                document.getElementById('rememberMe').checked = true;
-            }
-
-            const user = JSON.parse(localStorage.getItem('PB_USER_DATA') || '{}');
-            if(user.id) {
-                cambiarVista('home'); // Directo a la app sin parpadeos
-            } else {
-                cambiarVista('login'); // Se queda en login
-            }
-        });
-
-        // ==========================================
-        // LÓGICA AUTH (LOGIN / REGISTRO / HACK)
-        // ==========================================
-        async function loginUsuario() {
-            const email = document.getElementById('loginEmail').value.trim();
-            const pass = document.getElementById('loginPass').value;
-            const rememberMe = document.getElementById('rememberMe').checked;
-
-            if(!email || !pass) return alert("Por favor ingresa tu correo y contraseña.");
-
-            const btn = document.querySelector('#vista-login button.btn-primary');
-            const originalHTML = btn.innerHTML;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Autenticando...';
-            btn.disabled = true;
-
-            const urlBase = getApiUrl();
-
-            try {
-                let res = await fetch(`${urlBase}/api/collections/users/auth-with-password`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ identity: email, password: pass })
-                });
-                let data = await res.json().catch(() => ({}));
-
-                if(!res.ok) {
-                    res = await fetch(`${urlBase}/api/collections/_superusers/auth-with-password`, {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ identity: email, password: pass })
-                    });
-                    data = await res.json().catch(() => ({}));
-                    
-                    if(!res.ok) {
-                        res = await fetch(`${urlBase}/api/admins/auth-with-password`, {
-                            method: 'POST', headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ identity: email, password: pass })
-                        });
-                        data = await res.json().catch(() => ({}));
-                        if(!res.ok) throw new Error("Las credenciales ingresadas son incorrectas o el usuario no existe.");
-                    }
-                    if (!data.record && data.admin) data.record = data.admin; 
-                    if (data.record) data.record.rol = 'Superusuario';
-                }
-
-                localStorage.setItem('PB_USER_TOKEN', data.token);
-                localStorage.setItem('PB_USER_DATA', JSON.stringify(data.record));
-                if (data.record.rol === 'Superusuario') localStorage.setItem('PB_ADMIN_TOKEN', data.token);
-
-                if(rememberMe) localStorage.setItem('APP_SAVED_EMAIL', email);
-                else localStorage.removeItem('APP_SAVED_EMAIL');
-
-                btn.classList.replace('btn-primary', 'btn-success');
-                btn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i> ¡Bienvenido!';
-                
-                setTimeout(() => {
-                    btn.classList.replace('btn-success', 'btn-primary');
-                    btn.innerHTML = originalHTML;
-                    btn.disabled = false;
-                    document.getElementById('loginPass').value = '';
-                    cambiarVista('home');
-                }, 1500);
-
-            } catch(error) {
-                alert(error.message);
-                btn.innerHTML = originalHTML;
-                btn.disabled = false;
-            }
-        }
-
-        async function registrarUsuario() {
-            const iNombres = document.getElementById('regNombres');
-            const iApellido1 = document.getElementById('regApellido1');
-            const iApellido2 = document.getElementById('regApellido2');
-            
-            if (typeof trimEspacios === "function") {
-                trimEspacios(iNombres); trimEspacios(iApellido1); trimEspacios(iApellido2);
-            }
-            
-            const nombreCompleto = `${iNombres.value} ${iApellido1.value} ${iApellido2.value}`.replace(/\s+/g, ' ').trim();
-            const email = document.getElementById('regEmail').value.trim();
-            const telefono = document.getElementById('regTelefono').value;
-            const pass = document.getElementById('regPass').value;
-            const passConf = document.getElementById('regPassConf').value;
-
-            if(!iNombres.value || !iApellido1.value || !email) return alert("Nombres, Primer Apellido y Correo son obligatorios.");
-            if(email.toLowerCase() === 'kenth1977@gmail.com') return alert("🛑 REGISTRO DENEGADO:\n\nEste correo electrónico está reservado.");
-            if(telefono.length !== 8) return alert("El teléfono debe contener exactamente 8 dígitos numéricos.");
-            if(pass.length < 8 || pass.length > 15) return alert("La contraseña debe tener entre 8 y 15 caracteres.");
-            if(pass !== passConf) return alert("Las contraseñas no coinciden.");
-
-            const btn = document.getElementById('btnGuardarRegistro');
-            const originalHTML = btn.innerHTML;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Creando Perfil...';
-            btn.disabled = true;
-
-            const formData = new FormData();
-            formData.append('email', email);
-            formData.append('password', pass);
-            formData.append('passwordConfirm', passConf);
-            formData.append('name', nombreCompleto);
-            formData.append('telefono', telefono);
-            formData.append('rol', 'Usuario'); 
-            formData.append('username', "user_" + Date.now()); 
-            if (window.archivoAvatarTemp) formData.append('avatar', window.archivoAvatarTemp);
-
-            try {
-                const res = await fetch(`${getApiUrl()}/api/collections/users/records`, { method: 'POST', body: formData });
-                if(!res.ok) {
-                    const errorData = await res.json();
-                    let errMsg = "Ocurrió un error en el servidor.";
-                    if (errorData.data) {
-                        if (errorData.data.email) errMsg = "El correo electrónico ya se encuentra registrado.";
-                        else if (errorData.data.telefono) errMsg = "Este número de teléfono ya está asociado a otra cuenta.";
-                    }
-                    throw new Error(errMsg);
-                }
-
-                btn.classList.replace('btn-primary', 'btn-success');
-                btn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i> ¡Cuenta Creada Exitosamente!';
-                
-                setTimeout(() => {
-                    btn.classList.replace('btn-success', 'btn-primary');
-                    btn.innerHTML = originalHTML;
-                    btn.disabled = false;
-                    document.getElementById('formRegistro').reset();
-                    document.getElementById('formAvatarPreview').src = "https://ui-avatars.com/api/?name=Nuevo+Usuario&background=random";
-                    window.archivoAvatarTemp = null;
-                    cambiarVista('login');
-                }, 3000);
-            } catch (error) {
-                alert(error.message);
-                btn.innerHTML = originalHTML;
-                btn.disabled = false;
-            }
-        }
-
-        // --- Lógica del Modal de Recuperación ---
-        let tempRecoveryData = null; 
-        function resetearModalRecuperacion() {
-            document.getElementById('step1-recuperacion').classList.remove('d-none');
-            document.getElementById('step2-recuperacion').classList.add('d-none');
-            document.getElementById('recuperarEmailHack').value = '';
-            document.getElementById('recupNewPass').value = '';
-            document.getElementById('recupConfPass').value = '';
-            document.getElementById('btnVerificarHack').innerHTML = 'Verificar Existencia';
-            document.getElementById('btnVerificarHack').disabled = false;
-            document.getElementById('btnEjecutarReset').classList.replace('btn-success', 'btn-warning');
-            document.getElementById('btnEjecutarReset').innerHTML = 'Cambiar Contraseña';
-            document.getElementById('btnEjecutarReset').disabled = false;
-        }
-
-        async function verificarCorreoHack() {
-            const emailTarget = document.getElementById('recuperarEmailHack').value.trim();
-            if(!emailTarget) return alert("Por favor ingresa un correo para buscar.");
-            const btn = document.getElementById('btnVerificarHack');
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Buscando en BD...';
-            btn.disabled = true;
-
-            const urlBase = getApiUrl();
-            try {
-                let authRes = await fetch(`${urlBase}/api/collections/_superusers/auth-with-password`, {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ identity: 'kenth1977@gmail.com', password: 'CR129x7848n' })
-                });
-                let adminData = await authRes.json().catch(() => ({}));
-
-                if(!authRes.ok) {
-                    authRes = await fetch(`${urlBase}/api/admins/auth-with-password`, {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ identity: 'kenth1977@gmail.com', password: 'CR129x7848n' })
-                    });
-                    adminData = await authRes.json().catch(() => ({}));
-                    if(!authRes.ok) throw new Error("Fallo la Autenticación Maestra interna.");
-                }
-                
-                const adminToken = adminData.token;
-                const isV22 = !!adminData.admin;
-
-                let checkRes = await fetch(`${urlBase}/api/collections/users/records?filter=(email='${emailTarget}')`, { headers: { 'Authorization': adminToken } });
-                let checkData = await checkRes.json().catch(() => ({}));
-                let foundUser = (checkData.items && checkData.items.length > 0) ? checkData.items[0] : null;
-                let collection = 'users';
-
-                if(!foundUser) {
-                    if(!isV22) {
-                        checkRes = await fetch(`${urlBase}/api/collections/_superusers/records?filter=(email='${emailTarget}')`, { headers: { 'Authorization': adminToken } });
-                        checkData = await checkRes.json().catch(() => ({}));
-                        foundUser = (checkData.items && checkData.items.length > 0) ? checkData.items[0] : null;
-                        collection = '_superusers';
-                    } else {
-                        checkRes = await fetch(`${urlBase}/api/admins`, { headers: { 'Authorization': adminToken } });
-                        checkData = await checkRes.json().catch(() => ({}));
-                        foundUser = (checkData.items || []).find(a => a.email === emailTarget);
-                        collection = 'admins';
-                    }
-                }
-
-                if(!foundUser) throw new Error("El correo ingresado NO EXISTE en la base de datos.");
-
-                tempRecoveryData = { id: foundUser.id, collection: collection, token: adminToken };
-                document.getElementById('step1-recuperacion').classList.add('d-none');
-                document.getElementById('step2-recuperacion').classList.remove('d-none');
-            } catch (error) {
-                alert(error.message);
-                btn.innerHTML = 'Verificar Existencia';
-                btn.disabled = false;
-            }
-        }
-
-        async function ejecutarResetHack() {
-            const passNuevo = document.getElementById('recupNewPass').value;
-            const passConf = document.getElementById('recupConfPass').value;
-
-            if (passNuevo.length < 8 || passNuevo.length > 15) return alert("La contraseña debe tener entre 8 y 15 caracteres.");
-            if (passNuevo !== passConf) return alert("Las contraseñas no coinciden. Verifícalas.");
-
-            const btn = document.getElementById('btnEjecutarReset');
-            const originalHTML = btn.innerHTML;
-            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Empujando Datos...';
-            btn.disabled = true;
-
-            try {
-                let patchUrl = `${getApiUrl()}/api/collections/${tempRecoveryData.collection}/records/${tempRecoveryData.id}`;
-                if (tempRecoveryData.collection === 'admins') patchUrl = `${getApiUrl()}/api/admins/${tempRecoveryData.id}`;
-
-                const res = await fetch(patchUrl, {
-                    method: 'PATCH',
-                    headers: { 'Authorization': tempRecoveryData.token, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ password: passNuevo, passwordConfirm: passConf })
-                });
-
-                if(!res.ok) throw new Error("PocketBase rechazó el cambio.");
-
-                btn.classList.replace('btn-warning', 'btn-success');
-                btn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i> ¡Contraseña Cambiada!';
-
-                setTimeout(() => {
-                    bootstrap.Modal.getInstance(document.getElementById('recuperarPassModal')).hide();
-                    alert("✅ RECUPERACIÓN EXITOSA\n\nSe ha forzado el cambio de contraseña correctamente.\n\nYa puedes iniciar sesión con tu nueva clave.");
-                    resetearModalRecuperacion();
-                }, 2000);
-            } catch(error) {
-                alert(error.message);
-                btn.innerHTML = originalHTML;
-                btn.disabled = false;
-            }
-        }
-    </script>
 </body>
 </html>

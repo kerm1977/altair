@@ -18,7 +18,7 @@
     <link rel="stylesheet" href="css/bootstrap.css">
     <!-- Bootstrap Icons Local -->
     <link rel="stylesheet" href="css/bootstrap-icons.css">
-    <!-- CSS Principal Unificado (Opcional, si tienes estilos extra aquí) -->
+    <!-- CSS Principal Unificado -->
     <link rel="stylesheet" href="css/main.css">
 
     <style>
@@ -101,7 +101,7 @@
         .table-interactive tbody tr { cursor: pointer; transition: transform 0.2s ease; }
         .table-interactive tbody tr:hover td { background-color: var(--hover-row); color: var(--text-primary); }
 
-        /* Contenedor SPA: JS lo alineará al centro en Login, o arriba en los módulos */
+        /* Contenedor SPA */
         #app-root { flex-grow: 1; display: flex; flex-direction: column; width: 100%; padding-bottom: 90px; }
 
         .fade-view { animation: fadeIn 0.4s ease-in-out forwards; }
@@ -124,7 +124,7 @@
     <!-- ============================================================================== -->
     <main id="app-root">
         
-        <!-- VISTA ESTÁTICA: LOGIN (Inicia oculta para evitar parpadeos) -->
+        <!-- VISTA ESTÁTICA: LOGIN -->
         <div id="vista-login" class="w-100 fade-view d-none" style="max-width: 420px; margin: auto;">
             <div class="text-center mb-4 mt-4">
                 <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center shadow" style="width: 70px; height: 70px;">
@@ -147,7 +147,8 @@
                     <div class="mb-3">
                         <div class="d-flex justify-content-between align-items-center mb-1 px-2">
                             <label class="form-label fw-semibold text-muted-themed small m-0">Contraseña</label>
-                            <span role="button" class="text-info small text-decoration-underline fw-semibold cursor-pointer" data-bs-toggle="modal" data-bs-target="#recuperarPassModal">¿Olvidaste?</span>
+                            <!-- 🔥 BOTÓN OLVIDASTE: AHORA LLAMA A LA VISTA RECUPERACION.HTML -->
+                            <span role="button" class="text-info small text-decoration-underline fw-semibold cursor-pointer" onclick="cambiarVista('recuperacion')">¿Olvidaste?</span>
                         </div>
                         <div class="input-group-glass">
                             <div class="icon-box-glass"><i class="bi bi-lock"></i></div>
@@ -263,13 +264,12 @@
             </div>
         </div>
 
-        <!-- 🔥 VISTA DINÁMICA: AQUÍ SE INYECTAN LOS MÓDULOS COMO FRAGMENTOS -->
+        <!-- 🔥 VISTA DINÁMICA -->
         <div id="vista-dinamica" class="w-100 d-none fade-view"></div>
-
     </main>
 
     <!-- ============================================================================== -->
-    <!-- 📱 BARRA DE NAVEGACIÓN INFERIOR (SPA GLOBAL - ÚNICA - SIEMPRE VISIBLE) -->
+    <!-- 📱 BARRA DE NAVEGACIÓN INFERIOR -->
     <!-- ============================================================================== -->
     <div id="bottom-nav" class="fixed-bottom w-100" style="z-index: 1030;">
         <div class="glass-panel d-flex justify-content-around align-items-center pt-2 px-2 shadow-lg border-top border-secondary border-opacity-25" 
@@ -280,68 +280,21 @@
                 <span style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px;">INICIO</span>
             </a>
             
-            <!-- 🔥 BOTÓN AJUSTES: Reemplaza a Panel y Cpanel -->
             <a href="#" onclick="cambiarVista('dashboard')" id="navBtnAjustes" class="d-none text-themed text-decoration-none flex-column align-items-center p-2 opacity-75 nav-item-glass" title="Ajustes del Sistema">
                 <i class="bi bi-gear-fill fs-4 mb-1 text-warning"></i>
                 <span class="text-warning" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px;">AJUSTES</span>
             </a>
 
-            <!-- Dinámico: Dice LOGIN o SALIR dependiendo de la sesión -->
             <a href="#" id="navBtnAuth" class="text-primary text-decoration-none d-flex flex-column align-items-center p-2 opacity-75 nav-item-glass">
                 <i class="bi bi-person-fill fs-4 mb-1"></i>
                 <span style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px;">LOGIN</span>
             </a>
-
         </div>
     </div>
 
     <!-- ========================================================= -->
     <!-- 🔥 MODALES GLOBALES DE LA APLICACIÓN                      -->
     <!-- ========================================================= -->
-    
-    <!-- MODAL RECUPERACIÓN HACK -->
-    <div class="modal fade" id="recuperarPassModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-        <div class="modal-dialog modal-dialog-centered modal-sm">
-            <div class="modal-content glass-panel text-themed border-secondary border-opacity-25 shadow-lg rounded-4">
-                <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title fw-bold text-info fs-6"><i class="bi bi-unlock-fill me-2"></i> Recuperación Directa</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" onclick="typeof resetearModalRecuperacion === 'function' ? resetearModalRecuperacion() : null"></button>
-                </div>
-                <div class="modal-body pt-3 pb-4 text-start">
-                    <div id="step1-recuperacion">
-                        <p class="small text-muted-themed mb-3 fw-semibold">Modo de Emergencia: Ingresa tu correo para forzar el cambio en la BD.</p>
-                        <div class="input-group-glass mb-4">
-                            <div class="icon-box-glass"><i class="bi bi-envelope"></i></div>
-                            <input type="email" id="recuperarEmailHack" class="form-control-glass" placeholder="correo@ejemplo.com" required>
-                        </div>
-                        <button type="button" id="btnVerificarHack" class="btn btn-info text-dark w-100 rounded-pill fw-bold shadow-sm py-2" onclick="typeof verificarCorreoHack === 'function' ? verificarCorreoHack() : null">Verificar Existencia</button>
-                    </div>
-                    <div id="step2-recuperacion" class="d-none">
-                        <div class="alert bg-success bg-opacity-10 border border-success border-opacity-25 text-success small py-2 d-flex align-items-center gap-2 mb-3 rounded-3">
-                            <i class="bi bi-check-circle-fill fs-5"></i><div class="lh-sm"><strong>¡Cuenta encontrada!</strong><br>Por favor, asigna tu nueva clave.</div>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Nueva Contraseña</label>
-                            <div class="input-group-glass">
-                                <div class="icon-box-glass"><i class="bi bi-key"></i></div>
-                                <input type="password" id="recupNewPass" class="form-control-glass" placeholder="Máx 15 carac." maxlength="15">
-                                <div class="icon-btn-glass" onclick="typeof togglePassword === 'function' ? togglePassword('recupNewPass', 'iconRecup1') : null"><i class="bi bi-eye" id="iconRecup1"></i></div>
-                            </div>
-                        </div>
-                        <div class="mb-4">
-                            <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Confirmar</label>
-                            <div class="input-group-glass">
-                                <div class="icon-box-glass"><i class="bi bi-key-fill"></i></div>
-                                <input type="password" id="recupConfPass" class="form-control-glass" placeholder="Repita contraseña" maxlength="15">
-                                <div class="icon-btn-glass" onclick="typeof togglePassword === 'function' ? togglePassword('recupConfPass', 'iconRecup2') : null"><i class="bi bi-eye" id="iconRecup2"></i></div>
-                            </div>
-                        </div>
-                        <button type="button" id="btnEjecutarReset" class="btn btn-warning text-dark w-100 rounded-pill fw-bold shadow-sm py-2" onclick="typeof ejecutarResetHack === 'function' ? ejecutarResetHack() : null">Cambiar Contraseña</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
 
     <!-- MODAL REEMPLAZO DE ALERT() NATIVO -->
     <div class="modal fade" id="appAlertModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
@@ -362,13 +315,8 @@
         </div>
     </div>
 
-    <!-- ========================================== -->
-    <!-- 📦 SCRIPTS LOCALES (SIN INTERNET/CDNS)     -->
-    <!-- ========================================== -->
-    <!-- Bootstrap JS Local -->
+    <!-- SCRIPTS LOCALES -->
     <script src="js/bootstrap.js"></script>
-
-    <!-- Librerías de la App -->
     <script src="js/api_db.js"></script>
     <script src="js/index.js"></script>
     <script src="js/validaciones.js"></script>

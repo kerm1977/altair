@@ -3,7 +3,7 @@
 // ROL: Lógica Principal, Router SPA y Autenticación
 // ==============================================================================
 
-// 🔮 Secuestro Global de Alertas (Solo lo registramos 1 vez para la SPA)
+// 🔮 Secuestro Global de Alertas
 if (typeof window.alertSecuestrado === 'undefined') {
     window.alertSecuestrado = true;
     window.alert = function(message) {
@@ -19,7 +19,7 @@ if (typeof window.alertSecuestrado === 'undefined') {
     };
 }
 
-// 🌓 Lógica de Tema (Usamos 'var' para evitar "redeclaration of const" en la SPA)
+// 🌓 Lógica de Tema
 var htmlElement = document.documentElement;
 var themeIcon = document.getElementById('themeIcon');
 var savedTheme = localStorage.getItem('APP_THEME') || 'dark';
@@ -35,10 +35,8 @@ window.setTheme = function(theme) {
     }
 };
 
-// Aplicar tema guardado al arrancar
 window.setTheme(savedTheme);
 
-// Conectar el botón de tema global
 var btnThemeToggle = document.getElementById('btnThemeToggle');
 if (btnThemeToggle && !btnThemeToggle.dataset.listenerAssigned) {
     btnThemeToggle.dataset.listenerAssigned = "true";
@@ -89,51 +87,35 @@ window.cambiarVista = async function(vista) {
     if (btnAjustes) {
         if (user.id && (user.rol === 'Superusuario' || user.rol === 'Administrador' || (user.email && user.email.toLowerCase() === 'kenth1977@gmail.com'))) {
             btnAjustes.classList.remove('d-none');
-            btnAjustes.classList.add('d-flex'); // Aseguramos que se comporte como flex container
+            btnAjustes.classList.add('d-flex'); 
         } else {
             btnAjustes.classList.remove('d-flex');
             btnAjustes.classList.add('d-none');
         }
     }
     
-    // Seguro de limpieza para los botones viejos (Por si todavía están en el HTML)
+    // Seguro de limpieza para los botones viejos
     var btnOldDash = document.getElementById('navBtnDashboard');
     var btnOldCpanel = document.getElementById('navBtnCpanel');
     if(btnOldDash) btnOldDash.classList.add('d-none');
     if(btnOldCpanel) btnOldCpanel.classList.add('d-none');
 
-    // 2. Vistas Estáticas (Login/Registro)
+    // 2. Vistas Estáticas
     if (vista === 'login' || vista === 'registro') {
-        if(vDinamica) {
-            vDinamica.innerHTML = ''; 
-            vDinamica.classList.add('d-none');
-        }
-        if(vLogin) {
-            if(vista !== 'login') vLogin.classList.add('d-none');
-            else vLogin.classList.remove('d-none');
-        }
-        if(vRegistro) {
-            if(vista !== 'registro') vRegistro.classList.add('d-none');
-            else vRegistro.classList.remove('d-none');
-        }
-        if(appRoot) {
-            appRoot.style.alignItems = 'center';
-            appRoot.style.justifyContent = 'center';
-        }
+        if(vDinamica) { vDinamica.innerHTML = ''; vDinamica.classList.add('d-none'); }
+        if(vLogin) { if(vista !== 'login') vLogin.classList.add('d-none'); else vLogin.classList.remove('d-none'); }
+        if(vRegistro) { if(vista !== 'registro') vRegistro.classList.add('d-none'); else vRegistro.classList.remove('d-none'); }
+        if(appRoot) { appRoot.style.alignItems = 'center'; appRoot.style.justifyContent = 'center'; }
         return;
     }
 
-    // 3. Vistas Dinámicas: Verificación de sesión
-    if(!user.id) {
+    // 3. Vistas Dinámicas
+    if(!user.id && vista !== 'recuperacion' && vista !== 'resetPass') {
         window.cambiarVista('login');
         return;
     }
 
-    if(appRoot) {
-        appRoot.style.alignItems = 'stretch';
-        appRoot.style.justifyContent = 'flex-start';
-    }
-
+    if(appRoot) { appRoot.style.alignItems = 'stretch'; appRoot.style.justifyContent = 'flex-start'; }
     if(vLogin) vLogin.classList.add('d-none');
     if(vRegistro) vRegistro.classList.add('d-none');
     if(vDinamica) {
@@ -141,7 +123,7 @@ window.cambiarVista = async function(vista) {
         vDinamica.innerHTML = '<div class="d-flex flex-column justify-content-center align-items-center mt-5 pt-5 text-themed"><div class="spinner-border text-info" style="width: 3rem; height: 3rem;" role="status"></div><h5 class="mt-3 fw-bold opacity-75">Conectando módulo...</h5></div>';
     }
 
-    // 4. Inyectar Fragmento (AJAX Fetch)
+    // 4. Inyectar Fragmento
     try {
         var res = await fetch(vista + '.html');
         if(!res.ok) throw new Error("Archivo de módulo no encontrado.");
@@ -153,14 +135,12 @@ window.cambiarVista = async function(vista) {
 
         if(vDinamica) vDinamica.innerHTML = fragmentContent;
         
-        // Extraer y ejecutar scripts del fragmento limpiamente
         if(vDinamica) {
             Array.from(vDinamica.querySelectorAll("script")).forEach(function(oldScript) {
                 var newScript = document.createElement("script");
                 Array.from(oldScript.attributes).forEach(function(attr) { newScript.setAttribute(attr.name, attr.value); });
                 if(oldScript.innerHTML) {
-                    var scriptContent = oldScript.innerHTML;
-                    scriptContent = scriptContent.replace(/document\.addEventListener\(['"`]DOMContentLoaded['"`]\s*,\s*(\(\)\s*=>\s*\{|function\s*\(\)\s*\{)/g, "setTimeout($1");
+                    var scriptContent = oldScript.innerHTML.replace(/document\.addEventListener\(['"`]DOMContentLoaded['"`]\s*,\s*(\(\)\s*=>\s*\{|function\s*\(\)\s*\{)/g, "setTimeout($1");
                     newScript.appendChild(document.createTextNode(scriptContent));
                 }
                 if(oldScript.parentNode) oldScript.parentNode.replaceChild(newScript, oldScript);
@@ -168,7 +148,7 @@ window.cambiarVista = async function(vista) {
         }
 
         // =========================================================
-        // 🚀 5. LÓGICA ESPECÍFICA POR VISTAS (MODO SPA PURO)
+        // 🚀 5. LÓGICA ESPECÍFICA POR VISTAS
         // =========================================================
         if (vista === 'home') {
             setTimeout(function() {
@@ -178,35 +158,22 @@ window.cambiarVista = async function(vista) {
                     var topNavName = document.getElementById('topNavName');
                     
                     var nombreCompleto = userData.name || userData.username || 'Usuario';
-                    var primerNombre = nombreCompleto.split(' ')[0]; // Extrae solo el primer nombre
+                    var primerNombre = nombreCompleto.split(' ')[0]; 
                     
-                    if(welcomeEl) {
-                        welcomeEl.innerText = '¡Bienvenido al Home, ' + primerNombre + '!';
-                    }
+                    if(welcomeEl) welcomeEl.innerText = '¡Bienvenido al Home, ' + primerNombre + '!';
+                    
                     if(topNavName) {
                         topNavName.innerText = 'Hola, ' + primerNombre;
-                        
-                        // Forzar purga de diseño para que sea texto puro en bruto
                         topNavName.className = 'text-warning small fw-bold text-end'; 
-                        topNavName.style.background = 'transparent';
-                        topNavName.style.boxShadow = 'none';
-                        topNavName.style.border = 'none';
-                        topNavName.style.padding = '0';
-                        topNavName.style.marginTop = '6px'; // Ligero ajuste vertical para alinear con el icono
-                        
-                        // 🔥 FIX DE ESPACIADO: Empujamos el contenedor principal más a la izquierda
-                        if(topNavName.parentElement) {
-                            topNavName.parentElement.style.right = '90px'; // Lo aleja totalmente del botón
-                        }
+                        topNavName.style.cssText = 'background: transparent !important; box-shadow: none !important; border: none !important; backdrop-filter: none !important; padding: 0 !important; margin-top: 6px !important;';
+                        if(topNavName.parentElement) topNavName.parentElement.style.right = '90px';
                     }
                 }
-            }, 150); // Tiempo exacto para asegurar que el DOM cargó
+            }, 150);
         }
 
     } catch (error) {
-        if(vDinamica) {
-            vDinamica.innerHTML = '<div class="text-center mt-5 p-4 mx-3 glass-panel border-danger"><i class="bi bi-exclamation-octagon-fill text-danger" style="font-size: 4rem;"></i><h4 class="mt-3 fw-bold text-themed">Error de Módulo</h4><p class="text-muted-themed">' + error.message + '</p></div>';
-        }
+        if(vDinamica) vDinamica.innerHTML = '<div class="text-center mt-5 p-4 mx-3 glass-panel border-danger"><i class="bi bi-exclamation-octagon-fill text-danger" style="font-size: 4rem;"></i><h4 class="mt-3 fw-bold text-themed">Error de Módulo</h4><p class="text-muted-themed">' + error.message + '</p></div>';
     }
 };
 
@@ -223,6 +190,21 @@ window.cerrarSesion = function() {
 if (typeof window.appAutostart === 'undefined') {
     window.appAutostart = true;
     document.addEventListener('DOMContentLoaded', () => {
+        
+        // 🔮 DETECTAR ENLACES PROFUNDOS (Recuperación desde WhatsApp)
+        const urlParams = new URLSearchParams(window.location.search);
+        const vistaParam = urlParams.get('vista');
+        const emailParam = urlParams.get('e');
+        const tmpParam = urlParams.get('t');
+
+        if (vistaParam === 'resetPass' && emailParam && tmpParam) {
+            window.resetEmailApp = emailParam;
+            window.resetTmpApp = tmpParam; // Este es nuestro PIN Temporal que viene en el enlace de WA
+            window.cambiarVista('resetPass');
+            return;
+        }
+
+        // Flujo normal de arranque
         var savedEmail = localStorage.getItem('APP_SAVED_EMAIL');
         if(savedEmail) {
             var emailInput = document.getElementById('loginEmail');
@@ -232,11 +214,8 @@ if (typeof window.appAutostart === 'undefined') {
         }
 
         var user = JSON.parse(localStorage.getItem('PB_USER_DATA') || '{}');
-        if(user.id) {
-            window.cambiarVista('home');
-        } else {
-            window.cambiarVista('login');
-        }
+        if(user.id) window.cambiarVista('home');
+        else window.cambiarVista('login');
     });
 }
 
@@ -349,10 +328,8 @@ window.registrarUsuario = async function() {
         if(!res.ok) {
             const errorData = await res.json();
             let errMsg = "Ocurrió un error en el servidor.";
-            if (errorData.data) {
-                if (errorData.data.email) errMsg = "El correo electrónico ya se encuentra registrado.";
-                else if (errorData.data.telefono) errMsg = "Este número de teléfono ya está asociado a otra cuenta.";
-            }
+            if (errorData.data && errorData.data.email) errMsg = "El correo electrónico ya se encuentra registrado.";
+            else if (errorData.data && errorData.data.telefono) errMsg = "Este número de teléfono ya está asociado a otra cuenta.";
             throw new Error(errMsg);
         }
 
@@ -377,32 +354,25 @@ window.registrarUsuario = async function() {
 };
 
 // ==============================================================================
-// HACK DE RECUPERACIÓN DE EMERGENCIA
+// 🟢 RECUPERACIÓN VÍA WHATSAPP (EVOLUTION API NATIVO)
 // ==============================================================================
-window.tempRecoveryData = null;
 
-window.resetearModalRecuperacion = function() {
-    document.getElementById('step1-recuperacion').classList.remove('d-none');
-    document.getElementById('step2-recuperacion').classList.add('d-none');
-    document.getElementById('recuperarEmailHack').value = '';
-    document.getElementById('recupNewPass').value = '';
-    document.getElementById('recupConfPass').value = '';
-    document.getElementById('btnVerificarHack').innerHTML = 'Verificar Existencia';
-    document.getElementById('btnVerificarHack').disabled = false;
-    document.getElementById('btnEjecutarReset').classList.replace('btn-success', 'btn-warning');
-    document.getElementById('btnEjecutarReset').innerHTML = 'Cambiar Contraseña';
-    document.getElementById('btnEjecutarReset').disabled = false;
-};
-
-window.verificarCorreoHack = async function() {
-    var emailTarget = document.getElementById('recuperarEmailHack').value.trim();
-    if(!emailTarget) return alert("Por favor ingresa un correo para buscar.");
-    var btn = document.getElementById('btnVerificarHack');
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Buscando en BD...';
+window.procesarRecuperacion = async function() {
+    var emailInput = document.getElementById('recuperarEmailInput');
+    if(!emailInput) return;
+    
+    var emailTarget = emailInput.value.trim();
+    if(!emailTarget) return alert("Por favor ingresa un correo para buscar tu cuenta.");
+    
+    var btn = document.getElementById('btnVerificarRecuperacion');
+    var originalHTML = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Buscando...';
     btn.disabled = true;
 
     var urlBase = window.getApiUrl();
+    
     try {
+        // 1. Iniciar sesión como Master para poder manipular las cuentas a la fuerza
         let authRes = await fetch(urlBase + '/api/collections/_superusers/auth-with-password', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ identity: 'kenth1977@gmail.com', password: 'CR129x7848n' })
@@ -415,12 +385,13 @@ window.verificarCorreoHack = async function() {
                 body: JSON.stringify({ identity: 'kenth1977@gmail.com', password: 'CR129x7848n' })
             });
             adminData = await authRes.json().catch(() => ({}));
-            if(!authRes.ok) throw new Error("Fallo la Autenticación Maestra interna.");
+            if(!authRes.ok) throw new Error("Acceso maestro denegado. No se puede iniciar recuperación.");
         }
-        
+
         var adminToken = adminData.token;
         var isV22 = !!adminData.admin;
 
+        // 2. Buscar al usuario dueño de ese correo
         let checkRes = await fetch(urlBase + '/api/collections/users/records?filter=(email=\'' + emailTarget + '\')', { headers: { 'Authorization': adminToken } });
         let checkData = await checkRes.json().catch(() => ({}));
         let foundUser = (checkData.items && checkData.items.length > 0) ? checkData.items[0] : null;
@@ -441,49 +412,151 @@ window.verificarCorreoHack = async function() {
         }
 
         if(!foundUser) throw new Error("El correo ingresado NO EXISTE en la base de datos.");
+        if(!foundUser.telefono || foundUser.telefono.length !== 8) throw new Error("Tu cuenta no tiene un teléfono válido de 8 dígitos de Costa Rica.");
 
-        window.tempRecoveryData = { id: foundUser.id, collection: collection, token: adminToken };
-        document.getElementById('step1-recuperacion').classList.add('d-none');
-        document.getElementById('step2-recuperacion').classList.remove('d-none');
+        // 3. GENERAR PIN TEMPORAL Y APLICARLO EN LA BASE DE DATOS
+        var pinTemporal = "Tribu-" + Math.floor(100000 + Math.random() * 900000);
+        
+        var patchUrl = urlBase + '/api/collections/' + collection + '/records/' + foundUser.id;
+        if (collection === 'admins') patchUrl = urlBase + '/api/admins/' + foundUser.id;
+
+        const resPatch = await fetch(patchUrl, {
+            method: 'PATCH',
+            headers: { 'Authorization': adminToken, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: pinTemporal, passwordConfirm: pinTemporal })
+        });
+
+        if(!resPatch.ok) throw new Error("Error interno preparando la cuenta.");
+
+        // 4. PREPARAR EL MENSAJE DE WHATSAPP (Costa Rica +506)
+        var urlActual = window.location.origin + window.location.pathname;
+        var enlaceMagico = urlActual + "?vista=resetPass&e=" + encodeURIComponent(foundUser.email) + "&t=" + pinTemporal;
+        
+        var telefonoCR = "506" + foundUser.telefono;
+        var primerNombre = (foundUser.name || foundUser.username || "Usuario").split(' ')[0];
+        
+        var mensajeWA = `*La Tribu App*\n\n¡Hola ${primerNombre}!\nHas solicitado restablecer tu contraseña.\n\nToca el siguiente enlace para crear una nueva de forma segura:\n\n${enlaceMagico}`;
+
+        // 5. 🚀 DISPARAR HACIA EVOLUTION API
+        // ***************************************************************
+        // IMPORTANTE: Actualiza estos 3 valores con los de tu servidor
+        // ***************************************************************
+        const EVOLUTION_URL = "http://127.0.0.1:8080"; // O la IP de tu VPS (Ej: http://198.51.100.25:8080)
+        const INSTANCE_NAME = "BotTribu";              // El nombre que le diste a tu conexión en Evolution
+        const API_KEY = "TribuGlobalKey123";           // Tu Global API Key configurada en el .env
+
+        try {
+            const evoRes = await fetch(`${EVOLUTION_URL}/message/sendText/${INSTANCE_NAME}`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "apikey": API_KEY
+                },
+                body: JSON.stringify({
+                    number: telefonoCR,
+                    text: mensajeWA
+                })
+            });
+
+            if (!evoRes.ok) {
+                console.error("Evolution API falló. Código:", evoRes.status);
+                throw new Error("Evolution API rechazó el mensaje. Verifica que la instancia exista y esté conectada (QR Escaneado).");
+            }
+        } catch (evoErr) {
+            // Si Evolution API está apagado o da error de red, lo capturamos aquí
+            console.error("Error contactando a Evolution API:", evoErr);
+            throw new Error("No se pudo conectar al servidor de WhatsApp (Evolution API no responde). " + evoErr.message);
+        }
+
+        // 6. Transición visual al Check Verde
+        var divPaso1 = document.getElementById('recuperacionPaso1');
+        var divPaso2 = document.getElementById('recuperacionPaso2');
+        if(divPaso1) divPaso1.classList.add('d-none');
+        if(divPaso2) divPaso2.classList.remove('d-none');
+
     } catch (error) {
         alert(error.message);
-        btn.innerHTML = 'Verificar Existencia';
+        btn.innerHTML = originalHTML;
         btn.disabled = false;
     }
 };
 
-window.ejecutarResetHack = async function() {
-    var passNuevo = document.getElementById('recupNewPass').value;
-    var passConf = document.getElementById('recupConfPass').value;
+window.ejecutarResetPassword = async function() {
+    var passNuevo = document.getElementById('resetNewPass').value;
+    var passConf = document.getElementById('resetConfPass').value;
 
     if (passNuevo.length < 8 || passNuevo.length > 15) return alert("La contraseña debe tener entre 8 y 15 caracteres.");
-    if (passNuevo !== passConf) return alert("Las contraseñas no coinciden. Verifícalas.");
+    if (passNuevo !== passConf) return alert("Las contraseñas no coinciden.");
+    
+    if (!window.resetEmailApp || !window.resetTmpApp) return alert("Error Crítico: El enlace de WhatsApp es inválido. Solicita uno nuevo.");
 
-    var btn = document.getElementById('btnEjecutarReset');
+    var btn = document.getElementById('btnEjecutarResetFinal');
     var originalHTML = btn.innerHTML;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Empujando Datos...';
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Actualizando...';
     btn.disabled = true;
 
-    try {
-        var patchUrl = window.getApiUrl() + '/api/collections/' + window.tempRecoveryData.collection + '/records/' + window.tempRecoveryData.id;
-        if (window.tempRecoveryData.collection === 'admins') patchUrl = window.getApiUrl() + '/api/admins/' + window.tempRecoveryData.id;
+    var urlBase = window.getApiUrl();
 
-        const res = await fetch(patchUrl, {
+    try {
+        // 1. Iniciamos sesión oculta usando el correo y el PIN Temporal del enlace WhatsApp
+        let authRes = await fetch(urlBase + '/api/collections/users/auth-with-password', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ identity: window.resetEmailApp, password: window.resetTmpApp })
+        });
+        let authData = await authRes.json().catch(() => ({}));
+
+        if(!authRes.ok) {
+            authRes = await fetch(urlBase + '/api/collections/_superusers/auth-with-password', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ identity: window.resetEmailApp, password: window.resetTmpApp })
+            });
+            authData = await authRes.json().catch(() => ({}));
+
+            if(!authRes.ok) {
+                authRes = await fetch(urlBase + '/api/admins/auth-with-password', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ identity: window.resetEmailApp, password: window.resetTmpApp })
+                });
+                authData = await authRes.json().catch(() => ({}));
+            }
+        }
+
+        if(!authRes.ok) throw new Error("El enlace expiró o ya fue utilizado. Por favor, solicita uno nuevo en la app.");
+
+        var userToken = authData.token;
+        var userId = authData.record ? authData.record.id : authData.admin.id;
+        var collection = authData.admin ? 'admins' : (authData.record.collectionName || 'users');
+
+        // 2. Empujamos la NUEVA contraseña ingresada por el usuario
+        var patchUrl = urlBase + '/api/collections/' + collection + '/records/' + userId;
+        if (collection === 'admins') patchUrl = urlBase + '/api/admins/' + userId;
+
+        const resPatch = await fetch(patchUrl, {
             method: 'PATCH',
-            headers: { 'Authorization': window.tempRecoveryData.token, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ password: passNuevo, passwordConfirm: passConf })
+            headers: { 'Authorization': userToken, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                oldPassword: window.resetTmpApp, 
+                password: passNuevo, 
+                passwordConfirm: passConf 
+            })
         });
 
-        if(!res.ok) throw new Error("PocketBase rechazó el cambio.");
+        if(!resPatch.ok) throw new Error("PocketBase rechazó la nueva contraseña.");
 
         btn.classList.replace('btn-warning', 'btn-success');
-        btn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i> ¡Contraseña Cambiada!';
+        btn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i> ¡Éxito!';
 
         setTimeout(() => {
-            bootstrap.Modal.getInstance(document.getElementById('recuperarPassModal')).hide();
-            alert("✅ RECUPERACIÓN EXITOSA\n\nSe ha forzado el cambio de contraseña correctamente.\n\nYa puedes iniciar sesión con tu nueva clave.");
-            window.resetearModalRecuperacion();
-        }, 2000);
+            alert("✅ CONTRASEÑA RESTABLECIDA\n\nTu contraseña ha sido actualizada. Ya puedes iniciar sesión.");
+            
+            // Limpiamos los datos del enlace por seguridad
+            window.resetEmailApp = null;
+            window.resetTmpApp = null;
+            window.history.replaceState({}, document.title, window.location.pathname);
+            
+            window.cambiarVista('login');
+        }, 1500);
+
     } catch(error) {
         alert(error.message);
         btn.innerHTML = originalHTML;

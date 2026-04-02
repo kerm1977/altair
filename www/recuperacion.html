@@ -1,0 +1,46 @@
+<!-- ============================================================================== -->
+<!-- ARCHIVO: recuperacion.html                                                     -->
+<!-- DESCRIPCIÓN: Valida la cuenta y dispara el enlace mágico a WhatsApp Costa Rica -->
+<!-- ============================================================================== -->
+<div class="container fade-view pt-4 pb-5 mb-5 d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+    
+    <div class="card glass-panel shadow-lg rounded-4 p-4 p-md-5 mx-3 mx-sm-0 w-100" style="max-width: 500px;">
+        
+        <!-- Encabezado con Botón de Retroceso -->
+        <div class="d-flex align-items-center mb-4 gap-3">
+            <button class="btn btn-outline-secondary rounded-circle p-2 d-flex align-items-center justify-content-center shadow-sm" style="width: 40px; height: 40px;" onclick="cambiarVista('login')" title="Volver">
+                <i class="bi bi-arrow-left"></i>
+            </button>
+            <h3 class="fw-bold text-themed m-0"><i class="bi bi-whatsapp text-success me-2"></i> Recuperar Clave</h3>
+        </div>
+        
+        <!-- PASO 1: Formulario de Correo -->
+        <div id="recuperacionPaso1">
+            <p class="text-muted-themed small mb-4">Ingresa tu correo registrado. Te enviaremos un enlace de recuperación de un solo uso directamente por <strong>WhatsApp</strong> al número de teléfono asociado a esta cuenta.</p>
+            
+            <div class="input-group-glass mb-4">
+                <div class="icon-box-glass"><i class="bi bi-envelope"></i></div>
+                <input type="email" id="recuperarEmailInput" class="form-control-glass" placeholder="correo@ejemplo.com" required>
+            </div>
+            
+            <button type="button" id="btnVerificarRecuperacion" class="btn btn-success w-100 rounded-pill fw-bold shadow-sm py-3" onclick="typeof procesarRecuperacion === 'function' ? procesarRecuperacion() : null">
+                Enviar a mi WhatsApp <i class="bi bi-whatsapp ms-1"></i>
+            </button>
+        </div>
+
+        <!-- PASO 2: Confirmación Visual (Oculto por defecto) -->
+        <div id="recuperacionPaso2" class="d-none text-center mt-2">
+            <div class="bg-success bg-opacity-25 text-success rounded-circle d-inline-flex align-items-center justify-content-center mb-3 shadow" style="width: 90px; height: 90px;">
+                <i class="bi bi-check-lg" style="font-size: 3.5rem;"></i>
+            </div>
+            <h4 class="fw-bold text-themed mb-2">¡WhatsApp Enviado!</h4>
+            <p class="text-muted-themed small">El enlace de recuperación ha sido despachado a tu teléfono de Costa Rica (+506).</p>
+            <p class="text-warning small fw-semibold"><i class="bi bi-phone-vibrate-fill me-1"></i> Revisa los mensajes de tu WhatsApp para continuar.</p>
+            
+            <button class="btn btn-outline-success rounded-pill px-5 py-2 mt-3 fw-bold" onclick="cambiarVista('login')">
+                Volver al Login
+            </button>
+        </div>
+
+    </div>
+</div>

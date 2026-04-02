@@ -1,0 +1,37 @@
+ok si me parece pero me gustaría hacer una implementación al sistema de seguridad excepto Verificación por Administrador ya que no siempre se puede esta pendiente de esto... 
+
+
+lo primera opcion es fenomenal pero implementemos un pin de seguridad en el registro que diga Digite un pin de 6 digitos que te acuerdes por si se te olvida la contraseña.
+
+
+este campo se guarda con los datos de usuario... 
+
+
+ahora si a la persona se le olvida su contraseña necesito que apliquemos esto
+
+En el Registro (Fase de Prevención): Cuando un usuario crea su cuenta en vista-registro, la app genera automáticamente una Llave de Recuperación única de 16 caracteres (ejemplo: TRIBU-X92A-4491-K910).
+
+Responsabilidad del Usuario: Se le pide al usuario que guarde esa llave (puedes poner un botón de "Copiar" o "Descargar PDF").
+
+En la Base de Datos: Esa llave se guarda en PocketBase en un campo oculto, cifrada igual que la contraseña.
+
+El Proceso de Recuperación:
+
+
+El usuario entra a recuperacion.html.
+
+En lugar de pedirle que espere un correo que nunca llegará por el bloqueo de la VPN, el formulario le pide su Correo y su Llave Maestra.
+
+Si la llave coincide, la app le da paso inmediato a resetPass.html para que ponga su nueva contraseña.
+
+
+Ahora si el formulario ya no va a pedir solo  el correo sino
+
+el Teléfono con el que se registro
+
+El pin de seguridad y la clave o  Llave de Recuperación única de 16 caracteres
+
+y todo tiene que coincidor 
+
+
+mail y telefono y pin de 6 numeros y pin Recuperación guardado 

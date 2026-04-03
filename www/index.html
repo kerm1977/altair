@@ -248,7 +248,7 @@
                 <div class="text-center mb-4">
                     <h2 class="fw-bold text-themed mb-4"><i class="bi bi-person-badge text-primary me-2"></i>Únete a La Tribu</h2>
                     
-                    <div class="position-relative d-inline-block avatar-upload-container cursor-pointer" onclick="document.getElementById('inputAvatarFile').click()">
+                    <div class="position-relative d-inline-block avatar-upload-container cursor-pointer" onclick="typeof ImageEditorManager !== 'undefined' ? ImageEditorManager.abrirSelectorImagen('formAvatarPreview') : document.getElementById('inputAvatarFile').click()">
                         <img id="formAvatarPreview" src="https://ui-avatars.com/api/?name=Nuevo+Usuario&background=random" class="rounded-circle shadow-lg border border-4 border-secondary border-opacity-25" width="130" height="130" style="object-fit: cover; transition: all 0.3s;">
                         <div class="avatar-upload-overlay position-absolute top-0 start-0 w-100 h-100 rounded-circle bg-dark bg-opacity-50 d-flex justify-content-center align-items-center" style="opacity: 0; transition: opacity 0.2s;">
                             <i class="bi bi-camera-fill text-white fs-3"></i>
@@ -406,8 +406,10 @@
     <!-- LIBRERÍA DE VALIDACIONES -->
     <script src="js/validaciones.js"></script>
     
-    <!-- LÓGICA CORE -->
+    <!-- 🚀 NUEVO: EDITOR DE IMÁGENES -->
     <script src="js/imageEditor.js"></script>
+
+    <!-- LÓGICA CORE -->
     <script src="js/index.js"></script>
 
 </body>

@@ -1,7 +1,7 @@
 {
-  "name": "altus",
+  "name": "prometeusv1",
   "version": "1.0.0",
-  "description": "altus",
+  "description": "Prometeus",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -9,7 +9,7 @@
     "start-global": "node runserver.js"
   },
   "keywords": [],
-  "author": "altus",
+  "author": "kenneth",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {

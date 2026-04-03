@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">altus</string>
-    <string name="title_activity_main">altus</string>
-    <string name="package_name">com.altus.app</string>
-    <string name="custom_url_scheme">com.altus.app</string>
+    <string name="app_name">PrometeusV1</string>
+    <string name="title_activity_main">PrometeusV1</string>
+    <string name="package_name">com.prometeusv1.app</string>
+    <string name="custom_url_scheme">com.prometeusv1.app</string>
 </resources>

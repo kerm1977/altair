@@ -1,6 +1,6 @@
 // ==============================================================================
 // ARCHIVO: js/index.js
-// ROL: Lógica Principal, Router SPA, Autenticación, Perfil y Criptografía Cold Storage
+// ROL: Lógica Principal, Router SPA, Autenticación, Perfil y Criptografía
 // ==============================================================================
 
 // 🔮 Secuestro Global de Alertas
@@ -18,6 +18,35 @@ if (typeof window.alertSecuestrado === 'undefined') {
         }
     };
 }
+
+// ==============================================================================
+// URL DINÁMICA MULTI-ENTORNO (CON LIMPIEZA AUTOMÁTICA DE ERRORES DE TIPEO)
+// ==============================================================================
+window.DEFAULT_ENV = "dev";
+window.DEFAULT_DEV_URL = "https://desktop-71uhcug.tailb81e5f.ts.net"; // 🔥 AQUÍ QUEMAMOS TU URL DE TAILSCALE
+window.DEFAULT_PROD_URL = "https://api.tu-servidor-premium.com";
+
+window.getApiUrl = function() {
+    var env = localStorage.getItem('APP_ENV') || window.DEFAULT_ENV;
+    var rawUrl = env === 'prod' ? localStorage.getItem('APP_PROD_URL') : (localStorage.getItem('APP_DEV_URL') || window.DEFAULT_DEV_URL);
+    
+    if (rawUrl) {
+        // Elimina espacios en blanco y quita la barra diagonal al final si el usuario la puso por error
+        rawUrl = rawUrl.trim().replace(/\/+$/, "");
+    }
+    return rawUrl;
+};
+
+// 🛡️ TRADUCTOR DE ERRORES DE RED (APK / CORS) MEJORADO
+window.interpretarError = function(error) {
+    var msg = error.message || String(error);
+    var currentUrl = window.getApiUrl();
+    
+    if (msg.includes("Failed to fetch") || msg.toLowerCase().includes("networkerror")) {
+        return "❌ SIN CONEXIÓN AL SERVIDOR\n\nEl celular no puede conectarse a:\n[" + currentUrl + "]\n\n🔧 CAUSAS POSIBLES:\n1. Tu computadora está apagada o el servidor node está detenido.\n2. El túnel de Tailscale se cerró o no está apuntando al puerto 8090.\n3. Tu celular no tiene internet.\n\nPrueba abrir esa URL en el Chrome de tu celular para verificar si hay conexión real.";
+    }
+    return msg;
+};
 
 // 🌓 Lógica de Tema
 var htmlElement = document.documentElement;
@@ -47,14 +76,6 @@ if (btnThemeToggle && !btnThemeToggle.dataset.listenerAssigned) {
         localStorage.setItem('APP_THEME', newTheme);
     });
 }
-
-// ==============================================================================
-// URL DINÁMICA MULTI-ENTORNO
-// ==============================================================================
-window.getApiUrl = function() {
-    var env = localStorage.getItem('APP_ENV') || 'dev';
-    return env === 'prod' ? localStorage.getItem('APP_PROD_URL') : (localStorage.getItem('APP_DEV_URL') || 'http://127.0.0.1:8090');
-};
 
 // ==============================================================================
 // 🔄 ROUTER SPA: GESTOR DE VISTAS Y FRAGMENTOS
@@ -122,7 +143,7 @@ window.cambiarVista = async function(vista) {
     }
 
     // 3. Vistas Dinámicas
-    if(!user.id && vista !== 'recuperacion' && vista !== 'resetPass') {
+    if(!user.id && vista !== 'recuperacion' && vista !== 'resetPass' && vista !== 'home') {
         window.cambiarVista('login');
         return;
     }
@@ -165,10 +186,10 @@ window.cambiarVista = async function(vista) {
         if (vista === 'home') {
             setTimeout(function() {
                 var userData = JSON.parse(localStorage.getItem('PB_USER_DATA') || '{}');
+                var welcomeEl = document.getElementById('welcomeTitle');
+                var topNavName = document.getElementById('topNavName');
+                
                 if(userData.id) {
-                    var welcomeEl = document.getElementById('welcomeTitle');
-                    var topNavName = document.getElementById('topNavName');
-                    
                     var nombreCompleto = userData.name || userData.username || 'Usuario';
                     var primerNombre = nombreCompleto.split(' ')[0]; 
                     
@@ -180,22 +201,24 @@ window.cambiarVista = async function(vista) {
                         topNavName.style.cssText = 'background: transparent !important; box-shadow: none !important; border: none !important; backdrop-filter: none !important; padding: 0 !important; margin-top: 6px !important;';
                         if(topNavName.parentElement) topNavName.parentElement.style.right = '90px';
                     }
+                } else {
+                    if(welcomeEl) welcomeEl.innerText = '¡Explora La Tribu!';
+                    if(topNavName) topNavName.innerText = '';
                 }
             }, 150);
         }
 
         if (vista === 'perfil') {
-            // 🔥 PARCHE DE RESCATE VISUAL: Forza a mostrar la foto correcta al navegar
+            // 🔥 PARCHE DE RESCATE VISUAL
             setTimeout(function() {
                 var userData = JSON.parse(localStorage.getItem('PB_USER_DATA') || '{}');
                 var preview = document.getElementById('miPerfilAvatar');
                 if (preview && userData.avatar && userData.id) {
                     var urlBase = typeof window.getApiUrl === 'function' ? window.getApiUrl() : 'http://127.0.0.1:8090';
-                    // Utilizamos collectionId por defecto para evitar bugs de PocketBase v0.23
                     var colName = userData.collectionId || userData.collectionName || (userData.rol === 'Superusuario' ? '_superusers' : 'users');
                     preview.src = urlBase + '/api/files/' + colName + '/' + userData.id + '/' + userData.avatar + '?t=' + Date.now();
                 }
-            }, 250); // El retraso garantiza sobreescribir cualquier fallo del script interno de perfil.html
+            }, 250); 
         }
 
     } catch (error) {
@@ -224,9 +247,7 @@ if (typeof window.appAutostart === 'undefined') {
             if(remMe) remMe.checked = true;
         }
 
-        var user = JSON.parse(localStorage.getItem('PB_USER_DATA') || '{}');
-        if(user.id) window.cambiarVista('home');
-        else window.cambiarVista('login');
+        window.cambiarVista('home');
     });
 }
 
@@ -292,7 +313,7 @@ window.loginUsuario = async function() {
         }, 1500);
 
     } catch(error) {
-        alert(error.message);
+        alert(window.interpretarError(error));
         btn.innerHTML = originalHTML;
         btn.disabled = false;
     }
@@ -343,6 +364,8 @@ window.registrarUsuario = async function() {
         const res = await fetch(window.getApiUrl() + '/api/collections/users/records', { method: 'POST', body: formData });
         if(!res.ok) {
             const errorData = await res.json().catch(()=>({}));
+            console.error("PocketBase Reject:", errorData);
+            
             let errMsg = "Ocurrió un error en el servidor.";
             if (errorData.data) {
                 if (errorData.data.email) errMsg = "El correo electrónico ya se encuentra registrado.";
@@ -389,7 +412,7 @@ window.registrarUsuario = async function() {
         }, 1500);
 
     } catch (error) {
-        alert(error.message);
+        alert(window.interpretarError(error));
         btn.innerHTML = originalHTML;
         btn.disabled = false;
     }
@@ -475,7 +498,7 @@ window.ejecutarResetPassword = async function() {
         }, 1500);
 
     } catch(error) {
-        alert(error.message);
+        alert(window.interpretarError(error));
         btn.innerHTML = originalHTML;
         btn.disabled = false;
     }
@@ -483,7 +506,6 @@ window.ejecutarResetPassword = async function() {
 
 // ==============================================================================
 // 🦸‍♂️ LÓGICA DE PERFIL (DATOS, IMÁGENES, CONTRASEÑA Y LLAVE)
-// Centralizado aquí para evitar pérdida de contexto al navegar por la SPA
 // ==============================================================================
 window.guardarDatosPerfilLocal = async function() {
     var iNombres = document.getElementById('editNombres');
@@ -519,7 +541,6 @@ window.guardarDatosPerfilLocal = async function() {
             formData.append('avatar', window.archivoAvatarTemp, "avatar_" + Date.now() + ".jpg");
         }
 
-        // 🔥 FIX PROFUNDO: Forzamos collectionId para evitar errores 404 al buscar la imagen
         const colTarget = user.collectionId || user.collectionName || (user.rol === 'Superusuario' ? '_superusers' : 'users');
         let endpoint = `${urlBase}/api/collections/${colTarget}/records/${user.id}`;
         if (colTarget === 'admins') endpoint = `${urlBase}/api/admins/${user.id}`;
@@ -534,7 +555,6 @@ window.guardarDatosPerfilLocal = async function() {
 
         const updatedData = await res.json();
         
-        // 🔥 REPARACIÓN ESTRUCTURAL DE MEMORIA
         updatedData.rol = user.rol; 
         updatedData.collectionId = updatedData.collectionId || user.collectionId || colTarget;
         updatedData.collectionName = updatedData.collectionName || user.collectionName || colTarget;
@@ -560,7 +580,7 @@ window.guardarDatosPerfilLocal = async function() {
         }, 2000);
 
     } catch (error) {
-        alert(error.message);
+        alert(window.interpretarError(error));
         btn.innerHTML = originalHTML;
         btn.disabled = false;
     }
@@ -620,7 +640,7 @@ window.cambiarPasswordLocal = async function() {
         }, 1500);
 
     } catch (error) {
-        alert(error.message);
+        alert(window.interpretarError(error));
         btn.innerHTML = originalHTML;
         btn.disabled = false;
     }
@@ -703,7 +723,7 @@ window.generarCopiaLlaveJSON = async function() {
         }, 1500);
 
     } catch (error) {
-        alert(error.message);
+        alert(window.interpretarError(error));
         btn.innerHTML = originalHTML;
         btn.disabled = false;
     }

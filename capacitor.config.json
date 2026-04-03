@@ -1,6 +1,6 @@
 {
-  "appId": "com.altus.app",
-  "appName": "altus",
+  "appId": "com.prometeusv1.app",
+  "appName": "PrometeusV1",
   "webDir": "www",
   "bundledWebRuntime": false,
   "plugins": {

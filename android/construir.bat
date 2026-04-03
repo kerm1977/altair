@@ -5,7 +5,7 @@ setlocal enabledelayedexpansion
 cd /d "%~dp0"
 
 echo ==========================================
-echo    MOTOR COMPILADOR ANDROID (CORE V5 - UI FIX)
+echo   MOTOR COMPILADOR ANDROID (CORE V5 - UI FIX)
 echo ==========================================
 
 :: 2. CARGAR VARIABLES DIRECTAMENTE DESDE CAPACITOR (SIN ARCHIVOS PUENTE)

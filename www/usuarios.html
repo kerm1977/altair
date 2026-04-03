@@ -109,7 +109,7 @@
 </div>
 
 <!-- ============================================================================== -->
-<!-- MODAL 1: PERFIL DETALLADO -->
+<!-- MODAL 1: PERFIL DETALLADO Y RESCATE MASTER -->
 <!-- ============================================================================== -->
 <div class="modal fade" id="perfilModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
@@ -170,6 +170,31 @@
                         <i class="bi bi-cloud-arrow-up-fill fs-5"></i> Empujar y Verificar
                     </button>
                 </div>
+
+                <!-- 🔥 BÓVEDA DE RESCATE (SOLO SUPERUSUARIO) -->
+                <div id="adminRescueBlock" class="p-4 rounded-4 border border-danger border-opacity-50 text-start mt-3 d-none" style="background: rgba(220, 53, 69, 0.05);">
+                    <h6 class="fw-bold text-danger mb-3"><i class="bi bi-life-preserver me-2"></i>Bóveda de Rescate Maestro</h6>
+                    <p class="small text-muted-themed mb-3">Como Superusuario, puedes forzar una nueva contraseña sin conocer la anterior y generarle una nueva Llave JSON Encriptada al usuario.</p>
+                    
+                    <div class="row g-2 mb-3">
+                        <div class="col-sm-6">
+                            <div class="input-group-glass bg-dark border-danger border-opacity-50">
+                                <div class="icon-box-glass text-danger"><i class="bi bi-key"></i></div>
+                                <input type="password" class="form-control-glass text-light" id="rescuePassNuevo" placeholder="Nueva Clave Forzada">
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="input-group-glass bg-dark border-danger border-opacity-50">
+                                <div class="icon-box-glass text-danger"><i class="bi bi-key-fill"></i></div>
+                                <input type="password" class="form-control-glass text-light" id="rescuePassConf" placeholder="Confirmar Clave">
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn btn-danger rounded-pill fw-bold shadow-sm w-100 py-2" id="btnRescueDB" onclick="forzarRescateMaestro()">
+                        <i class="bi bi-usb-drive-fill me-2"></i> Forzar Clave y Generar Llave
+                    </button>
+                </div>
+
             </div>
         </div>
     </div>
@@ -346,7 +371,7 @@
     }, 100);
 
     // ==========================================================
-    // 🪄 DIAGNÓSTICO Y REPARACIÓN AUTOMÁTICA (AGRESIVO PARA V0.23)
+    // 🪄 DIAGNÓSTICO Y REPARACIÓN AUTOMÁTICA
     // ==========================================================
     async function diagnosticarTablas(token, urlBase) {
         try {
@@ -403,32 +428,11 @@
             
             const genFieldId = () => { let r=''; const c='abcdefghijklmnopqrstuvwxyz0123456789'; for(let i=0;i<8;i++)r+=c.charAt(Math.floor(Math.random()*c.length)); return r; };
 
-            // 🔥 EL GENERADOR UNIVERSAL ABSOLUTO (V23 y V22)
             const createField = (name) => {
                 if (isV23) {
-                    return {
-                        id: genFieldId(),
-                        name: name,
-                        type: 'text',
-                        system: false,
-                        required: false,
-                        presentable: false,
-                        hidden: false,
-                        primaryKey: false,
-                        min: 0,
-                        max: 0,
-                        pattern: ""
-                    };
+                    return { id: genFieldId(), name: name, type: 'text', system: false, required: false, presentable: false, hidden: false, primaryKey: false, min: 0, max: 0, pattern: "" };
                 } else {
-                    return {
-                        id: genFieldId(),
-                        name: name,
-                        type: 'text',
-                        system: false,
-                        required: false,
-                        unique: false,
-                        options: { min: null, max: null, pattern: "" }
-                    };
+                    return { id: genFieldId(), name: name, type: 'text', system: false, required: false, unique: false, options: { min: null, max: null, pattern: "" } };
                 }
             };
 
@@ -449,7 +453,7 @@
                 throw new Error("PocketBase rechazó la inyección. Detalle: " + JSON.stringify(errData.data || errData.message));
             }
             
-            alert("¡BRUTAL! 🚀\n\nLas columnas (incluyendo el PIN JSON) se inyectaron automáticamente y de forma nativa en la tabla auth.");
+            alert("¡BRUTAL! 🚀\n\nLas columnas se inyectaron automáticamente.");
             await cargarUsuariosDesdeBD();
             
         } catch(e) {
@@ -460,7 +464,7 @@
     }
 
     // ==========================================================
-    // CARGA DE USUARIOS
+    // CARGA DE USUARIOS Y PERFILES
     // ==========================================================
     async function cargarUsuariosDesdeBD() {
         const token = localStorage.getItem('PB_ADMIN_TOKEN');
@@ -528,6 +532,7 @@
             document.getElementById('lblContadorTabla').innerText = "0 cuentas";
             return;
         }
+        
         arreglo.forEach(u => {
             let b = `<span class="badge bg-primary rounded-pill px-3 py-2 shadow-sm"><i class="bi bi-person-fill"></i> <span class="d-none d-sm-inline">Usuario</span></span>`;
             if(u.rol === 'Superusuario') b = `<span class="badge bg-danger rounded-pill px-3 py-2 shadow-sm"><i class="bi bi-lightning-fill"></i> <span class="d-none d-sm-inline">Superusuario</span></span>`;
@@ -570,7 +575,100 @@
         else if (u.rol === 'Administrador') b = `<span class="badge bg-warning text-dark rounded-pill px-3 py-2 shadow-sm"><i class="bi bi-shield-fill-check"></i> Administrador</span>`;
         document.getElementById('detalleRol').innerHTML = b;
         document.getElementById('profPassActual').value = ""; document.getElementById('profPassNuevo').value = ""; document.getElementById('profPassConf').value = "";
+        
+        // 🔥 LÓGICA DE SUPERUSUARIO PARA HABILITAR LA BÓVEDA DE RESCATE
+        const sesionDataStr = localStorage.getItem('PB_USER_DATA');
+        const isMaster = sesionDataStr ? JSON.parse(sesionDataStr).rol === 'Superusuario' : false;
+        
+        // Si yo soy superusuario y el perfil que abrí NO es otro superusuario
+        if (isMaster && u.rol !== 'Superusuario') {
+            document.getElementById('adminRescueBlock').classList.remove('d-none');
+            document.getElementById('rescuePassNuevo').value = '';
+            document.getElementById('rescuePassConf').value = '';
+        } else {
+            document.getElementById('adminRescueBlock').classList.add('d-none');
+        }
+
         perfilModalInstancia.show();
+    }
+
+    // ==========================================================
+    // 🔥 FORZAR RESCATE MAESTRO (SOLO SUPERUSUARIO)
+    // ==========================================================
+    async function forzarRescateMaestro() {
+        const pNuevo = document.getElementById('rescuePassNuevo').value;
+        const pConf = document.getElementById('rescuePassConf').value;
+        
+        if(pNuevo.length < 8 || pNuevo.length > 15) return alert("La contraseña debe tener de 8 a 15 caracteres.");
+        if(pNuevo !== pConf) return alert("Las contraseñas de rescate no coinciden.");
+
+        const token = localStorage.getItem('PB_ADMIN_TOKEN');
+        const urlBase = typeof getApiUrl === 'function' ? getApiUrl() : 'http://127.0.0.1:8090';
+        const u = usuariosGlobales.find(x => x.id === idUsuarioEditando);
+        
+        if(!u.telefono) {
+            return alert("🛑 IMPOSIBLE GENERAR LLAVE:\n\nEl usuario no tiene un teléfono registrado. Edita su información primero para agregarle su número de celular antes de forzar el rescate.");
+        }
+
+        const btn = document.getElementById('btnRescueDB');
+        const oHtml = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Forzando Rescate...';
+        btn.disabled = true;
+
+        try {
+            // A. Cambiar contraseña saltándose el requisito de "oldPassword" gracias al Token Admin
+            const patchData = { password: pNuevo, passwordConfirm: pConf };
+            const res = await fetch(`${urlBase}/api/collections/${u.collectionName}/records/${u.id}`, { 
+                method: 'PATCH', 
+                headers: { 'Authorization': token, 'Content-Type': 'application/json' }, 
+                body: JSON.stringify(patchData) 
+            });
+            if(!res.ok) throw new Error("PocketBase rechazó la alteración de la contraseña.");
+            
+            // B. Generar la Llave JSON Encriptada (Cold Storage)
+            const hashSeguro = btoa(unescape(encodeURIComponent(pNuevo)));
+            const keyData = {
+                app: "La Tribu",
+                fecha: new Date().toISOString(),
+                email: u.email,
+                telefono: u.telefono,
+                pin: "RESETEADO", // Identificador de que fue un rescate maestro
+                hash_seguridad: hashSeguro
+            };
+            
+            const payloadEncriptado = btoa(unescape(encodeURIComponent(JSON.stringify(keyData)))).split('').reverse().join('');
+            const secureVault = {
+                _advertencia: "ARCHIVO ENCRIPTADO POR EL SUPERUSUARIO. NO MODIFICAR NINGUN CARACTER O LA LLAVE SE DESTRUIRA.",
+                tribu_secure_vault: payloadEncriptado
+            };
+            
+            const blob = new Blob([JSON.stringify(secureVault, null, 2)], { type: "application/json" });
+            const urlObj = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = urlObj;
+            a.download = `Llave_Rescate_Tribu_${u.telefono}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(urlObj);
+
+            btn.classList.replace('btn-danger', 'btn-success');
+            btn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i> ¡Rescate Exitoso!';
+            
+            setTimeout(() => {
+                alert("¡RESCATE MAESTRO COMPLETADO! 🚀\n\n1. La contraseña del usuario fue sobreescrita por la fuerza.\n2. Se acaba de descargar a tu equipo la 'Llave de Rescate Encriptada'.\n\nEnvíasela al usuario por correo o WhatsApp. Con ella podrá volver a acceder a su cuenta usando la pantalla de Recuperación.");
+                btn.classList.replace('btn-success', 'btn-danger');
+                btn.innerHTML = oHtml;
+                btn.disabled = false;
+                document.getElementById('rescuePassNuevo').value = '';
+                document.getElementById('rescuePassConf').value = '';
+            }, 1000);
+
+        } catch(e) {
+            alert(e.message);
+            btn.innerHTML = oHtml;
+            btn.disabled = false;
+        }
     }
 
     async function cambiarPasswordDesdePerfil() {
@@ -608,7 +706,6 @@
         document.getElementById('formAvatarPreview').src = "https://ui-avatars.com/api/?name=Nuevo+Usuario&background=random";
         document.getElementById('inputNombres').disabled = false; document.getElementById('inputApellido1').disabled = false; document.getElementById('inputApellido2').disabled = false; document.getElementById('inputTelefono').disabled = false;
         
-        // Habilitar PIN en creación
         var pInput = document.getElementById('inputPin');
         if(pInput) { pInput.disabled = false; pInput.value = ""; }
         

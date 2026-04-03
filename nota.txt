@@ -9,6 +9,7 @@ C:\Users\MINIOS\Desktop\altair\www <-- PARA EJECUTAR EL SERVIDOR
 Ejecutar estos 2 comandos en dos pestañas diferentes
 node runserver.js (Ejecuta tailscale, u)
 npx http-server www -c-1
+.\pocketbase.exe superuser upsert email contraseña
 
 
 

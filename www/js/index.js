@@ -1,6 +1,6 @@
 // ==============================================================================
 // ARCHIVO: js/index.js
-// ROL: Lógica Principal, Router SPA, Autenticación y Criptografía Cold Storage
+// ROL: Lógica Principal, Router SPA, Autenticación, Perfil y Criptografía Cold Storage
 // ==============================================================================
 
 // 🔮 Secuestro Global de Alertas
@@ -69,7 +69,7 @@ window.cambiarVista = async function(vista) {
 
     // 1. Configurar barra inferior de acuerdo a la sesión
     var btnAuth = document.getElementById('navBtnAuth');
-    var btnPerfil = document.getElementById('navBtnPerfil'); // <-- Capturamos el botón de Perfil
+    var btnPerfil = document.getElementById('navBtnPerfil'); 
     
     if (btnAuth) {
         if (user.id) {
@@ -85,7 +85,6 @@ window.cambiarVista = async function(vista) {
         }
     }
 
-    // 🔥 NUEVA LÓGICA: Mostrar u ocultar el Perfil
     if (btnPerfil) {
         if (user.id) {
             btnPerfil.classList.remove('d-none');
@@ -161,7 +160,7 @@ window.cambiarVista = async function(vista) {
         }
 
         // =========================================================
-        // 🚀 5. LÓGICA ESPECÍFICA POR VISTAS
+        // 🚀 5. LÓGICA ESPECÍFICA POR VISTAS (SPA ROUTER LOGIC)
         // =========================================================
         if (vista === 'home') {
             setTimeout(function() {
@@ -185,6 +184,20 @@ window.cambiarVista = async function(vista) {
             }, 150);
         }
 
+        if (vista === 'perfil') {
+            // 🔥 PARCHE DE RESCATE VISUAL: Forza a mostrar la foto correcta al navegar
+            setTimeout(function() {
+                var userData = JSON.parse(localStorage.getItem('PB_USER_DATA') || '{}');
+                var preview = document.getElementById('miPerfilAvatar');
+                if (preview && userData.avatar && userData.id) {
+                    var urlBase = typeof window.getApiUrl === 'function' ? window.getApiUrl() : 'http://127.0.0.1:8090';
+                    // Utilizamos collectionId por defecto para evitar bugs de PocketBase v0.23
+                    var colName = userData.collectionId || userData.collectionName || (userData.rol === 'Superusuario' ? '_superusers' : 'users');
+                    preview.src = urlBase + '/api/files/' + colName + '/' + userData.id + '/' + userData.avatar + '?t=' + Date.now();
+                }
+            }, 250); // El retraso garantiza sobreescribir cualquier fallo del script interno de perfil.html
+        }
+
     } catch (error) {
         if(vDinamica) vDinamica.innerHTML = '<div class="text-center mt-5 p-4 mx-3 glass-panel border-danger"><i class="bi bi-exclamation-octagon-fill text-danger" style="font-size: 4rem;"></i><h4 class="mt-3 fw-bold text-themed">Error de Módulo</h4><p class="text-muted-themed">' + error.message + '</p></div>';
     }
@@ -203,7 +216,6 @@ window.cerrarSesion = function() {
 if (typeof window.appAutostart === 'undefined') {
     window.appAutostart = true;
     document.addEventListener('DOMContentLoaded', () => {
-        // Flujo normal de arranque
         var savedEmail = localStorage.getItem('APP_SAVED_EMAIL');
         if(savedEmail) {
             var emailInput = document.getElementById('loginEmail');
@@ -320,26 +332,28 @@ window.registrarUsuario = async function() {
     formData.append('passwordConfirm', passConf);
     formData.append('name', nombreCompleto);
     formData.append('telefono', telefono);
-    formData.append('pin_recuperacion', pin); // Nuevo campo crucial en la BD
+    formData.append('pin_recuperacion', pin); 
     formData.append('rol', 'Usuario'); 
-    formData.append('username', "user_" + Date.now()); 
-    if (window.archivoAvatarTemp) formData.append('avatar', window.archivoAvatarTemp);
+    
+    if (window.archivoAvatarTemp) {
+        formData.append('avatar', window.archivoAvatarTemp, "avatar_" + Date.now() + ".jpg");
+    }
 
     try {
         const res = await fetch(window.getApiUrl() + '/api/collections/users/records', { method: 'POST', body: formData });
         if(!res.ok) {
             const errorData = await res.json().catch(()=>({}));
-            let errMsg = "Ocurrió un error en el servidor. ¿Añadiste la columna 'pin_recuperacion' en tu CPanel?";
-            if (errorData.data && errorData.data.email) errMsg = "El correo electrónico ya se encuentra registrado.";
-            else if (errorData.data && errorData.data.telefono) errMsg = "Este número de teléfono ya está asociado a otra cuenta.";
+            let errMsg = "Ocurrió un error en el servidor.";
+            if (errorData.data) {
+                if (errorData.data.email) errMsg = "El correo electrónico ya se encuentra registrado.";
+                else if (errorData.data.telefono) errMsg = "Este número de teléfono ya está asociado a otra cuenta.";
+                else if (errorData.data.password) errMsg = "La contraseña es débil o no cumple los requisitos.";
+                else errMsg = "Datos inválidos: " + JSON.stringify(errorData.data);
+            }
             throw new Error(errMsg);
         }
 
-        // ========================================================
-        // 🔥 GENERAR HASH DE SEGURIDAD Y DESCARGAR LLAVE JSON
-        // ========================================================
         const hashSeguro = btoa(unescape(encodeURIComponent(pass)));
-        
         const keyData = {
             app: "La Tribu",
             fecha: new Date().toISOString(),
@@ -364,7 +378,6 @@ window.registrarUsuario = async function() {
         
         setTimeout(() => {
             alert("¡Cuenta VIP creada exitosamente!\n\n⚠️ IMPORTANTE: Se ha descargado automáticamente tu LLAVE DE RECUPERACIÓN JSON.\nGuárdala muy bien, es la única forma de recuperar tu cuenta si olvidas tu contraseña.");
-            
             btn.classList.replace('btn-success', 'btn-primary');
             btn.innerHTML = originalHTML;
             btn.disabled = false;
@@ -387,12 +400,8 @@ window.registrarUsuario = async function() {
 // ==============================================================================
 
 window.procesarRecuperacion = function() {
-    // Validamos que el JSON se haya cargado mediante el <input type="file"> de recuperacion.html
     if (!window.tempRecoveryData) return alert("Carga un archivo de llave JSON válido primero.");
-    
-    // Pasamos los datos autorizados a la variable final
     window.resetKeyData = window.tempRecoveryData; 
-    
     alert("✅ Llave de seguridad JSON verificada correctamente.\n\nProcediendo a restaurar contraseña.");
     window.cambiarVista('resetPass');
 };
@@ -413,11 +422,8 @@ window.ejecutarResetPassword = async function() {
     try {
         const urlBase = window.getApiUrl();
         const email = window.resetKeyData.email;
-        
-        // Desencriptar de base64 para recuperar la clave vieja en la sombra
         const oldPass = decodeURIComponent(escape(atob(window.resetKeyData.hash_seguridad))); 
         
-        // 1. Autenticar para conseguir Token usando la contraseña vieja escondida en el JSON
         const authRes = await fetch(urlBase + '/api/collections/users/auth-with-password', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -428,7 +434,6 @@ window.ejecutarResetPassword = async function() {
         
         const authData = await authRes.json();
         
-        // 2. Patch de nueva contraseña en PocketBase
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Actualizando...';
         
         const patchData = { oldPassword: oldPass, password: passNuevo, passwordConfirm: passConf };
@@ -440,16 +445,13 @@ window.ejecutarResetPassword = async function() {
 
         if (!patchRes.ok) throw new Error("No se pudo actualizar la base de datos.");
 
-        // ========================================================
-        // 🔥 GENERAR NUEVA LLAVE (INVALÍDA LA ANTERIOR)
-        // ========================================================
         const newKeyData = {
             app: "La Tribu",
             fecha: new Date().toISOString(),
             email: email,
             telefono: window.resetKeyData.telefono,
             pin: window.resetKeyData.pin,
-            hash_seguridad: btoa(unescape(encodeURIComponent(passNuevo))) // Nuevo hash basado en la nueva clave
+            hash_seguridad: btoa(unescape(encodeURIComponent(passNuevo)))
         };
         
         const blob = new Blob([JSON.stringify(newKeyData, null, 2)], { type: "application/json" });
@@ -467,15 +469,240 @@ window.ejecutarResetPassword = async function() {
 
         setTimeout(() => {
             alert("¡Éxito! Contraseña cambiada permanentemente.\n\n⚠️ Se ha descargado tu NUEVA Llave de Recuperación. La llave vieja ya no sirve, debes borrarla por seguridad.");
-            
-            // Limpiamos memoria
             window.resetKeyData = null;
             window.tempRecoveryData = null;
-            
             window.cambiarVista('login');
         }, 1500);
 
     } catch(error) {
+        alert(error.message);
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
+    }
+};
+
+// ==============================================================================
+// 🦸‍♂️ LÓGICA DE PERFIL (DATOS, IMÁGENES, CONTRASEÑA Y LLAVE)
+// Centralizado aquí para evitar pérdida de contexto al navegar por la SPA
+// ==============================================================================
+window.guardarDatosPerfilLocal = async function() {
+    var iNombres = document.getElementById('editNombres');
+    var iApellido1 = document.getElementById('editApellido1');
+    var iApellido2 = document.getElementById('editApellido2');
+    var iTelefono = document.getElementById('editTelefono');
+    
+    if (typeof trimEspacios === "function") {
+        trimEspacios(iNombres); trimEspacios(iApellido1); trimEspacios(iApellido2);
+    }
+    
+    var nombreCompleto = `${iNombres.value} ${iApellido1.value} ${iApellido2.value}`.replace(/\s+/g, ' ').trim();
+    var telefono = iTelefono.value;
+
+    if(!iNombres.value || !iApellido1.value) return alert("Los Nombres y el Primer Apellido son obligatorios.");
+    if(telefono && telefono.length !== 8) return alert("El teléfono celular debe contener exactamente 8 dígitos.");
+
+    var btn = document.getElementById('btnGuardarPerfilLocal');
+    var originalHTML = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Guardando...';
+    btn.disabled = true;
+
+    try {
+        const user = JSON.parse(localStorage.getItem('PB_USER_DATA'));
+        const token = localStorage.getItem('PB_USER_TOKEN');
+        const urlBase = window.getApiUrl();
+        
+        const formData = new FormData();
+        formData.append('name', nombreCompleto);
+        formData.append('telefono', telefono);
+        
+        if (window.archivoAvatarTemp) {
+            formData.append('avatar', window.archivoAvatarTemp, "avatar_" + Date.now() + ".jpg");
+        }
+
+        // 🔥 FIX PROFUNDO: Forzamos collectionId para evitar errores 404 al buscar la imagen
+        const colTarget = user.collectionId || user.collectionName || (user.rol === 'Superusuario' ? '_superusers' : 'users');
+        let endpoint = `${urlBase}/api/collections/${colTarget}/records/${user.id}`;
+        if (colTarget === 'admins') endpoint = `${urlBase}/api/admins/${user.id}`;
+
+        const res = await fetch(endpoint, {
+            method: 'PATCH',
+            headers: { 'Authorization': token }, 
+            body: formData
+        });
+
+        if(!res.ok) throw new Error("No se pudieron guardar los cambios en la base de datos.");
+
+        const updatedData = await res.json();
+        
+        // 🔥 REPARACIÓN ESTRUCTURAL DE MEMORIA
+        updatedData.rol = user.rol; 
+        updatedData.collectionId = updatedData.collectionId || user.collectionId || colTarget;
+        updatedData.collectionName = updatedData.collectionName || user.collectionName || colTarget;
+        
+        localStorage.setItem('PB_USER_DATA', JSON.stringify(updatedData));
+        window.archivoAvatarTemp = null;
+
+        btn.classList.replace('btn-primary', 'btn-success');
+        btn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i> ¡Guardado Exitosamente!';
+
+        const preview = document.getElementById('miPerfilAvatar');
+        if (updatedData.avatar && preview) {
+            const newColName = updatedData.collectionId;
+            preview.src = `${urlBase}/api/files/${newColName}/${updatedData.id}/${updatedData.avatar}?t=${Date.now()}`;
+        }
+        
+        document.getElementById('miPerfilNombre').innerText = nombreCompleto;
+
+        setTimeout(() => {
+            btn.classList.replace('btn-success', 'btn-primary');
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+        }, 2000);
+
+    } catch (error) {
+        alert(error.message);
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
+    }
+};
+
+window.cambiarPasswordLocal = async function() {
+    var pActual = document.getElementById('editPassActual').value;
+    var pNuevo = document.getElementById('editPassNueva').value;
+    var pConf = document.getElementById('editPassConf').value;
+
+    if (!pActual || !pNuevo || !pConf) return alert("Por favor, completa los 3 campos de contraseña.");
+    if (pNuevo.length < 8 || pNuevo.length > 15) return alert("La nueva contraseña debe tener entre 8 y 15 caracteres.");
+    if (pNuevo !== pConf) return alert("Las contraseñas nuevas no coinciden. Usa el botón del 'ojo' para verificarlas.");
+
+    var btn = document.getElementById('btnCambiarPassLocal');
+    var originalHTML = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Autorizando...';
+    btn.disabled = true;
+
+    try {
+        const user = JSON.parse(localStorage.getItem('PB_USER_DATA'));
+        const token = localStorage.getItem('PB_USER_TOKEN');
+        const urlBase = window.getApiUrl();
+        
+        const colTarget = user.collectionId || user.collectionName || (user.rol === 'Superusuario' ? '_superusers' : 'users');
+        const patchData = { oldPassword: pActual, password: pNuevo, passwordConfirm: pConf };
+        
+        let endpoint = `${urlBase}/api/collections/${colTarget}/records/${user.id}`;
+        if (colTarget === 'admins') endpoint = `${urlBase}/api/admins/${user.id}`;
+
+        const res = await fetch(endpoint, {
+            method: 'PATCH',
+            headers: { 'Authorization': token, 'Content-Type': 'application/json' },
+            body: JSON.stringify(patchData)
+        });
+
+        if(!res.ok) throw new Error("La Contraseña Actual es incorrecta. Si la olvidaste, cierra sesión y usa la Llave JSON para recuperarla.");
+
+        btn.classList.replace('btn-danger', 'btn-success');
+        btn.innerHTML = '<i class="bi bi-shield-check me-2"></i> ¡Contraseña Actualizada!';
+
+        setTimeout(() => {
+            alert("✅ ¡ÉXITO! Tu contraseña ha sido actualizada.\n\n⚠️ ATENCIÓN: Tu llave JSON antigua ya no sirve con esta nueva contraseña. Ve a la pestaña 'Llave' para descargar una nueva.");
+            btn.classList.replace('btn-success', 'btn-danger');
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+            
+            document.getElementById('editPassActual').value = '';
+            document.getElementById('editPassNueva').value = '';
+            document.getElementById('editPassConf').value = '';
+            
+            const triggerEl = document.querySelector('#llave-tab');
+            if(triggerEl && typeof bootstrap !== 'undefined') {
+                const tab = new bootstrap.Tab(triggerEl);
+                tab.show();
+            }
+        }, 1500);
+
+    } catch (error) {
+        alert(error.message);
+        btn.innerHTML = originalHTML;
+        btn.disabled = false;
+    }
+};
+
+window.generarCopiaLlaveJSON = async function() {
+    var pass = document.getElementById('miPerfilPassKey').value;
+    if(!pass) return alert("Por favor, ingresa tu contraseña actual para poder encriptar la llave de seguridad.");
+
+    var btn = document.getElementById('btnDescargarMiLlave');
+    var originalHTML = btn.innerHTML;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Encriptando Llave...';
+    btn.disabled = true;
+
+    try {
+        const userStr = localStorage.getItem('PB_USER_DATA');
+        if(!userStr) throw new Error("No hay sesión activa.");
+        const user = JSON.parse(userStr);
+        
+        const urlBase = window.getApiUrl();
+        
+        let authRes = await fetch(urlBase + '/api/collections/users/auth-with-password', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ identity: user.email, password: pass })
+        });
+
+        if (!authRes.ok) {
+            authRes = await fetch(urlBase + '/api/collections/_superusers/auth-with-password', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ identity: user.email, password: pass })
+            });
+            if(!authRes.ok) {
+                authRes = await fetch(urlBase + '/api/admins/auth-with-password', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ identity: user.email, password: pass })
+                });
+                if(!authRes.ok) throw new Error("La contraseña ingresada es incorrecta. No se puede encriptar la llave.");
+            }
+        }
+
+        const hashSeguro = btoa(unescape(encodeURIComponent(pass)));
+        const keyData = {
+            app: "La Tribu",
+            fecha: new Date().toISOString(),
+            email: user.email,
+            telefono: user.telefono || "SUPERUSUARIO",
+            pin: user.pin_recuperacion || "MASTER",
+            hash_seguridad: hashSeguro
+        };
+        
+        const jsonString = JSON.stringify(keyData);
+        const payloadEncriptado = btoa(unescape(encodeURIComponent(jsonString))).split('').reverse().join('');
+        
+        const secureVault = {
+            _advertencia: "COPIA DE SEGURIDAD ENCRIPTADA MODO COLD STORAGE. NO MODIFICAR NINGUN CARACTER.",
+            tribu_secure_vault: payloadEncriptado
+        };
+        
+        const blob = new Blob([JSON.stringify(secureVault, null, 2)], { type: "application/json" });
+        const urlObj = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = urlObj;
+        a.download = `Copia_Seguridad_Tribu_${user.telefono || 'Master'}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(urlObj);
+
+        btn.classList.replace('btn-warning', 'btn-success');
+        btn.classList.replace('text-dark', 'text-white');
+        btn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i> ¡Llave Descargada!';
+        
+        setTimeout(() => {
+            alert("✅ LLAVE JSON DESCARGADA CON ÉXITO.\n\nPor favor, guárdala en un lugar seguro (Como tu Google Drive, Correo o USB) y NO le cambies el contenido interno.");
+            btn.classList.replace('btn-success', 'btn-warning');
+            btn.classList.replace('text-white', 'text-dark');
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+            document.getElementById('miPerfilPassKey').value = '';
+        }, 1500);
+
+    } catch (error) {
         alert(error.message);
         btn.innerHTML = originalHTML;
         btn.disabled = false;

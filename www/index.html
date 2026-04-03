@@ -223,11 +223,20 @@
                             <input type="email" class="form-control-glass fw-semibold" id="regEmail" placeholder="correo@ejemplo.com" required>
                         </div>
                     </div>
-                    <div class="mb-4">
-                        <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Teléfono Celular (Exactamente 8 dígitos)</label>
-                        <div class="input-group-glass">
-                            <div class="icon-box-glass"><i class="bi bi-telephone"></i></div>
-                            <input type="text" class="form-control-glass fw-bold" id="regTelefono" placeholder="12345678" maxlength="8" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 8)" required>
+                    <div class="row g-3 mb-4">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Teléfono Celular (8 dígitos)</label>
+                            <div class="input-group-glass">
+                                <div class="icon-box-glass"><i class="bi bi-telephone"></i></div>
+                                <input type="text" class="form-control-glass fw-bold" id="regTelefono" placeholder="12345678" maxlength="8" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 8)" required>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">PIN Secreto (6 carac.)</label>
+                            <div class="input-group-glass">
+                                <div class="icon-box-glass"><i class="bi bi-shield-lock-fill text-warning"></i></div>
+                                <input type="text" class="form-control-glass fw-bold text-uppercase" id="regPin" placeholder="Ej: AB1234" maxlength="6" required style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()">
+                            </div>
                         </div>
                     </div>
                     <div class="row g-3 mb-5">

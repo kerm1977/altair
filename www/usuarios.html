@@ -228,13 +228,24 @@
                             <input type="email" class="form-control-glass fw-semibold" id="inputEmail" placeholder="juan@correo.com" required>
                         </div>
                     </div>
-                    <div class="mb-4">
-                        <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Teléfono Celular</label>
-                        <div class="input-group-glass">
-                            <div class="icon-box-glass"><i class="bi bi-telephone"></i></div>
-                            <input type="text" class="form-control-glass fw-bold" id="inputTelefono" placeholder="12345678" maxlength="8" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 8)">
+                    
+                    <div class="row g-3 mb-4">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Teléfono Celular</label>
+                            <div class="input-group-glass">
+                                <div class="icon-box-glass"><i class="bi bi-telephone"></i></div>
+                                <input type="text" class="form-control-glass fw-bold" id="inputTelefono" placeholder="12345678" maxlength="8" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 8)">
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">PIN Recuperación JSON</label>
+                            <div class="input-group-glass">
+                                <div class="icon-box-glass"><i class="bi bi-shield-lock-fill text-warning"></i></div>
+                                <input type="text" class="form-control-glass fw-bold text-uppercase" id="inputPin" placeholder="AB1234" maxlength="6" style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()">
+                            </div>
                         </div>
                     </div>
+
                     <div class="row g-3 mb-4" id="bloquePassword">
                         <div class="col-12 col-md-6">
                             <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Contraseña <span class="fw-normal text-warning" id="txtOpcionalPass"></span></label>
@@ -301,7 +312,6 @@
 <!-- SCRIPTS LOCALES DEL FRAGMENTO USUARIOS -->
 <!-- ============================================================================== -->
 <script>
-    // Variables limpiadas de "let/const" a "var" para evitar choques al inyectar múltiples veces en la SPA
     var usuariosGlobales = [];
     var perfilModalInstancia = null;
     var formModalInstancia = null;
@@ -313,7 +323,6 @@
 
     setTimeout(function() {
         // --- FIX EFECTO BLUR (Z-INDEX) ---
-        // Extraemos los modales de la prisión del fade-view y los mandamos al body principal de index.html
         var vistaD = document.getElementById('vista-dinamica');
         if (vistaD) {
             ['perfilModal', 'formUsuarioModal', 'deleteConfirmModal'].forEach(function(id) {
@@ -326,7 +335,6 @@
             });
         }
 
-        // Inicializamos modales tras reubicarlos
         perfilModalInstancia = new bootstrap.Modal(document.getElementById('perfilModal'));
         formModalInstancia = new bootstrap.Modal(document.getElementById('formUsuarioModal'));
         deleteModalInstancia = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
@@ -337,25 +345,32 @@
         if(buscador) buscador.addEventListener('input', filtrarUsuarios);
     }, 100);
 
+    // ==========================================================
+    // 🪄 DIAGNÓSTICO Y REPARACIÓN AUTOMÁTICA (AGRESIVO PARA V0.23)
+    // ==========================================================
     async function diagnosticarTablas(token, urlBase) {
         try {
             const res = await fetch(`${urlBase}/api/collections/users`, { headers: { 'Authorization': token } });
             if(res.ok) {
                 const data = await res.json();
-                const fields = data.fields || data.schema || [];
+                const isV23 = Array.isArray(data.fields);
+                const fields = isV23 ? data.fields : (data.schema || []);
+                
                 const tieneRol = fields.some(f => f.name === 'rol');
                 const tieneTel = fields.some(f => f.name === 'telefono');
+                const tienePin = fields.some(f => f.name === 'pin_recuperacion');
 
                 const diagDiv = document.getElementById('diagnosticoBD');
-                if(!tieneRol || !tieneTel) {
+                
+                if(!tieneRol || !tieneTel || !tienePin) {
                     diagDiv.innerHTML = `
                         <div class="alert alert-danger glass-panel text-white border-danger d-flex flex-column flex-md-row align-items-start gap-3 shadow-lg">
-                            <i class="bi bi-exclamation-triangle-fill fs-1 text-warning"></i>
+                            <i class="bi bi-tools fs-1 text-warning"></i>
                             <div class="flex-grow-1">
-                                <h5 class="fw-bold mb-1">¡Faltan Columnas en PocketBase!</h5>
-                                <p class="mb-2 small">La tabla <strong>users</strong> no tiene los campos personalizados necesarios.</p>
+                                <h5 class="fw-bold mb-1">El Sistema detectó campos faltantes en tu BD</h5>
+                                <p class="mb-2 small">A tu tabla de usuarios en PocketBase le faltan las columnas de seguridad (rol, teléfono o <strong>pin_recuperacion</strong>).</p>
                                 <button id="btnAutoFix" onclick="autoRepararTablas()" class="btn btn-warning fw-bold text-dark rounded-pill px-4 shadow-sm mt-2">
-                                    <i class="bi bi-magic me-2"></i> Auto-Configurar Base de Datos
+                                    <i class="bi bi-magic me-2"></i> Forzar Inyección de Columnas Faltantes
                                 </button>
                             </div>
                         </div>
@@ -372,34 +387,81 @@
         const token = localStorage.getItem('PB_ADMIN_TOKEN');
         const urlBase = typeof getApiUrl === 'function' ? getApiUrl() : 'http://127.0.0.1:8090';
         const btn = document.getElementById('btnAutoFix');
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Inyectando magia...';
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Inyectando en el núcleo...';
         btn.disabled = true;
+        
         try {
             const res = await fetch(`${urlBase}/api/collections/users`, { headers: { 'Authorization': token } });
             const collection = await res.json();
+            
             const isV23 = Array.isArray(collection.fields);
             let targetArray = isV23 ? collection.fields : collection.schema;
+            
             const hasTelefono = targetArray.some(f => f.name === 'telefono');
             const hasRol = targetArray.some(f => f.name === 'rol');
+            const hasPin = targetArray.some(f => f.name === 'pin_recuperacion');
+            
             const genFieldId = () => { let r=''; const c='abcdefghijklmnopqrstuvwxyz0123456789'; for(let i=0;i<8;i++)r+=c.charAt(Math.floor(Math.random()*c.length)); return r; };
 
-            if (!hasTelefono) targetArray.push({ id: genFieldId(), name: 'telefono', type: 'text', system: false, required: false });
-            if (!hasRol) targetArray.push({ id: genFieldId(), name: 'rol', type: 'text', system: false, required: false });
+            // 🔥 EL GENERADOR UNIVERSAL ABSOLUTO (V23 y V22)
+            const createField = (name) => {
+                if (isV23) {
+                    return {
+                        id: genFieldId(),
+                        name: name,
+                        type: 'text',
+                        system: false,
+                        required: false,
+                        presentable: false,
+                        hidden: false,
+                        primaryKey: false,
+                        min: 0,
+                        max: 0,
+                        pattern: ""
+                    };
+                } else {
+                    return {
+                        id: genFieldId(),
+                        name: name,
+                        type: 'text',
+                        system: false,
+                        required: false,
+                        unique: false,
+                        options: { min: null, max: null, pattern: "" }
+                    };
+                }
+            };
+
+            if (!hasTelefono) targetArray.push(createField('telefono'));
+            if (!hasRol) targetArray.push(createField('rol'));
+            if (!hasPin) targetArray.push(createField('pin_recuperacion'));
 
             if (isV23) collection.fields = targetArray; else collection.schema = targetArray;
             
             const patchRes = await fetch(`${urlBase}/api/collections/${collection.id}`, {
-                method: 'PATCH', headers: { 'Authorization': token, 'Content-Type': 'application/json' }, body: JSON.stringify(collection)
+                method: 'PATCH', 
+                headers: { 'Authorization': token, 'Content-Type': 'application/json' }, 
+                body: JSON.stringify(collection)
             });
 
-            if (!patchRes.ok) throw new Error("PocketBase rechazó la alteración.");
-            alert("¡BRUTAL! 🚀\n\nLas columnas se inyectaron automáticamente.");
+            if (!patchRes.ok) {
+                const errData = await patchRes.json().catch(()=>({}));
+                throw new Error("PocketBase rechazó la inyección. Detalle: " + JSON.stringify(errData.data || errData.message));
+            }
+            
+            alert("¡BRUTAL! 🚀\n\nLas columnas (incluyendo el PIN JSON) se inyectaron automáticamente y de forma nativa en la tabla auth.");
             await cargarUsuariosDesdeBD();
+            
         } catch(e) {
-            alert("Por seguridad de tu BD, añade las columnas 'telefono' y 'rol' manualmente.");
+            alert("Hubo un error de conexión al reparar. Error: " + e.message);
+            btn.innerHTML = '<i class="bi bi-magic me-2"></i> Forzar Inyección Nuevamente';
+            btn.disabled = false;
         }
     }
 
+    // ==========================================================
+    // CARGA DE USUARIOS
+    // ==========================================================
     async function cargarUsuariosDesdeBD() {
         const token = localStorage.getItem('PB_ADMIN_TOKEN');
         const urlBase = typeof getApiUrl === 'function' ? getApiUrl() : 'http://127.0.0.1:8090';
@@ -545,6 +607,11 @@
         document.getElementById('inputPass').required = true; document.getElementById('inputPassConfirm').required = true;
         document.getElementById('formAvatarPreview').src = "https://ui-avatars.com/api/?name=Nuevo+Usuario&background=random";
         document.getElementById('inputNombres').disabled = false; document.getElementById('inputApellido1').disabled = false; document.getElementById('inputApellido2').disabled = false; document.getElementById('inputTelefono').disabled = false;
+        
+        // Habilitar PIN en creación
+        var pInput = document.getElementById('inputPin');
+        if(pInput) { pInput.disabled = false; pInput.value = ""; }
+        
         formModalInstancia.show();
     }
 
@@ -569,6 +636,11 @@
         document.getElementById('txtOpcionalPass').innerText = "(Opcional)";
 
         const iN = document.getElementById('inputNombres'), iA1 = document.getElementById('inputApellido1'), iA2 = document.getElementById('inputApellido2'), iT = document.getElementById('inputTelefono');
+        
+        // Bloquear PIN en edición (por seguridad de la Llave JSON)
+        var pInput = document.getElementById('inputPin');
+        if(pInput) { pInput.value = "OCULTO (JSON)"; pInput.disabled = true; }
+
         if (u.rol === 'Superusuario') {
             iN.value = "Superusuario"; iA1.value = "Maestro"; iA2.value = "";
             iN.disabled = true; iA1.disabled = true; iA2.disabled = true;
@@ -621,19 +693,39 @@
     async function guardarUsuario() {
         const iN = document.getElementById('inputNombres'), iA1 = document.getElementById('inputApellido1'), iA2 = document.getElementById('inputApellido2');
         if(typeof trimEspacios==="function"){ trimEspacios(iN); trimEspacios(iA1); trimEspacios(iA2); }
-        const nc = `${iN.value} ${iA1.value} ${iA2.value}`.replace(/\s+/g, ' ').trim(), em = document.getElementById('inputEmail').value.trim(), tel = document.getElementById('inputTelefono').value, p1 = document.getElementById('inputPass').value, p2 = document.getElementById('inputPassConfirm').value, rol = document.getElementById('selectRol').value;
+        const nc = `${iN.value} ${iA1.value} ${iA2.value}`.replace(/\s+/g, ' ').trim();
+        const em = document.getElementById('inputEmail').value.trim();
+        const tel = document.getElementById('inputTelefono').value;
+        const pin = document.getElementById('inputPin') ? document.getElementById('inputPin').value.trim() : '';
+        const p1 = document.getElementById('inputPass').value;
+        const p2 = document.getElementById('inputPassConfirm').value;
+        const rol = document.getElementById('selectRol').value;
 
         if(!em) return alert("Completa el correo.");
         if(em.toLowerCase() === 'kenth1977@gmail.com' && rol !== 'Superusuario') return alert("🛑 GUARDADO DENEGADO: Correo reservado.");
-        if(rol !== 'Superusuario') { if(!iN.value || !iA1.value) return alert("Nombre y Primer Apellido obligatorios."); if(tel && tel.length !== 8) return alert("Teléfono debe ser de 8 números."); }
+        if(rol !== 'Superusuario') { 
+            if(!iN.value || !iA1.value) return alert("Nombre y Primer Apellido obligatorios."); 
+            if(tel && tel.length !== 8) return alert("Teléfono debe ser de 8 números."); 
+            if(!modoEdicion && pin.length !== 6) return alert("El PIN JSON debe ser exactamente de 6 caracteres.");
+        }
         if(!modoEdicion && !p1) return alert("Contraseña obligatoria.");
         if(p1 || p2) { if(p1.length<8 || p1.length>15) return alert("De 8 a 15 caracteres."); if(p1!==p2) return alert("Contraseñas no coinciden."); }
 
         const token = localStorage.getItem('PB_ADMIN_TOKEN'); let colTarget = (rol === 'Superusuario') ? '_superusers' : 'users';
 
         const btn = document.getElementById('btnGuardarUser'), oHtml = btn.innerHTML; btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Guardando...'; btn.disabled = true;
-        const fd = new FormData(); fd.append('email', em); if(p1){ fd.append('password', p1); fd.append('passwordConfirm', p2); }
-        if (rol !== 'Superusuario') { fd.append('name', nc); fd.append('telefono', tel); fd.append('rol', rol); if (!modoEdicion) fd.append('username', "user_" + Date.now()); }
+        const fd = new FormData(); 
+        fd.append('email', em); 
+        if(p1){ fd.append('password', p1); fd.append('passwordConfirm', p2); }
+        if (rol !== 'Superusuario') { 
+            fd.append('name', nc); 
+            fd.append('telefono', tel); 
+            fd.append('rol', rol); 
+            if (!modoEdicion) {
+                fd.append('username', "user_" + Date.now()); 
+                fd.append('pin_recuperacion', pin); // Lo inyectamos en creación manual por admin
+            }
+        }
         if (window.archivoAvatarTemp) fd.append('avatar', window.archivoAvatarTemp);
 
         const urlBase = typeof getApiUrl === 'function' ? getApiUrl() : 'http://127.0.0.1:8090';
@@ -641,10 +733,153 @@
         try {
             let res, finalUrl = `${urlBase}/api/collections/${colTarget}/records`;
             if (modoEdicion && idUsuarioEditando && usuariosGlobales.find(u=>u.id===idUsuarioEditando).collectionName==='admins') { colTarget = 'admins'; finalUrl = `${urlBase}/api/admins`; }
-            if(modoEdicion) { res = await fetch(`${finalUrl}/${idUsuarioEditando}`, { method: 'PATCH', headers: { 'Authorization': token }, body: fd }); } 
-            else { res = await fetch(finalUrl, { method: 'POST', headers: { 'Authorization': token }, body: fd }); }
-            if(!res.ok) throw new Error("Error en BD.");
-            formModalInstancia.hide(); await cargarUsuariosDesdeBD();
-        } catch (e) { alert(e.message); } finally { btn.innerHTML = oHtml; btn.disabled = false; }
+            
+            if(modoEdicion) { 
+                res = await fetch(`${finalUrl}/${idUsuarioEditando}`, { method: 'PATCH', headers: { 'Authorization': token }, body: fd }); 
+            } else { 
+                res = await fetch(finalUrl, { method: 'POST', headers: { 'Authorization': token }, body: fd }); 
+            }
+            if(!res.ok) throw new Error("Error en la Base de Datos. ¿Aseguraste darle clic a Auto-Configurar en esta misma pantalla?");
+            
+            formModalInstancia.hide(); 
+            await cargarUsuariosDesdeBD();
+        } catch (e) { 
+            alert(e.message); 
+        } finally { 
+            btn.innerHTML = oHtml; 
+            btn.disabled = false; 
+        }
+    }
+
+    // ==========================================================
+    // 🛡️ RUTINA GLOBAL PARA EL EDITOR MANUAL DE TABLAS (ACTUALIZADO V0.23 + ESCUDO DE SISTEMA)
+    // ==========================================================
+    window.prepararEmpujeCamposBD = function() {
+        let tableName = "";
+        
+        if (window.modoCreacionTabla) {
+            tableName = document.getElementById('editorTableNameInput').value.trim();
+            if(!tableName) return alert("Debes ingresar un nombre para la nueva tabla.");
+            if(!/^[a-zA-Z0-9_]+$/.test(tableName)) return alert("El nombre de la tabla solo puede contener letras, números y guiones bajos (sin espacios).");
+        } else {
+            tableName = window.tablaEditandoData.name;
+        }
+
+        const rows = document.querySelectorAll('.campo-row');
+        let validRows = Array.from(rows).filter(r => r.hasAttribute('data-field-id'));
+
+        if(validRows.length === 0 && window.modoCreacionTabla) return alert("Debes añadir al menos un campo para crear la tabla.");
+        
+        let schemaCompleto = [];
+        let errorValidacion = null;
+
+        // Detección de versión para este contexto
+        let esV23 = false;
+        if (window.tablaEditandoData) esV23 = Array.isArray(window.tablaEditandoData.fields);
+        else esV23 = window.pbIsV23 || true; // Asume v23 por defecto para nuevas tablas
+
+        validRows.forEach(row => {
+            if(errorValidacion) return; // Cortar si ya hay error
+            
+            const fId = row.getAttribute('data-field-id');
+            const fRaw = row.getAttribute('data-raw-json');
+            
+            let fieldObj = fRaw ? JSON.parse(decodeURIComponent(fRaw)) : {
+                id: fId || generatePbFieldId(),
+                system: false
+            };
+
+            // 🔥 ESCUDO DE INMUNIDAD ABSOLUTA PARA CAMPOS DEL SISTEMA (EJ: PASSWORD, EMAIL)
+            // Si es un campo del sistema lo empujamos intacto y saltamos el parseo visual
+            if (fieldObj.system === true) {
+                schemaCompleto.push(fieldObj);
+                return; // Esto actúa como "continue" en el forEach
+            }
+
+            const nombre = row.querySelector('.field-name').value.trim();
+            const tipo = row.querySelector('.field-type').value;
+            const isReq = row.querySelector('.field-required').checked;
+            
+            const rawMin = row.querySelector('.field-min').value;
+            const rawMax = row.querySelector('.field-max').value;
+            const relacionId = row.querySelector('.field-relation').value;
+
+            if(!nombre) { errorValidacion = "Todos los campos deben tener un nombre."; return; }
+            if(!/^[a-zA-Z0-9_]+$/.test(nombre)) { errorValidacion = `El nombre '${nombre}' no es válido. Usa solo letras sin acentos o guiones bajos.`; return; }
+            if(tipo === 'relation' && !relacionId) { errorValidacion = `Para el campo '${nombre}', debes elegir una tabla a relacionar.`; return; }
+
+            fieldObj.name = nombre;
+            fieldObj.type = tipo;
+            fieldObj.required = isReq;
+
+            // 🔥 DESTRUCCIÓN DEL BLOQUE OPTIONS PARA V0.23
+            if (esV23) {
+                delete fieldObj.options;
+                delete fieldObj.unique; // Unique se hace por index en v23
+                
+                // Aplicar defaults obligatorios para evitar 400 Bad Request en v23
+                fieldObj.hidden = fieldObj.hidden || false;
+                fieldObj.presentable = fieldObj.presentable || false;
+                fieldObj.primaryKey = fieldObj.primaryKey || false;
+
+                if(tipo === 'text' || tipo === 'email' || tipo === 'url' || tipo === 'editor') {
+                    fieldObj.min = rawMin !== "" ? parseInt(rawMin) : 0;
+                    fieldObj.max = rawMax !== "" ? parseInt(rawMax) : 0;
+                    fieldObj.pattern = fieldObj.pattern || "";
+                } else if (tipo === 'number') {
+                    fieldObj.min = rawMin !== "" ? parseFloat(rawMin) : 0;
+                    fieldObj.max = rawMax !== "" ? parseFloat(rawMax) : 0;
+                } else if (tipo === 'relation') {
+                    fieldObj.collectionId = relacionId;
+                    fieldObj.cascadeDelete = fieldObj.cascadeDelete || false;
+                    fieldObj.maxSelect = fieldObj.maxSelect || 1; 
+                    fieldObj.minSelect = fieldObj.minSelect || 0;
+                } else if (tipo === 'file') {
+                    fieldObj.maxSelect = fieldObj.maxSelect || 1;
+                    fieldObj.maxSize = fieldObj.maxSize || 5242880; 
+                    fieldObj.mimeTypes = fieldObj.mimeTypes || [];
+                }
+            } else {
+                // Compatibilidad hacia atrás (v0.22 y menores)
+                if (!fieldObj.options) fieldObj.options = {};
+                if(tipo === 'text' || tipo === 'email' || tipo === 'url' || tipo === 'editor') {
+                    fieldObj.options.min = rawMin !== "" ? parseInt(rawMin) : null;
+                    fieldObj.options.max = rawMax !== "" ? parseInt(rawMax) : null;
+                } else if (tipo === 'number') {
+                    fieldObj.options.min = rawMin !== "" ? parseFloat(rawMin) : null;
+                    fieldObj.options.max = rawMax !== "" ? parseFloat(rawMax) : null;
+                } else if (tipo === 'relation') {
+                    fieldObj.options.collectionId = relacionId;
+                    if(!fRaw) { 
+                        fieldObj.options.cascadeDelete = false;
+                        fieldObj.options.maxSelect = 1; 
+                    }
+                } else if (tipo === 'file' && !fRaw) {
+                    fieldObj.options.maxSelect = 1;
+                    fieldObj.options.maxSize = 5242880; 
+                }
+            }
+
+            schemaCompleto.push(fieldObj);
+        });
+
+        if(errorValidacion) return alert(errorValidacion);
+
+        window.operacionPendienteDB = {
+            type: 'create_update',
+            isNew: window.modoCreacionTabla,
+            tableName: tableName,
+            fields: schemaCompleto
+        };
+
+        if (window.modalEditorInstancia) window.modalEditorInstancia.hide();
+        setTimeout(() => { if (typeof abrirModalSeguridad === 'function') abrirModalSeguridad(); }, 400);
+    };
+
+    function generatePbFieldId() {
+        let result = '';
+        const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
+        for(let i=0; i<8; i++) result += chars.charAt(Math.floor(Math.random() * chars.length));
+        return result;
     }
 </script>

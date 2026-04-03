@@ -1,6 +1,6 @@
 // ==============================================================================
 // ARCHIVO: js/index.js
-// ROL: Lógica Principal, Router SPA y Autenticación
+// ROL: Lógica Principal, Router SPA, Autenticación y Criptografía Cold Storage
 // ==============================================================================
 
 // 🔮 Secuestro Global de Alertas
@@ -190,20 +190,6 @@ window.cerrarSesion = function() {
 if (typeof window.appAutostart === 'undefined') {
     window.appAutostart = true;
     document.addEventListener('DOMContentLoaded', () => {
-        
-        // 🔮 DETECTAR ENLACES PROFUNDOS (Recuperación desde WhatsApp)
-        const urlParams = new URLSearchParams(window.location.search);
-        const vistaParam = urlParams.get('vista');
-        const emailParam = urlParams.get('e');
-        const tmpParam = urlParams.get('t');
-
-        if (vistaParam === 'resetPass' && emailParam && tmpParam) {
-            window.resetEmailApp = emailParam;
-            window.resetTmpApp = tmpParam; // Este es nuestro PIN Temporal que viene en el enlace de WA
-            window.cambiarVista('resetPass');
-            return;
-        }
-
         // Flujo normal de arranque
         var savedEmail = localStorage.getItem('APP_SAVED_EMAIL');
         if(savedEmail) {
@@ -220,7 +206,7 @@ if (typeof window.appAutostart === 'undefined') {
 }
 
 // ==============================================================================
-// LÓGICA AUTH (LOGIN / REGISTRO)
+// LÓGICA AUTH (LOGIN / REGISTRO CON JSON KEY)
 // ==============================================================================
 window.loginUsuario = async function() {
     var email = document.getElementById('loginEmail').value.trim();
@@ -299,12 +285,14 @@ window.registrarUsuario = async function() {
     var nombreCompleto = (iNombres.value + " " + iApellido1.value + " " + iApellido2.value).replace(/\s+/g, ' ').trim();
     var email = document.getElementById('regEmail').value.trim();
     var telefono = document.getElementById('regTelefono').value;
+    var pin = document.getElementById('regPin').value.trim().toUpperCase();
     var pass = document.getElementById('regPass').value;
     var passConf = document.getElementById('regPassConf').value;
 
-    if(!iNombres.value || !iApellido1.value || !email) return alert("Nombres, Primer Apellido y Correo son obligatorios.");
+    if(!iNombres.value || !iApellido1.value || !email || !telefono || !pin) return alert("Completa todos los campos obligatorios, incluyendo Teléfono y PIN.");
     if(email.toLowerCase() === 'kenth1977@gmail.com') return alert("🛑 REGISTRO DENEGADO:\n\nEste correo electrónico está reservado.");
     if(telefono.length !== 8) return alert("El teléfono debe contener exactamente 8 dígitos numéricos.");
+    if(pin.length !== 6) return alert("El PIN de seguridad debe tener exactamente 6 caracteres.");
     if(pass.length < 8 || pass.length > 15) return alert("La contraseña debe tener entre 8 y 15 caracteres.");
     if(pass !== passConf) return alert("Las contraseñas no coinciden.");
 
@@ -319,6 +307,7 @@ window.registrarUsuario = async function() {
     formData.append('passwordConfirm', passConf);
     formData.append('name', nombreCompleto);
     formData.append('telefono', telefono);
+    formData.append('pin_recuperacion', pin); // Nuevo campo crucial en la BD
     formData.append('rol', 'Usuario'); 
     formData.append('username', "user_" + Date.now()); 
     if (window.archivoAvatarTemp) formData.append('avatar', window.archivoAvatarTemp);
@@ -326,17 +315,43 @@ window.registrarUsuario = async function() {
     try {
         const res = await fetch(window.getApiUrl() + '/api/collections/users/records', { method: 'POST', body: formData });
         if(!res.ok) {
-            const errorData = await res.json();
-            let errMsg = "Ocurrió un error en el servidor.";
+            const errorData = await res.json().catch(()=>({}));
+            let errMsg = "Ocurrió un error en el servidor. ¿Añadiste la columna 'pin_recuperacion' en tu CPanel?";
             if (errorData.data && errorData.data.email) errMsg = "El correo electrónico ya se encuentra registrado.";
             else if (errorData.data && errorData.data.telefono) errMsg = "Este número de teléfono ya está asociado a otra cuenta.";
             throw new Error(errMsg);
         }
 
+        // ========================================================
+        // 🔥 GENERAR HASH DE SEGURIDAD Y DESCARGAR LLAVE JSON
+        // ========================================================
+        const hashSeguro = btoa(unescape(encodeURIComponent(pass)));
+        
+        const keyData = {
+            app: "La Tribu",
+            fecha: new Date().toISOString(),
+            email: email,
+            telefono: telefono,
+            pin: pin,
+            hash_seguridad: hashSeguro
+        };
+        
+        const blob = new Blob([JSON.stringify(keyData, null, 2)], { type: "application/json" });
+        const urlObj = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = urlObj;
+        a.download = `Llave_Recuperacion_${telefono}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(urlObj);
+
         btn.classList.replace('btn-primary', 'btn-success');
         btn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i> ¡Cuenta Creada Exitosamente!';
         
         setTimeout(() => {
+            alert("¡Cuenta VIP creada exitosamente!\n\n⚠️ IMPORTANTE: Se ha descargado automáticamente tu LLAVE DE RECUPERACIÓN JSON.\nGuárdala muy bien, es la única forma de recuperar tu cuenta si olvidas tu contraseña.");
+            
             btn.classList.replace('btn-success', 'btn-primary');
             btn.innerHTML = originalHTML;
             btn.disabled = false;
@@ -345,7 +360,8 @@ window.registrarUsuario = async function() {
             if (formAvatarPreview) formAvatarPreview.src = "https://ui-avatars.com/api/?name=Nuevo+Usuario&background=random";
             window.archivoAvatarTemp = null;
             window.cambiarVista('login');
-        }, 3000);
+        }, 1500);
+
     } catch (error) {
         alert(error.message);
         btn.innerHTML = originalHTML;
@@ -354,205 +370,94 @@ window.registrarUsuario = async function() {
 };
 
 // ==============================================================================
-// 🟢 RECUPERACIÓN VÍA WHATSAPP (EVOLUTION API NATIVO)
+// 🟢 RECUPERACIÓN POR LLAVE JSON (COLD STORAGE OFFLINE)
 // ==============================================================================
 
-window.procesarRecuperacion = async function() {
-    var emailInput = document.getElementById('recuperarEmailInput');
-    if(!emailInput) return;
+window.procesarRecuperacion = function() {
+    // Validamos que el JSON se haya cargado mediante el <input type="file"> de recuperacion.html
+    if (!window.tempRecoveryData) return alert("Carga un archivo de llave JSON válido primero.");
     
-    var emailTarget = emailInput.value.trim();
-    if(!emailTarget) return alert("Por favor ingresa un correo para buscar tu cuenta.");
+    // Pasamos los datos autorizados a la variable final
+    window.resetKeyData = window.tempRecoveryData; 
     
-    var btn = document.getElementById('btnVerificarRecuperacion');
-    var originalHTML = btn.innerHTML;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Buscando...';
-    btn.disabled = true;
-
-    var urlBase = window.getApiUrl();
-    
-    try {
-        // 1. Iniciar sesión como Master para poder manipular las cuentas a la fuerza
-        let authRes = await fetch(urlBase + '/api/collections/_superusers/auth-with-password', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ identity: 'kenth1977@gmail.com', password: 'CR129x7848n' })
-        });
-        let adminData = await authRes.json().catch(() => ({}));
-
-        if(!authRes.ok) {
-            authRes = await fetch(urlBase + '/api/admins/auth-with-password', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ identity: 'kenth1977@gmail.com', password: 'CR129x7848n' })
-            });
-            adminData = await authRes.json().catch(() => ({}));
-            if(!authRes.ok) throw new Error("Acceso maestro denegado. No se puede iniciar recuperación.");
-        }
-
-        var adminToken = adminData.token;
-        var isV22 = !!adminData.admin;
-
-        // 2. Buscar al usuario dueño de ese correo
-        let checkRes = await fetch(urlBase + '/api/collections/users/records?filter=(email=\'' + emailTarget + '\')', { headers: { 'Authorization': adminToken } });
-        let checkData = await checkRes.json().catch(() => ({}));
-        let foundUser = (checkData.items && checkData.items.length > 0) ? checkData.items[0] : null;
-        var collection = 'users';
-
-        if(!foundUser) {
-            if(!isV22) {
-                checkRes = await fetch(urlBase + '/api/collections/_superusers/records?filter=(email=\'' + emailTarget + '\')', { headers: { 'Authorization': adminToken } });
-                checkData = await checkRes.json().catch(() => ({}));
-                foundUser = (checkData.items && checkData.items.length > 0) ? checkData.items[0] : null;
-                collection = '_superusers';
-            } else {
-                checkRes = await fetch(urlBase + '/api/admins', { headers: { 'Authorization': adminToken } });
-                checkData = await checkRes.json().catch(() => ({}));
-                foundUser = (checkData.items || []).find(a => a.email === emailTarget);
-                collection = 'admins';
-            }
-        }
-
-        if(!foundUser) throw new Error("El correo ingresado NO EXISTE en la base de datos.");
-        if(!foundUser.telefono || foundUser.telefono.length !== 8) throw new Error("Tu cuenta no tiene un teléfono válido de 8 dígitos de Costa Rica.");
-
-        // 3. GENERAR PIN TEMPORAL Y APLICARLO EN LA BASE DE DATOS
-        var pinTemporal = "Tribu-" + Math.floor(100000 + Math.random() * 900000);
-        
-        var patchUrl = urlBase + '/api/collections/' + collection + '/records/' + foundUser.id;
-        if (collection === 'admins') patchUrl = urlBase + '/api/admins/' + foundUser.id;
-
-        const resPatch = await fetch(patchUrl, {
-            method: 'PATCH',
-            headers: { 'Authorization': adminToken, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ password: pinTemporal, passwordConfirm: pinTemporal })
-        });
-
-        if(!resPatch.ok) throw new Error("Error interno preparando la cuenta.");
-
-        // 4. PREPARAR EL MENSAJE DE WHATSAPP (Costa Rica +506)
-        var urlActual = window.location.origin + window.location.pathname;
-        var enlaceMagico = urlActual + "?vista=resetPass&e=" + encodeURIComponent(foundUser.email) + "&t=" + pinTemporal;
-        
-        var telefonoCR = "506" + foundUser.telefono;
-        var primerNombre = (foundUser.name || foundUser.username || "Usuario").split(' ')[0];
-        
-        var mensajeWA = `*La Tribu App*\n\n¡Hola ${primerNombre}!\nHas solicitado restablecer tu contraseña.\n\nToca el siguiente enlace para crear una nueva de forma segura:\n\n${enlaceMagico}`;
-
-        // 5. 🚀 DISPARAR HACIA EVOLUTION API
-        // ***************************************************************
-        // IMPORTANTE: Actualiza estos 3 valores con los de tu servidor
-        // ***************************************************************
-        const EVOLUTION_URL = "http://127.0.0.1:8080"; // O la IP de tu VPS (Ej: http://198.51.100.25:8080)
-        const INSTANCE_NAME = "BotTribu";              // El nombre que le diste a tu conexión en Evolution
-        const API_KEY = "TribuGlobalKey123";           // Tu Global API Key configurada en el .env
-
-        try {
-            const evoRes = await fetch(`${EVOLUTION_URL}/message/sendText/${INSTANCE_NAME}`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "apikey": API_KEY
-                },
-                body: JSON.stringify({
-                    number: telefonoCR,
-                    text: mensajeWA
-                })
-            });
-
-            if (!evoRes.ok) {
-                console.error("Evolution API falló. Código:", evoRes.status);
-                throw new Error("Evolution API rechazó el mensaje. Verifica que la instancia exista y esté conectada (QR Escaneado).");
-            }
-        } catch (evoErr) {
-            // Si Evolution API está apagado o da error de red, lo capturamos aquí
-            console.error("Error contactando a Evolution API:", evoErr);
-            throw new Error("No se pudo conectar al servidor de WhatsApp (Evolution API no responde). " + evoErr.message);
-        }
-
-        // 6. Transición visual al Check Verde
-        var divPaso1 = document.getElementById('recuperacionPaso1');
-        var divPaso2 = document.getElementById('recuperacionPaso2');
-        if(divPaso1) divPaso1.classList.add('d-none');
-        if(divPaso2) divPaso2.classList.remove('d-none');
-
-    } catch (error) {
-        alert(error.message);
-        btn.innerHTML = originalHTML;
-        btn.disabled = false;
-    }
+    alert("✅ Llave de seguridad JSON verificada correctamente.\n\nProcediendo a restaurar contraseña.");
+    window.cambiarVista('resetPass');
 };
 
 window.ejecutarResetPassword = async function() {
     var passNuevo = document.getElementById('resetNewPass').value;
     var passConf = document.getElementById('resetConfPass').value;
 
-    if (passNuevo.length < 8 || passNuevo.length > 15) return alert("La contraseña debe tener entre 8 y 15 caracteres.");
-    if (passNuevo !== passConf) return alert("Las contraseñas no coinciden.");
-    
-    if (!window.resetEmailApp || !window.resetTmpApp) return alert("Error Crítico: El enlace de WhatsApp es inválido. Solicita uno nuevo.");
+    if(!window.resetKeyData) return alert("Error Crítico: Llave JSON perdida en memoria. Vuelve a subir el archivo.");
+    if(passNuevo.length < 8 || passNuevo.length > 15) return alert("La contraseña debe tener entre 8 y 15 caracteres.");
+    if(passNuevo !== passConf) return alert("Las contraseñas no coinciden.");
 
     var btn = document.getElementById('btnEjecutarResetFinal');
     var originalHTML = btn.innerHTML;
-    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Actualizando...';
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Autenticando...';
     btn.disabled = true;
 
-    var urlBase = window.getApiUrl();
-
     try {
-        // 1. Iniciamos sesión oculta usando el correo y el PIN Temporal del enlace WhatsApp
-        let authRes = await fetch(urlBase + '/api/collections/users/auth-with-password', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ identity: window.resetEmailApp, password: window.resetTmpApp })
+        const urlBase = window.getApiUrl();
+        const email = window.resetKeyData.email;
+        
+        // Desencriptar de base64 para recuperar la clave vieja en la sombra
+        const oldPass = decodeURIComponent(escape(atob(window.resetKeyData.hash_seguridad))); 
+        
+        // 1. Autenticar para conseguir Token usando la contraseña vieja escondida en el JSON
+        const authRes = await fetch(urlBase + '/api/collections/users/auth-with-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ identity: email, password: oldPass })
         });
-        let authData = await authRes.json().catch(() => ({}));
-
-        if(!authRes.ok) {
-            authRes = await fetch(urlBase + '/api/collections/_superusers/auth-with-password', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ identity: window.resetEmailApp, password: window.resetTmpApp })
-            });
-            authData = await authRes.json().catch(() => ({}));
-
-            if(!authRes.ok) {
-                authRes = await fetch(urlBase + '/api/admins/auth-with-password', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ identity: window.resetEmailApp, password: window.resetTmpApp })
-                });
-                authData = await authRes.json().catch(() => ({}));
-            }
-        }
-
-        if(!authRes.ok) throw new Error("El enlace expiró o ya fue utilizado. Por favor, solicita uno nuevo en la app.");
-
-        var userToken = authData.token;
-        var userId = authData.record ? authData.record.id : authData.admin.id;
-        var collection = authData.admin ? 'admins' : (authData.record.collectionName || 'users');
-
-        // 2. Empujamos la NUEVA contraseña ingresada por el usuario
-        var patchUrl = urlBase + '/api/collections/' + collection + '/records/' + userId;
-        if (collection === 'admins') patchUrl = urlBase + '/api/admins/' + userId;
-
-        const resPatch = await fetch(patchUrl, {
+        
+        if (!authRes.ok) throw new Error("La llave JSON cargada está obsoleta o la contraseña ya fue cambiada previamente por otro medio.");
+        
+        const authData = await authRes.json();
+        
+        // 2. Patch de nueva contraseña en PocketBase
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Actualizando...';
+        
+        const patchData = { oldPassword: oldPass, password: passNuevo, passwordConfirm: passConf };
+        const patchRes = await fetch(urlBase + '/api/collections/users/records/' + authData.record.id, {
             method: 'PATCH',
-            headers: { 'Authorization': userToken, 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                oldPassword: window.resetTmpApp, 
-                password: passNuevo, 
-                passwordConfirm: passConf 
-            })
+            headers: { 'Authorization': authData.token, 'Content-Type': 'application/json' },
+            body: JSON.stringify(patchData)
         });
 
-        if(!resPatch.ok) throw new Error("PocketBase rechazó la nueva contraseña.");
+        if (!patchRes.ok) throw new Error("No se pudo actualizar la base de datos.");
+
+        // ========================================================
+        // 🔥 GENERAR NUEVA LLAVE (INVALÍDA LA ANTERIOR)
+        // ========================================================
+        const newKeyData = {
+            app: "La Tribu",
+            fecha: new Date().toISOString(),
+            email: email,
+            telefono: window.resetKeyData.telefono,
+            pin: window.resetKeyData.pin,
+            hash_seguridad: btoa(unescape(encodeURIComponent(passNuevo))) // Nuevo hash basado en la nueva clave
+        };
+        
+        const blob = new Blob([JSON.stringify(newKeyData, null, 2)], { type: "application/json" });
+        const urlObj = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = urlObj;
+        a.download = `NUEVA_Llave_Recuperacion_${window.resetKeyData.telefono}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(urlObj);
 
         btn.classList.replace('btn-warning', 'btn-success');
         btn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i> ¡Éxito!';
 
         setTimeout(() => {
-            alert("✅ CONTRASEÑA RESTABLECIDA\n\nTu contraseña ha sido actualizada. Ya puedes iniciar sesión.");
+            alert("¡Éxito! Contraseña cambiada permanentemente.\n\n⚠️ Se ha descargado tu NUEVA Llave de Recuperación. La llave vieja ya no sirve, debes borrarla por seguridad.");
             
-            // Limpiamos los datos del enlace por seguridad
-            window.resetEmailApp = null;
-            window.resetTmpApp = null;
-            window.history.replaceState({}, document.title, window.location.pathname);
+            // Limpiamos memoria
+            window.resetKeyData = null;
+            window.tempRecoveryData = null;
             
             window.cambiarVista('login');
         }, 1500);

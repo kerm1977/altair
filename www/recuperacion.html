@@ -1,46 +1,68 @@
 <!-- ============================================================================== -->
-<!-- ARCHIVO: recuperacion.html                                                     -->
-<!-- DESCRIPCIÓN: Valida la cuenta y dispara el enlace mágico a WhatsApp Costa Rica -->
+<!-- ARCHIVO: recuperacion.html (VERSIÓN ARCHIVO JSON LOCAL)                        -->
 <!-- ============================================================================== -->
 <div class="container fade-view pt-4 pb-5 mb-5 d-flex justify-content-center align-items-center" style="min-height: 80vh;">
-    
     <div class="card glass-panel shadow-lg rounded-4 p-4 p-md-5 mx-3 mx-sm-0 w-100" style="max-width: 500px;">
         
-        <!-- Encabezado con Botón de Retroceso -->
         <div class="d-flex align-items-center mb-4 gap-3">
-            <button class="btn btn-outline-secondary rounded-circle p-2 d-flex align-items-center justify-content-center shadow-sm" style="width: 40px; height: 40px;" onclick="cambiarVista('login')" title="Volver">
+            <button class="btn btn-outline-secondary rounded-circle p-0 d-flex align-items-center justify-content-center shadow-sm" style="width: 40px; height: 40px;" onclick="cambiarVista('login')" title="Volver">
                 <i class="bi bi-arrow-left"></i>
             </button>
-            <h3 class="fw-bold text-themed m-0"><i class="bi bi-whatsapp text-success me-2"></i> Recuperar Clave</h3>
+            <h3 class="fw-bold text-themed m-0"><i class="bi bi-key-fill text-warning me-2"></i> Llave Maestra</h3>
         </div>
         
-        <!-- PASO 1: Formulario de Correo -->
         <div id="recuperacionPaso1">
-            <p class="text-muted-themed small mb-4">Ingresa tu correo registrado. Te enviaremos un enlace de recuperación de un solo uso directamente por <strong>WhatsApp</strong> al número de teléfono asociado a esta cuenta.</p>
+            <p class="text-muted-themed small mb-4">El día de tu registro se descargó una <strong>Llave JSON de Seguridad</strong>. Súbela para validar tu identidad sin necesidad de internet.</p>
             
-            <div class="input-group-glass mb-4">
-                <div class="icon-box-glass"><i class="bi bi-envelope"></i></div>
-                <input type="email" id="recuperarEmailInput" class="form-control-glass" placeholder="correo@ejemplo.com" required>
+            <div class="border border-secondary border-opacity-50 rounded-4 p-4 text-center cursor-pointer mb-4" style="border-style: dashed !important; background: var(--input-bg); transition: all 0.3s;" onmouseover="this.style.borderColor='#0dcaf0'; this.style.backgroundColor='rgba(13,202,240,0.05)';" onmouseout="this.style.borderColor=''; this.style.backgroundColor='var(--input-bg)';" onclick="document.getElementById('recoveryFileInput').click()">
+                <i class="bi bi-file-earmark-lock-fill text-info mb-2 d-block" style="font-size: 3rem;"></i>
+                <h6 class="fw-bold text-themed">Toca para Cargar tu Archivo .JSON</h6>
+                <span class="small text-muted-themed" id="recoveryFileName">Ningún archivo seleccionado</span>
+                <input type="file" id="recoveryFileInput" class="d-none" accept=".json" onchange="window.leerLlaveRecuperacion(event)">
             </div>
-            
-            <button type="button" id="btnVerificarRecuperacion" class="btn btn-success w-100 rounded-pill fw-bold shadow-sm py-3" onclick="typeof procesarRecuperacion === 'function' ? procesarRecuperacion() : null">
-                Enviar a mi WhatsApp <i class="bi bi-whatsapp ms-1"></i>
+
+            <button type="button" id="btnVerificarRecuperacion" class="btn btn-primary w-100 rounded-pill fw-bold py-3 shadow-sm" onclick="procesarRecuperacion()" disabled>
+                Desbloquear Cuenta <i class="bi bi-unlock-fill ms-1"></i>
             </button>
         </div>
-
-        <!-- PASO 2: Confirmación Visual (Oculto por defecto) -->
-        <div id="recuperacionPaso2" class="d-none text-center mt-2">
-            <div class="bg-success bg-opacity-25 text-success rounded-circle d-inline-flex align-items-center justify-content-center mb-3 shadow" style="width: 90px; height: 90px;">
-                <i class="bi bi-check-lg" style="font-size: 3.5rem;"></i>
-            </div>
-            <h4 class="fw-bold text-themed mb-2">¡WhatsApp Enviado!</h4>
-            <p class="text-muted-themed small">El enlace de recuperación ha sido despachado a tu teléfono de Costa Rica (+506).</p>
-            <p class="text-warning small fw-semibold"><i class="bi bi-phone-vibrate-fill me-1"></i> Revisa los mensajes de tu WhatsApp para continuar.</p>
-            
-            <button class="btn btn-outline-success rounded-pill px-5 py-2 mt-3 fw-bold" onclick="cambiarVista('login')">
-                Volver al Login
-            </button>
-        </div>
-
     </div>
 </div>
+
+<script>
+    window.tempRecoveryData = null;
+
+    window.leerLlaveRecuperacion = function(event) {
+        var file = event.target.files[0];
+        var nameLabel = document.getElementById('recoveryFileName');
+        var btnVerificar = document.getElementById('btnVerificarRecuperacion');
+        
+        if (file) {
+            if (!file.name.endsWith('.json')) {
+                alert("Por favor, sube únicamente un archivo JSON de Llave de Recuperación.");
+                event.target.value = "";
+                return;
+            }
+            nameLabel.innerText = file.name;
+            nameLabel.classList.replace('text-muted-themed', 'text-success');
+            nameLabel.classList.add('fw-bold');
+
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    var data = JSON.parse(e.target.result);
+                    if (data.email && data.pin && data.hash_seguridad) {
+                        window.tempRecoveryData = data;
+                        btnVerificar.disabled = false;
+                    } else {
+                        alert("El archivo JSON está corrupto o no pertenece a la seguridad de La Tribu.");
+                        btnVerificar.disabled = true;
+                    }
+                } catch (err) {
+                    alert("Error crítico: El archivo subido no es un formato JSON válido.");
+                    btnVerificar.disabled = true;
+                }
+            };
+            reader.readAsText(file);
+        }
+    };
+</script>

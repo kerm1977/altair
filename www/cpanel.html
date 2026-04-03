@@ -632,15 +632,15 @@
         } catch (e) { window.collectionsList.innerHTML = '<div class="col-12 text-center text-danger py-3">Error extrayendo tablas.</div>'; }
     }
 
-    // 🔥 AVISO VISUAL DE IDs DEL SISTEMA
+    // 🔥 AVISO VISUAL DE IDs DEL SISTEMA Y ESCUDO CORE
     function inyectarBloqueSistema(contenedor) {
         const htmlSysRow = `
         <div class="campo-row rounded-3 p-3 mb-3 border border-success border-opacity-50 shadow-sm" style="background-color: rgba(25, 135, 84, 0.1);">
             <div class="d-flex align-items-center text-success">
                 <i class="bi bi-shield-lock-fill fs-4 me-3"></i>
                 <div>
-                    <strong class="d-block mb-1">Identificadores del Sistema</strong>
-                    <span class="small text-light opacity-75">Las columnas <code>id</code>, <code>created</code> y <code>updated</code> son <strong>generadas automáticamente</strong> y asignadas como llaves primarias por PocketBase. No necesitas crearlas.</span>
+                    <strong class="d-block mb-1">Escudo de Núcleo Activado</strong>
+                    <span class="small text-light opacity-75">Las columnas core del sistema (<code>id</code>, <code>email</code>, <code>password</code>, <code>created</code>, <code>updated</code>, etc.) se detectan y se protegen en la interfaz para evitar la corrupción de la base de datos al guardar.</span>
                 </div>
             </div>
         </div>`;
@@ -712,9 +712,21 @@
         const fType = fieldData ? fieldData.type : 'text';
         const fReq = fieldData ? fieldData.required : false;
         const fSys = fieldData ? fieldData.system : false;
-        const fMin = fieldData && fieldData.options && fieldData.options.min !== undefined && fieldData.options.min !== null ? fieldData.options.min : '';
-        const fMax = fieldData && fieldData.options && fieldData.options.max !== undefined && fieldData.options.max !== null ? fieldData.options.max : '';
-        const fRelId = fieldData && fieldData.options && fieldData.options.collectionId ? fieldData.options.collectionId : '';
+        
+        // 🛡️ EL ESCUDO INTELIGENTE: Detecta si es Core por propiedad, tipo (autodate) o nombre reservado.
+        const isCoreField = fSys === true || fType === 'autodate' || (fieldData && ['id', 'created', 'updated', 'password', 'tokenKey', 'emailVisibility', 'verified'].includes(fName));
+
+        // Detección automática de min/max soportando la sintaxis v22 y v23
+        let fMin = ''; let fMax = ''; let fRelId = '';
+        if (fieldData && window.pbIsV23) {
+            if (fieldData.min !== undefined && fieldData.min !== null && fieldData.min !== 0) fMin = fieldData.min;
+            if (fieldData.max !== undefined && fieldData.max !== null && fieldData.max !== 0) fMax = fieldData.max;
+            fRelId = fieldData.collectionId || '';
+        } else if (fieldData && fieldData.options) {
+            if (fieldData.options.min !== undefined && fieldData.options.min !== null && fieldData.options.min !== 0) fMin = fieldData.options.min;
+            if (fieldData.options.max !== undefined && fieldData.options.max !== null && fieldData.options.max !== 0) fMax = fieldData.options.max;
+            fRelId = fieldData.options.collectionId || '';
+        }
         
         const fRawData = fieldData ? encodeURIComponent(JSON.stringify(fieldData)) : '';
 
@@ -725,21 +737,25 @@
             }
         });
 
-        const isMinMaxDisabled = (fType === 'bool' || fType === 'date' || fType === 'file' || fType === 'relation') ? 'disabled' : '';
+        // Si es campo Core se deshabilita gran parte de la UI para no corromper la BD
+        const isMinMaxDisabled = (fType === 'bool' || fType === 'date' || fType === 'file' || fType === 'relation' || isCoreField) ? 'disabled' : '';
         const showRelation = fType === 'relation' ? '' : 'd-none';
         const showMinMax = fType === 'relation' ? 'd-none' : '';
-        const disableIfSystem = fSys ? 'disabled title="Campo del sistema (intocable)"' : '';
+        
+        const disableIfSystem = isCoreField ? 'disabled title="Campo Core (Intocable)"' : '';
+        const inputVisualClass = isCoreField ? 'text-secondary' : 'text-light';
+        const extraTypeOption = isCoreField && !['text','number','bool','date','json','file','relation','email','url','editor'].includes(fType) ? `<option value="${fType}" selected>${fType.toUpperCase()} (Core)</option>` : '';
 
         const htmlRow = `
         <div class="campo-row rounded-3 p-3 mb-2 border border-secondary border-opacity-50 shadow-sm position-relative" id="${uniqueRowId}" data-field-id="${fId}" data-raw-json="${fRawData}">
             <div class="row g-3 align-items-end">
                 <div class="col-12 col-sm-6 col-md-3">
                     <label class="form-label small text-secondary mb-1">Nombre Columna</label>
-                    <input type="text" class="form-control form-control-sm bg-black text-light border-secondary field-name" value="${fName}" placeholder="ej. titulo, edad" ${disableIfSystem}>
+                    <input type="text" class="form-control form-control-sm bg-black border-secondary field-name ${inputVisualClass}" value="${fName}" placeholder="ej. titulo, edad" ${disableIfSystem}>
                 </div>
                 <div class="col-12 col-sm-6 col-md-2">
                     <label class="form-label small text-secondary mb-1">Tipo de Dato</label>
-                    <select class="form-select form-select-sm bg-black text-light border-secondary field-type" onchange="toggleRelacionUI('${uniqueRowId}')" ${disableIfSystem}>
+                    <select class="form-select form-select-sm bg-black border-secondary field-type ${inputVisualClass}" onchange="toggleRelacionUI('${uniqueRowId}')" ${disableIfSystem}>
                         <option value="text" ${fType==='text'?'selected':''}>Texto</option>
                         <option value="number" ${fType==='number'?'selected':''}>Número</option>
                         <option value="bool" ${fType==='bool'?'selected':''}>Booleano</option>
@@ -750,19 +766,20 @@
                         <option value="email" ${fType==='email'?'selected':''}>Email</option>
                         <option value="url" ${fType==='url'?'selected':''}>URL</option>
                         <option value="editor" ${fType==='editor'?'selected':''}>Editor HTML</option>
+                        ${extraTypeOption}
                     </select>
                 </div>
                 <div class="col-6 col-md-2 box-minmax ${showMinMax}">
                     <label class="form-label small text-secondary mb-1">Mínimo</label>
-                    <input type="number" class="form-control form-control-sm bg-black text-light border-secondary field-min" value="${fMin}" placeholder="Opcional" ${isMinMaxDisabled} ${disableIfSystem}>
+                    <input type="number" class="form-control form-control-sm bg-black border-secondary field-min ${inputVisualClass}" value="${fMin}" placeholder="Opcional" ${isMinMaxDisabled} ${disableIfSystem}>
                 </div>
                 <div class="col-6 col-md-2 box-minmax ${showMinMax}">
                     <label class="form-label small text-secondary mb-1">Máximo</label>
-                    <input type="number" class="form-control form-control-sm bg-black text-light border-secondary field-max" value="${fMax}" placeholder="Opcional" ${isMinMaxDisabled} ${disableIfSystem}>
+                    <input type="number" class="form-control form-control-sm bg-black border-secondary field-max ${inputVisualClass}" value="${fMax}" placeholder="Opcional" ${isMinMaxDisabled} ${disableIfSystem}>
                 </div>
                 <div class="col-12 col-md-4 box-relation ${showRelation}">
                     <label class="form-label small text-info mb-1 fw-semibold"><i class="bi bi-link"></i> Tabla a Relacionar</label>
-                    <select class="form-select form-select-sm bg-black text-light border-info field-relation" ${disableIfSystem}>
+                    <select class="form-select form-select-sm bg-black border-info field-relation ${inputVisualClass}" ${disableIfSystem}>
                         ${relationOptions}
                     </select>
                 </div>
@@ -773,8 +790,8 @@
                     </div>
                 </div>
                 <div class="col-4 col-sm-6 col-md-1 text-end">
-                    ${!fSys ? `<button class="btn btn-sm btn-outline-danger w-100 px-0" onclick="iniciarBorradoCampo('${uniqueRowId}')" title="Borrar campo"><i class="bi bi-trash"></i></button>` 
-                            : `<span class="badge bg-warning text-dark w-100 py-2"><i class="bi bi-lock-fill"></i> Sys</span>`}
+                    ${!isCoreField ? `<button class="btn btn-sm btn-outline-danger w-100 px-0" onclick="iniciarBorradoCampo('${uniqueRowId}')" title="Borrar campo"><i class="bi bi-trash"></i></button>` 
+                            : `<span class="badge bg-warning text-dark w-100 py-2"><i class="bi bi-lock-fill"></i> Core</span>`}
                 </div>
             </div>
         </div>`;
@@ -1004,10 +1021,31 @@
         let schemaCompleto = [];
         let errorValidacion = null;
 
+        // Detección de versión agresiva
+        let esV23 = false;
+        if (window.tablaEditandoData) esV23 = Array.isArray(window.tablaEditandoData.fields);
+        else esV23 = window.pbIsV23 || true;
+
         validRows.forEach(row => {
+            if(errorValidacion) return; // Cortar si ya hay error
+            
             const fId = row.getAttribute('data-field-id');
             const fRaw = row.getAttribute('data-raw-json');
             
+            let fieldObj = fRaw ? JSON.parse(decodeURIComponent(fRaw)) : {
+                id: fId || generatePbFieldId(),
+                system: false
+            };
+
+            // 🛡️ ESCUDO DE INMUNIDAD ABSOLUTA PARA CAMPOS DEL SISTEMA Y CORE
+            // Los campos core de pocketbase (id, email, password, created, updated) regresan exactos e intactos.
+            const isCoreField = fieldObj.system === true || fieldObj.type === 'autodate' || (fRaw && ['id', 'created', 'updated', 'password', 'tokenKey', 'emailVisibility', 'verified'].includes(fieldObj.name));
+
+            if (isCoreField) {
+                schemaCompleto.push(fieldObj);
+                return; // Ignora todo el parseo visual y salta al siguiente campo
+            }
+
             const nombre = row.querySelector('.field-name').value.trim();
             const tipo = row.querySelector('.field-type').value;
             const isReq = row.querySelector('.field-required').checked;
@@ -1020,33 +1058,56 @@
             if(!/^[a-zA-Z0-9_]+$/.test(nombre)) { errorValidacion = `El nombre '${nombre}' no es válido. Usa solo letras sin acentos o guiones bajos.`; return; }
             if(tipo === 'relation' && !relacionId) { errorValidacion = `Para el campo '${nombre}', debes elegir una tabla a relacionar.`; return; }
 
-            let fieldObj = fRaw ? JSON.parse(decodeURIComponent(fRaw)) : {
-                id: fId || generatePbFieldId(),
-                system: false,
-                options: {}
-            };
-
             fieldObj.name = nombre;
             fieldObj.type = tipo;
             fieldObj.required = isReq;
 
-            if (!fieldObj.options) fieldObj.options = {};
-            
-            if(tipo === 'text' || tipo === 'email' || tipo === 'url' || tipo === 'editor') {
-                fieldObj.options.min = rawMin !== "" ? parseInt(rawMin) : null;
-                fieldObj.options.max = rawMax !== "" ? parseInt(rawMax) : null;
-            } else if (tipo === 'number') {
-                fieldObj.options.min = rawMin !== "" ? parseFloat(rawMin) : null;
-                fieldObj.options.max = rawMax !== "" ? parseFloat(rawMax) : null;
-            } else if (tipo === 'relation') {
-                fieldObj.options.collectionId = relacionId;
-                if(!fRaw) { 
-                    fieldObj.options.cascadeDelete = false;
-                    fieldObj.options.maxSelect = 1; 
+            // 🔥 PARSEO ABSOLUTO v0.23 (Destrucción de options y unique)
+            if (esV23) {
+                delete fieldObj.options;
+                delete fieldObj.unique; 
+                
+                fieldObj.hidden = fieldObj.hidden || false;
+                fieldObj.presentable = fieldObj.presentable || false;
+                fieldObj.primaryKey = fieldObj.primaryKey || false;
+
+                if(tipo === 'text' || tipo === 'email' || tipo === 'url' || tipo === 'editor') {
+                    fieldObj.min = rawMin !== "" ? parseInt(rawMin) : 0;
+                    fieldObj.max = rawMax !== "" ? parseInt(rawMax) : 0;
+                    fieldObj.pattern = fieldObj.pattern || "";
+                    if (tipo === 'text') fieldObj.autogeneratePattern = fieldObj.autogeneratePattern || "";
+                } else if (tipo === 'number') {
+                    fieldObj.min = rawMin !== "" ? parseFloat(rawMin) : 0;
+                    fieldObj.max = rawMax !== "" ? parseFloat(rawMax) : 0;
+                } else if (tipo === 'relation') {
+                    fieldObj.collectionId = relacionId;
+                    fieldObj.cascadeDelete = fieldObj.cascadeDelete || false;
+                    fieldObj.maxSelect = fieldObj.maxSelect || 1; 
+                    fieldObj.minSelect = fieldObj.minSelect || 0;
+                } else if (tipo === 'file') {
+                    fieldObj.maxSelect = fieldObj.maxSelect || 1;
+                    fieldObj.maxSize = fieldObj.maxSize || 5242880; 
+                    fieldObj.mimeTypes = fieldObj.mimeTypes || [];
                 }
-            } else if (tipo === 'file' && !fRaw) {
-                fieldObj.options.maxSelect = 1;
-                fieldObj.options.maxSize = 5242880; 
+            } else {
+                // Compatibilidad hacia atrás (v0.22)
+                if (!fieldObj.options) fieldObj.options = {};
+                if(tipo === 'text' || tipo === 'email' || tipo === 'url' || tipo === 'editor') {
+                    fieldObj.options.min = rawMin !== "" ? parseInt(rawMin) : null;
+                    fieldObj.options.max = rawMax !== "" ? parseInt(rawMax) : null;
+                } else if (tipo === 'number') {
+                    fieldObj.options.min = rawMin !== "" ? parseFloat(rawMin) : null;
+                    fieldObj.options.max = rawMax !== "" ? parseFloat(rawMax) : null;
+                } else if (tipo === 'relation') {
+                    fieldObj.options.collectionId = relacionId;
+                    if(!fRaw) { 
+                        fieldObj.options.cascadeDelete = false;
+                        fieldObj.options.maxSelect = 1; 
+                    }
+                } else if (tipo === 'file' && !fRaw) {
+                    fieldObj.options.maxSelect = 1;
+                    fieldObj.options.maxSize = 5242880; 
+                }
             }
 
             schemaCompleto.push(fieldObj);
@@ -1061,12 +1122,8 @@
             fields: schemaCompleto
         };
 
-        // 🔥 SOLUCIÓN: Ocultar el editor y esperar 400ms ANTES de mostrar el candado
         if (window.modalEditorInstancia) window.modalEditorInstancia.hide();
-        
-        setTimeout(() => {
-            abrirModalSeguridad();
-        }, 400);
+        setTimeout(() => { if (typeof abrirModalSeguridad === 'function') abrirModalSeguridad(); }, 400);
     }
 
     // 🔥 VERIFICA CREDENCIALES COMPLETAS (CORREO + CLAVE) Y EMPUJA AL SERVIDOR

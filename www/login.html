@@ -207,11 +207,10 @@
                     <div class="mb-3">
                         <div class="d-flex justify-content-between align-items-center mb-1 px-2">
                             <label class="form-label fw-semibold text-muted-themed small m-0">Contraseña</label>
-                            <a href="#" class="text-info small text-decoration-none fw-semibold">¿Olvidaste?</a>
+                            <a href="#" class="text-info small text-decoration-none fw-semibold" onclick="cambiarVista('recuperacion')">¿Olvidaste?</a>
                         </div>
                         <div class="input-group-glass">
                             <div class="icon-box-glass"><i class="bi bi-lock"></i></div>
-                            <!-- APLICADO: Máximo de 15 caracteres en Login -->
                             <input type="password" id="loginPass" class="form-control-glass" placeholder="Máx 15 carac." maxlength="15" required>
                             <div class="icon-btn-glass" onclick="togglePassword('loginPass', 'iconLoginPass')">
                                 <i class="bi bi-eye" id="iconLoginPass"></i>
@@ -219,7 +218,6 @@
                         </div>
                     </div>
 
-                    <!-- APLICADO: Opción de Recordar Contraseña/Correo -->
                     <div class="d-flex justify-content-between align-items-center mb-4 px-2">
                         <div class="form-check">
                             <input class="form-check-input border-secondary" type="checkbox" id="rememberMe">
@@ -241,7 +239,7 @@
         </div>
 
         <!-- ============================================================================== -->
-        <!-- VISTA 2: REGISTRO VIP (CONECTADO A POCKETBASE) -->
+        <!-- VISTA 2: REGISTRO VIP (CON COLD STORAGE) -->
         <!-- ============================================================================== -->
         <div id="vista-registro" class="w-100 d-none fade-view my-4" style="max-width: 650px;">
             <div class="glass-panel p-4 p-md-5 shadow-lg">
@@ -267,19 +265,16 @@
                         <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Nombres</label>
                         <div class="input-group-glass">
                             <div class="icon-box-glass"><i class="bi bi-person"></i></div>
-                            <!-- APLICADO: Validación estricta y Title Case desde validaciones.js -->
                             <input type="text" class="form-control-glass fw-semibold" id="regNombres" placeholder="Ej. Juan Carlos" required oninput="validarNombres(this)" onblur="trimEspacios(this)">
                         </div>
                     </div>
 
                     <!-- Apellidos -->
                     <div class="row g-3 mb-4">
-                        <!-- APLICADO: col-12 en movil (se apilan verticalmente), col-md-6 en escritorio -->
                         <div class="col-12 col-md-6">
                             <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Primer Apellido</label>
                             <div class="input-group-glass">
                                 <div class="icon-box-glass"><i class="bi bi-person-lines-fill"></i></div>
-                                <!-- APLICADO: Validación estricta sin espacios -->
                                 <input type="text" class="form-control-glass fw-semibold" id="regApellido1" placeholder="Ej. Pérez" required oninput="validarApellidos(this)" onblur="trimEspacios(this)">
                             </div>
                         </div>
@@ -287,7 +282,6 @@
                             <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Segundo Apellido</label>
                             <div class="input-group-glass">
                                 <div class="icon-box-glass"><i class="bi bi-person-lines-fill"></i></div>
-                                <!-- APLICADO: Validación estricta sin espacios -->
                                 <input type="text" class="form-control-glass fw-semibold" id="regApellido2" placeholder="Ej. Silva (Opcional)" oninput="validarApellidos(this)" onblur="trimEspacios(this)">
                             </div>
                         </div>
@@ -302,23 +296,31 @@
                         </div>
                     </div>
 
-                    <!-- Teléfono -->
-                    <div class="mb-4">
-                        <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Teléfono Celular (Exactamente 8 dígitos)</label>
-                        <div class="input-group-glass">
-                            <div class="icon-box-glass"><i class="bi bi-telephone"></i></div>
-                            <input type="text" class="form-control-glass fw-bold" id="regTelefono" placeholder="12345678" maxlength="8" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 8)" required>
+                    <!-- 🔥 CAMPOS NUEVOS DE SEGURIDAD (Cold Storage) -->
+                    <div class="row g-3 mb-4 p-3 rounded-4 border border-warning border-opacity-50" style="background-color: rgba(255, 193, 7, 0.05);">
+                        <p class="text-warning small fw-bold mb-0 text-center w-100"><i class="bi bi-shield-lock-fill me-1"></i> Datos para Llave de Recuperación</p>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Celular</label>
+                            <div class="input-group-glass">
+                                <div class="icon-box-glass"><i class="bi bi-telephone text-warning"></i></div>
+                                <input type="text" class="form-control-glass fw-bold" id="regTelefono" placeholder="12345678" maxlength="8" oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 8)" required>
+                            </div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">PIN (6 carac.)</label>
+                            <div class="input-group-glass">
+                                <div class="icon-box-glass"><i class="bi bi-123 text-warning"></i></div>
+                                <input type="text" class="form-control-glass fw-bold text-uppercase" id="regPin" placeholder="AB1234" maxlength="6" style="text-transform: uppercase;" oninput="this.value = this.value.toUpperCase()" required>
+                            </div>
                         </div>
                     </div>
 
                     <!-- Contraseñas (8 a 15 Caracteres) -->
                     <div class="row g-3 mb-5">
-                        <!-- APLICADO: col-12 en movil (se apilan verticalmente), col-md-6 en escritorio -->
                         <div class="col-12 col-md-6">
                             <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Crear Contraseña</label>
                             <div class="input-group-glass">
                                 <div class="icon-box-glass"><i class="bi bi-key"></i></div>
-                                <!-- APLICADO: Límite extendido a 15 -->
                                 <input type="password" class="form-control-glass" id="regPass" placeholder="De 8 a 15 carac." maxlength="15" minlength="8" required>
                                 <div class="icon-btn-glass" onclick="togglePassword('regPass', 'iconRegPass1')">
                                     <i class="bi bi-eye" id="iconRegPass1"></i>
@@ -329,7 +331,6 @@
                             <label class="form-label small fw-semibold text-muted-themed mb-1 px-2">Confirmar Contraseña</label>
                             <div class="input-group-glass">
                                 <div class="icon-box-glass"><i class="bi bi-shield-lock-fill"></i></div>
-                                <!-- APLICADO: Límite extendido a 15 -->
                                 <input type="password" class="form-control-glass" id="regPassConf" placeholder="Repita contraseña" maxlength="15" minlength="8" required>
                                 <div class="icon-btn-glass" onclick="togglePassword('regPassConf', 'iconRegPass2')">
                                     <i class="bi bi-eye" id="iconRegPass2"></i>
@@ -344,7 +345,7 @@
                             <i class="bi bi-arrow-left me-1"></i> Volver al Login
                         </button>
                         <button type="button" id="btnGuardarRegistro" class="btn btn-primary rounded-pill fw-bold shadow-sm py-3 px-4 w-100" onclick="registrarUsuario()">
-                            Crear Cuenta VIP <i class="bi bi-stars ms-1"></i>
+                            Crear Cuenta y Llave <i class="bi bi-stars ms-1"></i>
                         </button>
                     </div>
 
@@ -446,6 +447,12 @@
             const vLogin = document.getElementById('vista-login');
             const vRegistro = document.getElementById('vista-registro');
 
+            // Soporte para redirección externa (Como recuperar contraseña)
+            if (vista === 'recuperacion') {
+                window.location.href = 'recuperacion.html';
+                return;
+            }
+
             if (vista === 'registro') {
                 vLogin.classList.add('d-none');
                 vRegistro.classList.remove('d-none');
@@ -519,7 +526,7 @@
                 btn.classList.replace('btn-primary', 'btn-success');
                 btn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i> ¡Bienvenido!';
                 
-                // APLICADO: GUARDIA DIRECCIONAL
+                // GUARDIA DIRECCIONAL
                 setTimeout(() => {
                     if (data.record.rol === 'Superusuario' || data.record.email.toLowerCase() === 'kenth1977@gmail.com') {
                         window.location.href = 'dashboard.html';
@@ -548,10 +555,11 @@
             const nombreCompleto = `${iNombres.value} ${iApellido1.value} ${iApellido2.value}`.replace(/\s+/g, ' ').trim();
             const email = document.getElementById('regEmail').value.trim();
             const telefono = document.getElementById('regTelefono').value;
+            const pin = document.getElementById('regPin').value.trim().toUpperCase();
             const pass = document.getElementById('regPass').value;
             const passConf = document.getElementById('regPassConf').value;
 
-            if(!iNombres.value || !iApellido1.value || !email) return alert("Nombres, Primer Apellido y Correo son obligatorios.");
+            if(!iNombres.value || !iApellido1.value || !email || !telefono || !pin) return alert("Completa todos los campos obligatorios, incluyendo Teléfono y PIN.");
             
             // 🛑 CANDADO DE TITANIO
             if(email.toLowerCase() === 'kenth1977@gmail.com') {
@@ -559,6 +567,7 @@
             }
 
             if(telefono.length !== 8) return alert("El teléfono debe contener exactamente 8 dígitos numéricos.");
+            if(pin.length !== 6) return alert("El PIN de seguridad debe tener exactamente 6 caracteres.");
             if(pass.length < 8 || pass.length > 15) return alert("La contraseña debe tener entre 8 y 15 caracteres.");
             if(pass !== passConf) return alert("Las contraseñas no coinciden. Por favor verifica los campos con el botón del ojo.");
 
@@ -575,6 +584,7 @@
             formData.append('passwordConfirm', passConf);
             formData.append('name', nombreCompleto);
             formData.append('telefono', telefono);
+            formData.append('pin_recuperacion', pin);
             formData.append('rol', 'Usuario'); 
             formData.append('username', "user_" + Date.now()); 
 
@@ -605,11 +615,37 @@
                     throw new Error(errMsg);
                 }
 
+                // ========================================================
+                // 🔥 MAGIA COLD STORAGE: GENERAR Y DESCARGAR LLAVE JSON
+                // ========================================================
+                const hashSeguro = btoa(unescape(encodeURIComponent(pass)));
+                
+                const keyData = {
+                    app: "La Tribu",
+                    fecha: new Date().toISOString(),
+                    email: email,
+                    telefono: telefono,
+                    pin: pin,
+                    hash_seguridad: hashSeguro
+                };
+                
+                const blob = new Blob([JSON.stringify(keyData, null, 2)], { type: "application/json" });
+                const urlObj = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = urlObj;
+                a.download = `Llave_Recuperacion_Tribu_${telefono}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(urlObj);
+
                 btn.classList.replace('btn-primary', 'btn-success');
-                btn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i> ¡Cuenta Creada Exitosamente!';
+                btn.innerHTML = '<i class="bi bi-check-circle-fill me-2"></i> ¡Cuenta y Llave Creadas!';
                 
                 // Limpieza post-registro
                 setTimeout(() => {
+                    alert("✅ ¡CUENTA CREADA CON ÉXITO!\n\n⚠️ IMPORTANTE: Se acaba de descargar automáticamente tu LLAVE DE RECUPERACIÓN JSON a tu dispositivo.\n\nPor favor, guárdala en un lugar seguro. Si algún día olvidas tu contraseña, esta llave es el ÚNICO medio para recuperarla.");
+                    
                     btn.classList.replace('btn-success', 'btn-primary');
                     btn.innerHTML = originalHTML;
                     btn.disabled = false;
@@ -617,7 +653,7 @@
                     document.getElementById('formAvatarPreview').src = "https://ui-avatars.com/api/?name=Nuevo+Usuario&background=random";
                     window.archivoAvatarTemp = null;
                     cambiarVista('login');
-                }, 3000);
+                }, 1500);
 
             } catch (error) {
                 alert(error.message);

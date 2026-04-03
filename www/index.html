@@ -344,13 +344,13 @@
             </div>
         </div>
 
-        <!-- 🔥 VISTA DINAMICA (AQUÍ SE INYECTA RECUPERACION.HTML, HOME Y DASHBOARD) -->
+        <!-- 🔥 VISTA DINAMICA (AQUÍ SE INYECTA RECUPERACION.HTML, HOME, PERFIL Y DASHBOARD) -->
         <div id="vista-dinamica" class="w-100 d-none fade-view"></div>
 
     </main>
 
     <!-- ============================================================================== -->
-    <!-- 🎛️ BARRA DE NAVEGACIÓN INFERIOR (RECUPERADA)                                  -->
+    <!-- 🎛️ BARRA DE NAVEGACIÓN INFERIOR (ACTUALIZADA CON PERFIL)                     -->
     <!-- ============================================================================== -->
     <nav class="navbar fixed-bottom glass-panel border-0 border-top border-secondary border-opacity-25 rounded-top-4 pb-2 pt-2 px-3 z-3" style="border-bottom-left-radius: 0 !important; border-bottom-right-radius: 0 !important; padding-bottom: calc(0.5rem + env(safe-area-inset-bottom)) !important;">
         <div class="container-fluid d-flex justify-content-around align-items-center m-0 p-0" style="max-width: 600px; margin: 0 auto !important;">
@@ -360,6 +360,12 @@
                 <span class="d-block text-uppercase" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px;">Inicio</span>
             </div>
             
+            <!-- NUEVO BOTÓN DE PERFIL -->
+            <div id="navBtnPerfil" class="text-center cursor-pointer text-themed d-none flex-column align-items-center" onclick="cambiarVista('perfil')" style="width: 70px;">
+                <i class="bi bi-person-badge-fill fs-4 mb-1 d-block"></i>
+                <span class="d-block text-uppercase" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px;">Perfil</span>
+            </div>
+
             <div id="navBtnAjustes" class="text-center cursor-pointer text-themed d-none flex-column align-items-center" onclick="cambiarVista('dashboard')" style="width: 70px;">
                 <i class="bi bi-gear-fill fs-4 mb-1 d-block"></i>
                 <span class="d-block text-uppercase" style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px;">Ajustes</span>
@@ -400,7 +406,7 @@
     <!-- LIBRERÍA DE VALIDACIONES -->
     <script src="js/validaciones.js"></script>
     
-    <!-- LÓGICA CORE (js/index.js incrustada para funcionar sin internet) -->
+    <!-- LÓGICA CORE -->
     <script src="js/index.js"></script>
 
 </body>

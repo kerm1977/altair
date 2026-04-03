@@ -69,6 +69,8 @@ window.cambiarVista = async function(vista) {
 
     // 1. Configurar barra inferior de acuerdo a la sesión
     var btnAuth = document.getElementById('navBtnAuth');
+    var btnPerfil = document.getElementById('navBtnPerfil'); // <-- Capturamos el botón de Perfil
+    
     if (btnAuth) {
         if (user.id) {
             btnAuth.innerHTML = '<i class="bi bi-box-arrow-right fs-4 mb-1"></i><span style="font-size: 0.65rem; font-weight: 700; letter-spacing: 0.5px;">SALIR</span>';
@@ -80,6 +82,17 @@ window.cambiarVista = async function(vista) {
             btnAuth.onclick = function() { window.cambiarVista('login'); };
             btnAuth.classList.remove('text-danger');
             btnAuth.classList.add('text-primary');
+        }
+    }
+
+    // 🔥 NUEVA LÓGICA: Mostrar u ocultar el Perfil
+    if (btnPerfil) {
+        if (user.id) {
+            btnPerfil.classList.remove('d-none');
+            btnPerfil.classList.add('d-flex');
+        } else {
+            btnPerfil.classList.remove('d-flex');
+            btnPerfil.classList.add('d-none');
         }
     }
 

@@ -109,6 +109,14 @@
                     </div>
                     <h1 class="fs-2 fw-bold mb-1 text-dark prayer-title">Mi Decenario</h1>
                     <p class="text-muted fst-italic fs-6 mb-4">Un momento de paz y oración</p>
+
+                    <!-- NUEVO: Indicador de Conexión a la Base de Datos -->
+                    <div class="d-flex justify-content-center align-items-center mb-4">
+                        <div class="badge bg-light text-secondary border shadow-sm px-3 py-2 fs-6 rounded-pill" id="db-status-badge">
+                            <i class="bi bi-circle-fill text-warning me-1" id="db-status-icon"></i>
+                            <span id="db-status-text">Verificando conexión...</span>
+                        </div>
+                    </div>
                     
                     <!-- Tu Progreso Dinámico Independiente -->
                     <div class="bg-white rounded-4 p-3 mb-4 shadow-sm border">
@@ -684,5 +692,6 @@ Ayúdame, oh Señor, a que mi corazón sea misericordioso para que yo sienta tod
     <script src="js/bootstrap.bundle.min.js"></script>
     <script src="js/index.js"></script>
     <script src="js/ota_updater.js"></script>
+    <script src="js/conexion_checker.js"></script>
 </body>
 </html>

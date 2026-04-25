@@ -1,0 +1,485 @@
+/* Fondo dinámico y luminoso: Rayos de Sangre y Agua VIVOS */
+body {
+    font-family: 'Lora', serif;
+    background: linear-gradient(110deg, #ffffff 0%, #ffb3b3 25%, #ffffff 50%, #b3e6ff 75%, #ffffff 100%);
+    background-size: 300% 300%;
+    animation: divineRays 16s ease-in-out infinite;
+    color: #333333;
+    min-height: 100vh;
+    display: flex;
+    align-items: flex-start; /* Alineación desde arriba para respetar márgenes exactos */
+    overflow-x: hidden;
+}
+
+/* Animación suave del degradado */
+@keyframes divineRays {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+h1, h2, h3, .prayer-title {
+    font-family: 'Playfair Display', serif;
+}
+
+/* Efecto Glassmorphism (Cristal con Blur) para Modales */
+.clean-card {
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(25px) saturate(120%);
+    -webkit-backdrop-filter: blur(25px) saturate(120%);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 1.5rem;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08), inset 0 0 20px rgba(255, 255, 255, 0.5);
+}
+
+/* --- BOTONES E INDICADORES FLOTANTES GLOBALES --- */
+.fab-settings {
+    position: fixed;
+    top: 30px; /* PC - Bajado 10px extra */
+    right: 20px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background-color: rgba(255,255,255,0.8);
+    backdrop-filter: blur(10px);
+    color: #b91c1c;
+    border: 1px solid rgba(255,255,255,0.5);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    z-index: 1030; /* Z-index para quedar debajo de modales */
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.fab-info {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background-color: rgba(255,255,255,0.8);
+    backdrop-filter: blur(10px);
+    color: #475569;
+    border: 1px solid rgba(255,255,255,0.5);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    z-index: 1030;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.step-indicator-fixed {
+    position: fixed;
+    top: 30px; /* Alineado exactamente con fab-settings en PC */
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1030;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.fab-settings:hover, .fab-info:hover {
+    background-color: #ffffff;
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+}
+.fab-settings:hover { color: #b91c1c; transform: scale(1.1) rotate(15deg); }
+.fab-info:hover { color: #b91c1c; }
+
+/* --- BOTÓN FLOTANTE PARA ORACIÓN COMPLETA (PC) --- */
+#fab-prayer {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 55px;
+    height: 55px;
+    border-radius: 50%;
+    background-color: rgba(255,255,255,0.85);
+    backdrop-filter: blur(10px);
+    color: #0c4a6e;
+    border: 1px solid rgba(255,255,255,0.6);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    z-index: 1030;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+#fab-prayer:hover {
+    background-color: #ffffff;
+    color: #0284c7;
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+}
+
+/* --- BOTÓN FLOTANTE PARA ORACIÓN COMPLETA (MÓVIL - Dentro del contenedor) --- */
+#fab-prayer-mobile {
+    position: absolute;
+    top: 72%; /* Ajustado para que quede más arriba y no choque con Siguiente */
+    right: 5%;
+    transform: translate(50%, -50%);
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: rgba(255,255,255,0.85);
+    backdrop-filter: blur(10px);
+    color: #0c4a6e;
+    border: 1px solid rgba(255,255,255,0.6);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    z-index: 20;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+}
+#fab-prayer-mobile:hover {
+    background-color: #ffffff;
+    color: #0284c7;
+    transform: translate(50%, -50%) scale(1.15);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+}
+
+/* Control de ocultamiento para botones dinámicos */
+.prayer-btn-hidden {
+    display: none !important;
+}
+
+/* --- CONTROL EXACTO DE ESPACIOS (PC) --- */
+.main-content {
+    width: 100%;
+    padding-top: 100px; /* Suficiente espacio libre en PC para los controles flotantes superiores */
+}
+
+.rosary-wrapper {
+    margin-top: 20px; 
+}
+
+.prayer-content-wrapper {
+    padding-top: 140px !important; /* Empuja el texto hacia abajo de manera forzosa en PC, manteniéndolo separado del inicio */
+}
+
+/* --- FONDO DEL MODAL CON EFECTO BLUR --- */
+.modal-backdrop {
+    background-color: rgba(255, 255, 255, 0.4) !important;
+}
+.modal-backdrop.show {
+    opacity: 1 !important;
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+}
+
+/* --- CONTENEDOR DEL ROSARIO --- */
+#rosary-container {
+    position: relative;
+    width: 100%;
+    max-width: 320px;
+    aspect-ratio: 3 / 4.2; 
+    margin: 0 auto;
+    filter: drop-shadow(0 15px 15px rgba(0,0,0,0.1));
+}
+
+#rosary-container svg {
+    pointer-events: none;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    z-index: 0;
+}
+
+/* --- BOTONES FLOTANTES DE NAVEGACIÓN --- */
+.btn-float-nav {
+    position: absolute;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    z-index: 20;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.btn-float-nav:disabled {
+    opacity: 0.4;
+    pointer-events: none;
+    box-shadow: none;
+}
+
+.nav-prev { left: 5%; top: 95%; transform: translate(-50%, -50%); }
+.nav-next { right: 5%; top: 95%; transform: translate(50%, -50%); }
+
+.nav-prev:hover:not(:disabled) { transform: translate(-50%, -50%) scale(1.15); }
+.nav-next:hover:not(:disabled) { transform: translate(50%, -50%) scale(1.15); }
+
+/* --- CUENTAS Y ANIMACIONES --- */
+.bead-wrapper {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+}
+
+.bead {
+    transition: all 0.4s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    outline: none;
+    border: none;
+    background: transparent;
+}
+
+.realistic-bead {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 25%, 
+        var(--b-c1, #ffb3b3) 0%, 
+        var(--b-c2, #ff1a1a) 20%, 
+        var(--b-c3, #cc0000) 50%, 
+        var(--b-c4, #660000) 100%);
+    box-shadow: 
+        inset -3px -3px 6px rgba(0,0,0,0.5), 
+        inset 3px 3px 6px rgba(255,255,255,0.8), 
+        2px 4px 6px rgba(0,0,0,0.3);
+    position: relative;
+    transition: background 0.8s ease, transform 0.4s ease, box-shadow 0.4s ease;
+}
+
+.realistic-bead::after {
+    content: '';
+    position: absolute;
+    top: 15%;
+    left: 20%;
+    width: 25%;
+    height: 25%;
+    background: radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 70%);
+    border-radius: 50%;
+}
+
+.realistic-medal {
+    width: 42px;
+    height: 56px;
+    border-radius: 40% 40% 40% 40% / 50% 50% 50% 50%;
+    background-color: #f1f3f5;
+    background-size: cover;
+    background-position: center;
+    border: 4px solid #ced4da;
+    box-shadow: inset 0 0 8px rgba(0,0,0,0.6), 2px 4px 8px rgba(0,0,0,0.3); 
+    position: relative;
+}
+
+.medal-misericordia { background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Divine_Mercy_painting.jpg/200px-Divine_Mercy_painting.jpg'); }
+.medal-rosario { background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/16th-century_unknown_painters_-_Virgin_Mary_-_WGA24018.jpg/200px-16th-century_unknown_painters_-_Virgin_Mary_-_WGA24018.jpg'); }
+
+.realistic-medal::before {
+    content: '';
+    position: absolute;
+    top: -4px; left: -4px; right: -4px; bottom: -4px;
+    border-radius: inherit;
+    background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 30%, rgba(0,0,0,0.05) 70%, rgba(255,255,255,0.7) 100%);
+    pointer-events: none;
+}
+
+.realistic-cross {
+    width: 40px;
+    height: 60px;
+    filter: drop-shadow(2px 4px 4px rgba(0,0,0,0.3)); 
+    transition: all 0.4s ease;
+}
+
+/* --- EFECTO DE LUZ DINÁMICA RADIANTES EN LA CUENTA ACTIVA --- */
+.bead-wrapper.active {
+    z-index: 25;
+}
+
+.bead-wrapper.active .realistic-bead,
+.bead-wrapper.active .realistic-medal {
+    transform: scale(1.3);
+    animation: beadRadiantLight 1.8s infinite alternate ease-in-out;
+}
+
+.bead-wrapper.active .realistic-cross {
+    transform: scale(1.3);
+    animation: crossRadiantLight 1.8s infinite alternate ease-in-out;
+}
+
+@keyframes beadRadiantLight {
+    0% { 
+        box-shadow: 
+            0 0 8px 2px rgba(179, 230, 255, 0.4), 
+            0 0 12px 4px rgba(255, 179, 179, 0.3), 
+            inset -3px -3px 6px rgba(0,0,0,0.5), 
+            inset 3px 3px 6px rgba(255,255,255,0.8);
+    }
+    100% { 
+        box-shadow: 
+            0 0 15px 5px rgba(179, 230, 255, 0.7), 
+            0 0 25px 8px rgba(255, 179, 179, 0.6),
+            inset -3px -3px 6px rgba(0,0,0,0.5), 
+            inset 3px 3px 6px rgba(255,255,255,0.8);
+    }
+}
+
+@keyframes crossRadiantLight {
+    0% { 
+        filter: drop-shadow(2px 4px 4px rgba(0,0,0,0.3)) 
+                drop-shadow(0 0 6px rgba(179, 230, 255, 0.4)) 
+                drop-shadow(0 0 8px rgba(255, 179, 179, 0.3)); 
+    }
+    100% { 
+        filter: drop-shadow(2px 4px 4px rgba(0,0,0,0.3)) 
+                drop-shadow(0 0 12px rgba(179, 230, 255, 0.7)) 
+                drop-shadow(0 0 18px rgba(255, 179, 179, 0.6)); 
+    }
+}
+
+.bead-wrapper.completed .bead {
+    filter: brightness(0.60) grayscale(25%);
+}
+
+#prayer-card-content {
+    transition: opacity 0.4s ease-in-out;
+}
+
+.prayer-text-container {
+    white-space: pre-wrap; 
+    font-size: 1.25rem;
+    line-height: 1.6;
+    text-shadow: 0 1px 2px rgba(255,255,255,0.8);
+}
+
+.btn-custom {
+    font-family: 'Playfair Display', serif;
+    font-weight: 600;
+    border-radius: 50px;
+    transition: all 0.3s;
+}
+.btn-primary-custom {
+    background: #b91c1c; 
+    color: white;
+    border: none;
+    box-shadow: 0 4px 12px rgba(185, 28, 28, 0.3);
+}
+.btn-primary-custom:hover {
+    background: #991b1b;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(185, 28, 28, 0.4);
+}
+
+.bg-white-hover-fix {
+    background-color: #ffffff;
+}
+.btn-outline-secondary.bg-white-hover-fix:hover {
+    background-color: #6c757d;
+    color: #ffffff;
+}
+.btn-outline-danger.bg-white-hover-fix:hover {
+    background-color: #dc3545;
+    color: #ffffff;
+}
+.btn-outline-primary.bg-white-hover-fix:hover {
+    background-color: #0d6efd;
+    color: #ffffff;
+}
+.btn-outline-success.bg-white-hover-fix:hover {
+    background-color: #198754;
+    color: #ffffff;
+}
+.btn-outline-info.bg-white-hover-fix:hover {
+    background-color: #0dcaf0;
+    color: #ffffff;
+}
+
+.social-link {
+    color: #475569;
+    transition: color 0.3s ease, transform 0.2s ease;
+}
+.social-link:hover {
+    color: #b91c1c;
+    transform: scale(1.05);
+}
+
+.accordion-button:not(.collapsed) {
+    background-color: #f8d7da;
+    color: #b91c1c;
+}
+.accordion-button:focus {
+    box-shadow: none;
+    border-color: rgba(0,0,0,.125);
+}
+
+.accordion-faustina .accordion-button:not(.collapsed) {
+    background-color: #e0f2fe;
+    color: #0c4a6e;
+}
+.accordion-faustina .accordion-body {
+    white-space: pre-wrap;
+    line-height: 1.6;
+}
+
+@media (max-width: 767.98px) {
+    /* --- CONTROL EXACTO DE ESPACIOS (MÓVIL) --- */
+    .fab-settings {
+        top: 25px; 
+        right: 15px;
+        width: 45px;
+        height: 45px;
+        font-size: 1.2rem;
+    }
+    .step-indicator-fixed {
+        top: 25px; 
+    }
+    
+    .main-content {
+        padding-top: 100px; /* Aumentado para que el decenario no choque NUNCA con el indicador superior */
+    }
+
+    .rosary-wrapper {
+        margin-top: 10px; 
+    }
+    
+    .prayer-content-wrapper {
+        padding-top: 40px !important; /* Mantiene la separación de la cruz hacia abajo */
+        margin-top: 0 !important;
+    }
+
+    #rosary-container {
+        max-width: 380px;
+        width: 100%;
+        margin-bottom: 0;
+    }
+    
+    .clean-card {
+        padding: 1.5rem !important;
+    }
+
+    .fab-info {
+        display: none !important; /* Oculta el botón Acerca De en móviles */
+    }
+    
+    #fab-prayer-mobile {
+        top: 72%; /* Se sube para evitar chocar por completo con el botón Siguiente */
+        right: 5%;
+    }
+    
+    .prayer-text-container {
+        font-size: 1.15rem;
+    }
+}

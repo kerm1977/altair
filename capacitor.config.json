@@ -1,6 +1,6 @@
 {
-  "appId": "com.prometeusv1.app",
-  "appName": "PrometeusV1",
+  "appId": "com.divinamisericordia.app",
+  "appName": "DIVINAMISERICORDIA",
   "webDir": "www",
   "bundledWebRuntime": false,
   "plugins": {

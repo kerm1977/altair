@@ -1,6 +1,7 @@
+// configurar_proyecto.js
 // ==============================================================================
 // ARCHIVO: configurar_proyecto.js
-// ROL: Asistente de configuración (Modo Dios) - Versión PocketBase (Sin SQLite)
+// ROL: Asistente CLI para configurar Nombre, ID, Package, Icono y Sincronizar
 // ==============================================================================
 
 const fs = require('fs');
@@ -16,19 +17,30 @@ const rl = readline.createInterface({
 console.log("========================================================");
 console.log("🚀 MODO DIOS: CONFIGURADOR DE APP (POCKETBASE) 🚀");
 console.log("========================================================\n");
-console.log("Este asistente preparará tu app y sincronizará el código automáticamente.\n");
+console.log("Este asistente preparará tu app, tu icono y sincronizará el código automáticamente.\n");
 
-rl.question("1. Nombre de la nueva App (Ej: Mi Restaurante): ", (appName) => {
+const capConfigPath = path.join(__dirname, 'capacitor.config.json');
+
+// Leer configuración actual si existe para usarla de default
+let currentAppName = "Altair";
+let currentAppId = "com.altair.app";
+
+if (fs.existsSync(capConfigPath)) {
+    try {
+        const currentConfig = JSON.parse(fs.readFileSync(capConfigPath, 'utf8'));
+        if (currentConfig.appName) currentAppName = currentConfig.appName;
+        if (currentConfig.appId) currentAppId = currentConfig.appId;
+    } catch (e) {}
+}
+
+rl.question(`1. Nombre de la nueva App (Ej: Mi Restaurante) [Actual: ${currentAppName}]: `, (appNameInput) => {
+    const finalAppName = appNameInput.trim() || currentAppName;
     
-    // Asignar nombre o usar default
-    const finalAppName = appName.trim() || 'La Tribu';
-    
-    // Generar ID sugerido limpiando el nombre (minúsculas, sin espacios ni caracteres raros)
+    // Generar ID sugerido limpiando el nombre
     const sugerenciaId = `com.${finalAppName.toLowerCase().replace(/[^a-z0-9]/g, '')}.app`;
 
-    rl.question(`2. ID del Paquete (Presiona Enter para usar '${sugerenciaId}'): `, (appId) => {
-        
-        let finalAppId = appId.trim() || sugerenciaId;
+    rl.question(`2. ID del Paquete (Presiona Enter para usar '${sugerenciaId}'): `, (appIdInput) => {
+        let finalAppId = appIdInput.trim() || sugerenciaId;
 
         // ===================================================================
         // VALIDACIÓN CRÍTICA PARA ANDROID (Debe contener al menos un punto)
@@ -38,42 +50,35 @@ rl.question("1. Nombre de la nueva App (Ej: Mi Restaurante): ", (appName) => {
             console.log(`\n⚠️  AVISO: Android exige que el ID tenga al menos un punto (.). Auto-corregido a: '${finalAppId}'`);
         }
 
-        // NUEVAS PREGUNTAS PARA EL PACKAGE.JSON
         rl.question("3. Descripción de la App (Ej: App de Delivery): ", (appDesc) => {
             const finalAppDesc = appDesc.trim() || 'Plantilla de App con PocketBase';
 
             rl.question("4. Autor (Ej: Tu Nombre o Empresa): ", (appAuthor) => {
                 const finalAppAuthor = appAuthor.trim() || '';
 
-                // ===================================================================
-                // 🔥 NUEVO: PREGUNTA PARA EL ICONO (ARRASTRAR Y SOLTAR)
-                // ===================================================================
                 console.log('\n======================================================');
                 console.log(' 🖼️  CONFIGURACIÓN DEL ICONO / LOGO DE LA APP');
                 console.log('======================================================');
-                console.log('👉 ARRASTRA Y SUELTA tu imagen (PNG o JPG) aquí en la ventana negra y presiona Enter.');
+                console.log('👉 ARRASTRA Y SUELTA tu imagen (PNG o JPG) aquí en la consola y presiona Enter.');
                 console.log('   (O simplemente presiona Enter para saltar este paso y mantener el actual)');
-                
-                rl.question('\n5. Ruta de la imagen: ', (iconInput) => {
 
+                rl.question('\n5. Ruta de la imagen: ', (iconInput) => {
+                    
                     console.log("\n⚙️  Configurando variables del proyecto...");
 
                     // ===================================================================
                     // 1. ACTUALIZAR capacitor.config.json
                     // ===================================================================
-                    const capConfigPath = path.join(__dirname, 'capacitor.config.json');
                     if (fs.existsSync(capConfigPath)) {
                         try {
                             const capConfig = JSON.parse(fs.readFileSync(capConfigPath, 'utf8'));
                             capConfig.appId = finalAppId;
                             capConfig.appName = finalAppName;
                             fs.writeFileSync(capConfigPath, JSON.stringify(capConfig, null, 2));
-                            console.log(`✅ capacitor.config.json actualizado (Nombre: ${finalAppName}, ID: ${finalAppId})`);
+                            console.log(`✅ capacitor.config.json actualizado.`);
                         } catch (err) {
                             console.error("❌ Error leyendo capacitor.config.json:", err.message);
                         }
-                    } else {
-                        console.warn("⚠️ No se encontró capacitor.config.json");
                     }
 
                     // ===================================================================
@@ -83,79 +88,112 @@ rl.question("1. Nombre de la nueva App (Ej: Mi Restaurante): ", (appName) => {
                     if (fs.existsSync(pkgConfigPath)) {
                         try {
                             const pkgConfig = JSON.parse(fs.readFileSync(pkgConfigPath, 'utf8'));
-                            
-                            // package.json exige nombres en minúsculas, sin espacios y seguros para URL
                             const safePkgName = finalAppName.toLowerCase().replace(/[^a-z0-9\-]/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
                             
-                            // Se reescribe la información interna del proyecto
                             pkgConfig.name = safePkgName || 'app-generica';
-                            pkgConfig.version = "1.0.0"; // Reiniciamos la versión a la 1.0.0 por ser una app nueva
+                            pkgConfig.version = "1.0.0";
                             pkgConfig.description = finalAppDesc;
                             pkgConfig.author = finalAppAuthor;
                             
-                            // Se guarda el archivo package.json modificado asegurando codificación utf8
                             fs.writeFileSync(pkgConfigPath, JSON.stringify(pkgConfig, null, 2), 'utf8');
-                            
-                            // Verificación de lectura: abrimos el archivo nuevamente para estar 100% seguros de que se guardó
-                            const checkPkg = JSON.parse(fs.readFileSync(pkgConfigPath, 'utf8'));
-                            console.log(`✅ package.json actualizado (Nombre interno verificado: ${checkPkg.name}, Autor: ${checkPkg.author || 'Anónimo'})`);
-                        } catch (err) {
-                            console.error("❌ Error actualizando package.json:", err.message);
-                        }
-                    } else {
-                        console.warn("⚠️ No se encontró package.json");
+                            console.log(`✅ package.json actualizado.`);
+                        } catch (err) {}
                     }
 
                     // ===================================================================
-                    // 3. PROCESAR Y GUARDAR EL ICONO ARRASTRADO
+                    // 3. LA MAGIA: PROCESAR ICONO CON LA HERRAMIENTA OFICIAL DE CAPACITOR
                     // ===================================================================
-                    // Las consolas a veces le ponen comillas simples o dobles al arrastrar un archivo. Las limpiamos.
-                    let cleanIconPath = iconInput.replace(/['"]/g, '').trim(); 
+                    // Limpieza robusta de ruta y espacios escapados
+                    let cleanIconPath = iconInput.trim().replace(/^["']|["']$/g, '');
+                    cleanIconPath = cleanIconPath.replace(/\\ /g, ' '); // NUEVO: Elimina las barras invertidas que escapan espacios
+                    
+                    // TRADUCTOR INVISIBLE: Si la consola te coló una ruta tipo GitBash/WSL (/mnt/c/...), la pasamos a C:\
+                    if (process.platform === 'win32' && cleanIconPath.match(/^\/mnt\/[a-zA-Z]\//)) {
+                        const letraDisco = cleanIconPath.charAt(5).toUpperCase();
+                        const restoRuta = cleanIconPath.slice(7).replace(/\//g, '\\');
+                        cleanIconPath = `${letraDisco}:\\${restoRuta}`;
+                    } else if (process.platform === 'win32' && cleanIconPath.match(/^\/[a-zA-Z]\//)) {
+                        // Por si acaso lanza formato tipo /c/Users/...
+                        const letraDisco = cleanIconPath.charAt(1).toUpperCase();
+                        const restoRuta = cleanIconPath.slice(3).replace(/\//g, '\\');
+                        cleanIconPath = `${letraDisco}:\\${restoRuta}`;
+                    }
                     
                     if (cleanIconPath && fs.existsSync(cleanIconPath)) {
                         const ext = path.extname(cleanIconPath).toLowerCase();
                         if (ext === '.png' || ext === '.jpg' || ext === '.jpeg') {
-                            const targetIconPath = path.join(__dirname, 'icon.png');
                             try {
-                                fs.copyFileSync(cleanIconPath, targetIconPath);
-                                console.log(`✅ ¡Icono cargado con éxito! Se guardó como 'icon.png'. El compilador lo inyectará en Android.`);
+                                // A. CREAR LA RUTA EXACTA QUE PEDISTE (www/img/icos)
+                                const customImgDir = path.join(__dirname, 'www', 'img', 'icos');
+                                if (!fs.existsSync(customImgDir)) {
+                                    fs.mkdirSync(customImgDir, { recursive: true });
+                                }
+
+                                // B. Extraer el nombre original y copiar la imagen ahí
+                                const originalFileName = path.basename(cleanIconPath);
+                                const customImgPath = path.join(customImgDir, originalFileName);
+                                fs.copyFileSync(cleanIconPath, customImgPath);
+                                console.log(`\n✅ Imagen del APK guardada correctamente en la ruta:`);
+                                console.log(`   -> ${customImgPath}`);
+
+                                // C. CONFIGURAR CAPACITOR (Para generar el código en Java/Android)
+                                // Capacitor necesita a juro que exista 'assets/icon.png', así que le hacemos una copia invisible.
+                                const assetsDir = path.join(__dirname, 'assets');
+                                if (!fs.existsSync(assetsDir)) fs.mkdirSync(assetsDir, { recursive: true });
+                                fs.copyFileSync(cleanIconPath, path.join(assetsDir, 'icon.png'));
+                                fs.copyFileSync(cleanIconPath, path.join(assetsDir, 'splash.png'));
+
+                                // D. Instalar la librería oficial de iconos (si no existe)
+                                const isAssetsInstalled = fs.existsSync(path.join(__dirname, 'node_modules', '@capacitor', 'assets'));
+                                if (!isAssetsInstalled) {
+                                    console.log("⏳ Preparando generador de iconos de Android...");
+                                    console.log("   (Instalando @capacitor/assets, esto puede tardar unos segundos...)");
+                                    // Añadido --legacy-peer-deps para ignorar conflictos de versiones entre plugins
+                                    execSync('npm install @capacitor/assets --save-dev --legacy-peer-deps', { stdio: 'inherit' });
+                                } else {
+                                    console.log("✅ Generador de iconos nativo ya instalado, omitiendo descarga.");
+                                }
+
+                                // E. Destruir y generar los iconos perfectos en Android
+                                console.log("🖼️  Generando Iconos Adaptativos y Pantalla de Carga en Android...");
+                                execSync('npx capacitor-assets generate --android', { stdio: 'inherit' });
+                                
+                                console.log(`✅ ¡Iconos de Android configurados con éxito!`);
+
                             } catch (err) {
-                                console.log(`❌ Error al copiar la imagen del icono: ${err.message}`);
+                                console.log(`❌ Error procesando el icono: ${err.message}`);
+                                console.log(`💡 SUGERENCIA: Revisa los logs de arriba. Si npm falla, puedes intentar instalarlo manualmente ejecutando: npm install @capacitor/assets --save-dev --legacy-peer-deps`);
                             }
                         } else {
-                            console.log(`❌ Formato no soportado (${ext}). Por favor usa un archivo PNG o JPG.`);
+                            console.log(`❌ Formato no soportado (${ext}). Por favor usa archivos PNG o JPG.`);
                         }
                     } else if (cleanIconPath) {
-                        console.log(`❌ No se encontró la imagen en la ruta especificada.`);
+                        console.log(`❌ No se encontró la imagen en la ruta especificada:\n   -> ${cleanIconPath}`);
+                    } else {
+                        console.log(`ℹ️  No se modificó el icono. Se usará el actual.`);
                     }
 
                     // ===================================================================
                     // 4. EJECUTAR npx cap sync AUTOMÁTICAMENTE
                     // ===================================================================
-                    console.log("\n🔄 Inyectando el código en Android (Ejecutando npx cap sync)...");
-                    console.log("⏳ Por favor espera, esto puede tomar unos segundos...\n");
-                    
+                    console.log("\n🔄 Inyectando todo el código en Android (Ejecutando npx cap sync)...");
                     try {
-                        // stdio: 'inherit' permite que veas los colores y el progreso real de Capacitor en tu consola
                         execSync('npx cap sync', { stdio: 'inherit' });
                         console.log("\n✅ Sincronización completada con éxito.");
                     } catch (error) {
-                        console.error("\n❌ Error al ejecutar npx cap sync. Revisa si Capacitor está instalado correctamente.");
+                        console.error("\n❌ Error al ejecutar npx cap sync.");
                     }
 
+                    // ===================================================================
+                    // FIN
+                    // ===================================================================
                     console.log("\n========================================================");
                     console.log("🎉 ¡CONFIGURACIÓN COMPLETADA!");
                     console.log("========================================================");
                     console.log("👉 El código y tu icono ya están dentro de la caja fuerte de Android.");
                     console.log("👉 Tu único paso final es compilar:");
                     console.log("   1. cd android");
-                    console.log("   2. construir.bat");
-                    
-                    // Aviso visual importante para el usuario sobre su consola
-                    console.log("\n💡 NOTA SOBRE LA CONSOLA:");
-                    console.log("Si tu terminal sigue mostrando '(pepinocho@1.0.0)' es normal.");
-                    console.log("Las consolas guardan ese nombre en memoria al abrirlas.");
-                    console.log("Cierra la consola y ábrela de nuevo (o escribe 'cd .') para refrescarlo.\n");
+                    console.log("   2. construir.bat\n");
                     
                     rl.close();
                 }); // Fin pregunta 5 (Icono)

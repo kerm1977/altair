@@ -1,0 +1,1605 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Devocionario - Decenario (Misericordia y Rosario)</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Fondo dinámico y luminoso: Rayos de Sangre y Agua VIVOS */
+        body {
+            font-family: 'Lora', serif;
+            background: linear-gradient(110deg, #ffffff 0%, #ffb3b3 25%, #ffffff 50%, #b3e6ff 75%, #ffffff 100%);
+            background-size: 300% 300%;
+            animation: divineRays 16s ease-in-out infinite;
+            color: #333333;
+            min-height: 100vh;
+            display: flex;
+            align-items: flex-start; /* Alineación desde arriba para respetar márgenes exactos */
+            overflow-x: hidden;
+        }
+
+        /* Animación suave del degradado */
+        @keyframes divineRays {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        h1, h2, h3, .prayer-title {
+            font-family: 'Playfair Display', serif;
+        }
+
+        /* Efecto Glassmorphism (Cristal con Blur) para Modales */
+        .clean-card {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(25px) saturate(120%);
+            -webkit-backdrop-filter: blur(25px) saturate(120%);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 1.5rem;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08), inset 0 0 20px rgba(255, 255, 255, 0.5);
+        }
+
+        /* --- BOTONES E INDICADORES FLOTANTES GLOBALES --- */
+        .fab-settings {
+            position: fixed;
+            top: 30px; /* PC - Bajado 10px extra */
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: rgba(255,255,255,0.8);
+            backdrop-filter: blur(10px);
+            color: #b91c1c;
+            border: 1px solid rgba(255,255,255,0.5);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            z-index: 1030; /* Z-index para quedar debajo de modales */
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .step-indicator-fixed {
+            position: fixed;
+            top: 30px; /* Alineado exactamente con fab-settings en PC - Bajado 10px extra */
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1030;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+        }
+
+        .fab-settings:hover {
+            background-color: #ffffff;
+            transform: scale(1.1) rotate(15deg);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+            color: #b91c1c;
+        }
+
+        /* --- BOTÓN FLOTANTE PARA ORACIÓN COMPLETA (PC) --- */
+        #fab-prayer {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            background-color: rgba(255,255,255,0.85);
+            backdrop-filter: blur(10px);
+            color: #0c4a6e;
+            border: 1px solid rgba(255,255,255,0.6);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            z-index: 1030;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        #fab-prayer:hover {
+            background-color: #ffffff;
+            color: #0284c7;
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+        }
+
+        /* --- BOTÓN FLOTANTE PARA ORACIÓN COMPLETA (MÓVIL - Dentro del contenedor) --- */
+        #fab-prayer-mobile {
+            position: absolute;
+            top: 78%; /* Posicionado justo arriba del botón "Siguiente" que está al 95% */
+            right: 5%;
+            transform: translate(50%, -50%);
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background-color: rgba(255,255,255,0.85);
+            backdrop-filter: blur(10px);
+            color: #0c4a6e;
+            border: 1px solid rgba(255,255,255,0.6);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            z-index: 20;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+        }
+        #fab-prayer-mobile:hover {
+            background-color: #ffffff;
+            color: #0284c7;
+            transform: translate(50%, -50%) scale(1.15);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+        }
+
+        /* Control de ocultamiento para botones dinámicos */
+        .prayer-btn-hidden {
+            display: none !important;
+        }
+
+        /* --- CONTROL EXACTO DE ESPACIOS (PC) --- */
+        .main-content {
+            width: 100%;
+            /* top(30) + height(~40) = 70px ocupados por el header flotante (compensando los 10px extra) */
+            padding-top: 70px; 
+        }
+        
+        .rosary-wrapper {
+            margin-top: 35px; /* Exactamente 35px desde el indicador en PC */
+        }
+        
+        .prayer-content-wrapper {
+            margin-top: 100px; /* Exactamente 100px desde la cruz en PC */
+        }
+
+        /* --- FONDO DEL MODAL CON EFECTO BLUR --- */
+        .modal-backdrop {
+            background-color: rgba(255, 255, 255, 0.4) !important;
+        }
+        .modal-backdrop.show {
+            opacity: 1 !important;
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+        }
+
+        /* --- CONTENEDOR DEL ROSARIO --- */
+        #rosary-container {
+            position: relative;
+            width: 100%;
+            max-width: 320px;
+            aspect-ratio: 3 / 4.2; 
+            margin: 0 auto;
+            filter: drop-shadow(0 15px 15px rgba(0,0,0,0.1));
+        }
+
+        #rosary-container svg {
+            pointer-events: none;
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            z-index: 0;
+        }
+
+        /* --- BOTONES FLOTANTES DE NAVEGACIÓN (ALINEADOS A LA CRUZ) --- */
+        .btn-float-nav {
+            position: absolute;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            z-index: 20;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .btn-float-nav:disabled {
+            opacity: 0.4;
+            pointer-events: none;
+            box-shadow: none;
+        }
+        
+        .nav-prev { left: 5%; top: 95%; transform: translate(-50%, -50%); }
+        .nav-next { right: 5%; top: 95%; transform: translate(50%, -50%); }
+        
+        .nav-prev:hover:not(:disabled) { transform: translate(-50%, -50%) scale(1.15); }
+        .nav-next:hover:not(:disabled) { transform: translate(50%, -50%) scale(1.15); }
+
+        /* --- CUENTAS Y ANIMACIONES --- */
+        .bead-wrapper {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+        }
+
+        .bead {
+            transition: all 0.4s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            padding: 0;
+            outline: none;
+            border: none;
+            background: transparent;
+        }
+        
+        .realistic-bead {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 25%, 
+                var(--b-c1, #ffb3b3) 0%, 
+                var(--b-c2, #ff1a1a) 20%, 
+                var(--b-c3, #cc0000) 50%, 
+                var(--b-c4, #660000) 100%);
+            box-shadow: 
+                inset -3px -3px 6px rgba(0,0,0,0.5), 
+                inset 3px 3px 6px rgba(255,255,255,0.8), 
+                2px 4px 6px rgba(0,0,0,0.3);
+            position: relative;
+            transition: background 0.8s ease, transform 0.4s ease, box-shadow 0.4s ease;
+        }
+
+        .realistic-bead::after {
+            content: '';
+            position: absolute;
+            top: 15%;
+            left: 20%;
+            width: 25%;
+            height: 25%;
+            background: radial-gradient(circle, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 70%);
+            border-radius: 50%;
+        }
+
+        .realistic-medal {
+            width: 42px;
+            height: 56px;
+            border-radius: 40% 40% 40% 40% / 50% 50% 50% 50%;
+            background-color: #f1f3f5;
+            background-size: cover;
+            background-position: center;
+            border: 4px solid #ced4da;
+            box-shadow: inset 0 0 8px rgba(0,0,0,0.6), 2px 4px 8px rgba(0,0,0,0.3); 
+            position: relative;
+        }
+        
+        .medal-misericordia { background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Divine_Mercy_painting.jpg/200px-Divine_Mercy_painting.jpg'); }
+        .medal-rosario { background-image: url('https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/16th-century_unknown_painters_-_Virgin_Mary_-_WGA24018.jpg/200px-16th-century_unknown_painters_-_Virgin_Mary_-_WGA24018.jpg'); }
+
+        .realistic-medal::before {
+            content: '';
+            position: absolute;
+            top: -4px; left: -4px; right: -4px; bottom: -4px;
+            border-radius: inherit;
+            background: linear-gradient(135deg, rgba(255,255,255,0.9) 0%, rgba(255,255,255,0) 30%, rgba(0,0,0,0.05) 70%, rgba(255,255,255,0.7) 100%);
+            pointer-events: none;
+        }
+
+        .realistic-cross {
+            width: 40px;
+            height: 60px;
+            filter: drop-shadow(2px 4px 4px rgba(0,0,0,0.3)); 
+            transition: all 0.4s ease;
+        }
+
+        /* --- EFECTO DE LUZ DINÁMICA RADIANTES EN LA CUENTA ACTIVA --- */
+        .bead-wrapper.active {
+            z-index: 25;
+        }
+        
+        .bead-wrapper.active .realistic-bead,
+        .bead-wrapper.active .realistic-medal {
+            transform: scale(1.3);
+            animation: beadRadiantLight 1.8s infinite alternate ease-in-out;
+        }
+
+        .bead-wrapper.active .realistic-cross {
+            transform: scale(1.3);
+            animation: crossRadiantLight 1.8s infinite alternate ease-in-out;
+        }
+
+        @keyframes beadRadiantLight {
+            0% { 
+                box-shadow: 
+                    0 0 8px 2px rgba(179, 230, 255, 0.4), 
+                    0 0 12px 4px rgba(255, 179, 179, 0.3), 
+                    inset -3px -3px 6px rgba(0,0,0,0.5), 
+                    inset 3px 3px 6px rgba(255,255,255,0.8);
+            }
+            100% { 
+                box-shadow: 
+                    0 0 15px 5px rgba(179, 230, 255, 0.7), 
+                    0 0 25px 8px rgba(255, 179, 179, 0.6),
+                    inset -3px -3px 6px rgba(0,0,0,0.5), 
+                    inset 3px 3px 6px rgba(255,255,255,0.8);
+            }
+        }
+
+        @keyframes crossRadiantLight {
+            0% { 
+                filter: drop-shadow(2px 4px 4px rgba(0,0,0,0.3)) 
+                        drop-shadow(0 0 6px rgba(179, 230, 255, 0.4)) 
+                        drop-shadow(0 0 8px rgba(255, 179, 179, 0.3)); 
+            }
+            100% { 
+                filter: drop-shadow(2px 4px 4px rgba(0,0,0,0.3)) 
+                        drop-shadow(0 0 12px rgba(179, 230, 255, 0.7)) 
+                        drop-shadow(0 0 18px rgba(255, 179, 179, 0.6)); 
+            }
+        }
+
+        .bead-wrapper.completed .bead {
+            filter: brightness(0.60) grayscale(25%);
+        }
+
+        #prayer-card-content {
+            transition: opacity 0.4s ease-in-out;
+        }
+
+        .prayer-text-container {
+            white-space: pre-wrap; 
+            font-size: 1.25rem;
+            line-height: 1.6;
+            text-shadow: 0 1px 2px rgba(255,255,255,0.8);
+        }
+
+        .btn-custom {
+            font-family: 'Playfair Display', serif;
+            font-weight: 600;
+            border-radius: 50px;
+            transition: all 0.3s;
+        }
+        .btn-primary-custom {
+            background: #b91c1c; 
+            color: white;
+            border: none;
+            box-shadow: 0 4px 12px rgba(185, 28, 28, 0.3);
+        }
+        .btn-primary-custom:hover {
+            background: #991b1b;
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(185, 28, 28, 0.4);
+        }
+
+        .bg-white-hover-fix {
+            background-color: #ffffff;
+        }
+        .btn-outline-secondary.bg-white-hover-fix:hover {
+            background-color: #6c757d;
+            color: #ffffff;
+        }
+        .btn-outline-danger.bg-white-hover-fix:hover {
+            background-color: #dc3545;
+            color: #ffffff;
+        }
+        .btn-outline-primary.bg-white-hover-fix:hover {
+            background-color: #0d6efd;
+            color: #ffffff;
+        }
+        .btn-outline-success.bg-white-hover-fix:hover {
+            background-color: #198754;
+            color: #ffffff;
+        }
+
+        .social-link {
+            color: #475569;
+            transition: color 0.3s ease, transform 0.2s ease;
+        }
+        .social-link:hover {
+            color: #b91c1c;
+            transform: scale(1.05);
+        }
+
+        .accordion-button:not(.collapsed) {
+            background-color: #f8d7da;
+            color: #b91c1c;
+        }
+        .accordion-button:focus {
+            box-shadow: none;
+            border-color: rgba(0,0,0,.125);
+        }
+        
+        .accordion-faustina .accordion-button:not(.collapsed) {
+            background-color: #e0f2fe;
+            color: #0c4a6e;
+        }
+        .accordion-faustina .accordion-body {
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 767.98px) {
+            /* --- CONTROL EXACTO DE ESPACIOS (MÓVIL) --- */
+            .fab-settings {
+                top: 25px; /* Bajado 10px extra */
+                right: 15px;
+                width: 45px;
+                height: 45px;
+                font-size: 1.2rem;
+            }
+            .step-indicator-fixed {
+                top: 25px; /* Alineado exactamente con fab-settings móvil (bajado 10px) */
+            }
+            
+            .main-content {
+                /* top(25) + height(~38) = 63px ocupados por el header flotante */
+                padding-top: 63px; 
+            }
+
+            .rosary-wrapper {
+                margin-top: 20px; /* Exactamente 20px desde el indicador en Móvil */
+            }
+            
+            .prayer-content-wrapper {
+                margin-top: 50px; /* Exactamente 50px desde la cruz en Móvil */
+            }
+
+            #rosary-container {
+                max-width: 380px;
+                width: 100%;
+                margin-bottom: 0;
+            }
+            
+            .clean-card {
+                padding: 1.5rem !important;
+            }
+            
+            .fab-prayer {
+                position: absolute;
+                top: 75%;
+                right: 5%;
+                bottom: auto;
+                transform: translate(50%, -50%);
+                width: 48px;
+                height: 48px;
+                font-size: 1.3rem;
+                z-index: 20;
+            }
+            
+            .prayer-text-container {
+                font-size: 1.15rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Botón Flotante para Menú/Ajustes -->
+    <button class="fab-settings" data-bs-toggle="modal" data-bs-target="#settingsModal" aria-label="Ajustes y Devociones">
+        <i class="bi bi-list"></i>
+    </button>
+
+    <!-- Botón Flotante Oración Completa (PC) - Oculto en móvil por d-md-flex y d-none -->
+    <button class="fab-prayer prayer-btn-hidden d-none d-md-flex" id="fab-prayer" data-bs-toggle="modal" data-bs-target="#fullPrayerModal" aria-label="Leer oración completa">
+        <i class="bi bi-book-half"></i>
+    </button>
+
+    <!-- Indicador de Fase/Paso Flotante Centrado en lo Alto -->
+    <div class="step-indicator-fixed badge text-secondary px-4 py-2 rounded-pill fs-6 shadow-sm">
+        <i class="bi bi-bookmark-fill text-danger me-1" id="badge-icon"></i> 
+        <span id="step-badge" class="fw-bold text-dark">Inicio</span>
+    </div>
+
+    <!-- Container Principal con Layout de Flujo Libre -->
+    <div class="container main-content pb-5">
+        <div class="px-2 px-md-4 pb-2 pb-md-4">
+            
+            <div class="row">
+                
+                <!-- Columna Izquierda: El Rosario Gráfico -->
+                <div class="col-md-5 col-lg-5 d-flex justify-content-center position-relative rosary-wrapper">
+                    <div id="rosary-container">
+                        <!-- Generado por JS -->
+                        
+                        <!-- BOTONES FLOTANTES JUNTO A LA CRUZ -->
+                        <button id="btn-prev-float" class="btn-float-nav nav-prev bg-white text-dark" title="Anterior">
+                            <i class="bi bi-chevron-left"></i>
+                        </button>
+                        <button id="btn-next-float" class="btn-float-nav nav-next" title="Siguiente">
+                            <i class="bi bi-chevron-right"></i>
+                        </button>
+                        
+                        <!-- Botón Flotante Oración Completa (Móvil) - Oculto en PC por d-md-none -->
+                        <button class="fab-prayer-mobile prayer-btn-hidden d-flex d-md-none" id="fab-prayer-mobile" data-bs-toggle="modal" data-bs-target="#fullPrayerModal" aria-label="Leer oración completa">
+                            <i class="bi bi-book-half"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Columna Derecha: Tarjeta de Oración -->
+                <div class="col-md-7 col-lg-7 prayer-content-wrapper">
+                    <div class="d-flex flex-column text-center text-md-start">
+                        <div id="prayer-card-content">
+                            <!-- Título y Texto principal -->
+                            <h2 id="prayer-title" class="prayer-title mb-2 fw-bold text-dark fs-2">
+                                Cargando...
+                            </h2>
+                            <p id="prayer-text" class="prayer-text-container text-dark fw-bold mb-0">
+                                Preparando devocionario...
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Oración Completa Flotante -->
+    <div class="modal fade" id="fullPrayerModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content clean-card border-0 p-3">
+                <div class="modal-header border-0 pb-0 justify-content-end px-0">
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body pt-0">
+                    <h5 class="modal-title prayer-title fw-bold text-dark w-100 text-center mb-4" id="fullPrayerTitle">Oración Completa</h5>
+                    <div class="text-secondary" style="font-size: 1.15rem; white-space: pre-wrap; line-height: 1.6;" id="fullPrayerText">
+                        <!-- Oración inyectada por JS -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Ajustes / Menú Inicial -->
+    <div class="modal fade" id="settingsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content clean-card border-0 text-center p-4 p-md-5">
+                <div class="modal-header border-0 pb-0 justify-content-end px-0">
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body pt-0">
+                    <div class="display-4 text-danger mb-3 opacity-75">
+                        <i class="bi bi-book"></i>
+                    </div>
+                    <h1 class="fs-2 fw-bold mb-1 text-dark prayer-title">Mi Decenario</h1>
+                    <p class="text-muted fst-italic fs-6 mb-4">Un momento de paz y oración</p>
+                    
+                    <!-- Tu Progreso Dinámico Independiente (Contador y Metas) -->
+                    <div class="bg-white rounded-4 p-3 mb-4 shadow-sm border">
+                        <h6 class="fw-bold text-dark mb-2 text-start" id="progress-title"><i class="bi bi-trophy text-warning me-1"></i> Tu Progreso</h6>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="small text-muted fw-bold">Completados: <strong id="completed-count" class="text-dark fs-5 ms-1">0</strong></span>
+                            <select class="form-select form-select-sm w-auto bg-light border-0 shadow-sm fw-bold text-secondary" id="goal-selector" onchange="changeGoal()">
+                                <option value="9">Novenario (9)</option>
+                                <option value="15">15 Días</option>
+                                <option value="30">30 Días</option>
+                            </select>
+                        </div>
+                        <div class="progress rounded-pill bg-light border" style="height: 15px;">
+                            <div id="goal-progress-bar" class="progress-bar bg-success progress-bar-striped progress-bar-animated fw-bold" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+                        </div>
+                    </div>
+
+                    <h5 class="mb-3 text-secondary" style="font-weight: 500;">Selecciona tu devoción</h5>
+                    
+                    <div class="btn-group shadow-sm w-100 mb-3" role="group" aria-label="Selección de devoción">
+                        <input type="radio" class="btn-check" name="devotion" id="devMisericordia" value="misericordia" autocomplete="off" onchange="changeDevotion()">
+                        <label class="btn btn-outline-primary px-2 px-md-3 fw-bold" for="devMisericordia">Divina Misericordia</label>
+                        
+                        <input type="radio" class="btn-check" name="devotion" id="devRosario" value="rosario" autocomplete="off" onchange="changeDevotion()">
+                        <label class="btn btn-outline-danger px-2 px-md-3 fw-bold" for="devRosario">Santo Rosario</label>
+                    </div>
+
+                    <!-- Selector de Misterios (Oculto por defecto) -->
+                    <div id="mystery-selector-container" class="mb-3 d-none">
+                        <label for="mysterySelector" class="form-label text-muted small">Día de los Misterios:</label>
+                        <select class="form-select bg-light text-dark shadow-sm" id="mysterySelector" onchange="changeDevotion()">
+                            <option value="auto">Automático (Según el día de hoy)</option>
+                            <option value="gozosos">Gozosos (Lunes y Sábado)</option>
+                            <option value="dolorosos">Dolorosos (Martes y Viernes)</option>
+                            <option value="gloriosos">Gloriosos (Miércoles y Domingo)</option>
+                            <option value="luminosos">Luminosos (Jueves)</option>
+                        </select>
+                    </div>
+
+                    <!-- Botones de Guías de Oraciones y Resumen -->
+                    <div class="mt-4 mb-4 d-flex flex-column gap-2">
+                        <button class="btn btn-outline-secondary btn-custom w-100 py-2 shadow-sm bg-white-hover-fix" data-bs-toggle="modal" data-bs-target="#prayersModal" onclick="hideSettingsModal()">
+                            <i class="bi bi-journal-text me-1"></i> Guía de oraciones comunes
+                        </button>
+                        <button class="btn btn-outline-danger btn-custom w-100 py-2 shadow-sm bg-white-hover-fix" data-bs-toggle="modal" data-bs-target="#faustinaModal" onclick="hideSettingsModal()">
+                            <i class="bi bi-suit-heart-fill me-1"></i> Oraciones de Santa Faustina
+                        </button>
+                        <button class="btn btn-outline-primary btn-custom w-100 py-2 shadow-sm bg-white-hover-fix" data-bs-toggle="modal" data-bs-target="#historiaFaustinaModal" onclick="hideSettingsModal()">
+                            <i class="bi bi-person-lines-fill me-1"></i> Historia de Santa Faustina
+                        </button>
+                        
+                        <!-- BOTÓN ACERCA DE LA TRIBU REUBICADO AQUÍ -->
+                        <button class="btn btn-outline-success btn-custom w-100 py-2 shadow-sm bg-white-hover-fix mt-2" data-bs-toggle="modal" data-bs-target="#aboutModal" onclick="hideSettingsModal()">
+                            <i class="bi bi-info-circle me-1"></i> Acerca de La Tribu
+                        </button>
+                    </div>
+
+                    <button type="button" class="btn btn-outline-custom btn-custom px-5 w-100 py-2 mb-2 mt-2" data-bs-dismiss="modal">
+                        Continuar Orando
+                    </button>
+                    <button type="button" class="btn btn-light text-secondary btn-custom w-100 py-2" data-bs-dismiss="modal" onclick="resetDecenario()">
+                        <i class="bi bi-arrow-clockwise"></i> Reiniciar desde cero
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Historia de Santa Faustina -->
+    <div class="modal fade" id="historiaFaustinaModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content clean-card border-0">
+                <div class="modal-header border-0 pb-0">
+                    <h4 class="modal-title prayer-title fw-bold text-dark"><i class="bi bi-person-lines-fill text-primary me-2"></i> Historia de Santa Faustina</h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body pt-3 text-start">
+                    <h3 class="prayer-title fw-bold text-dark text-center mb-1">Santa María Faustina Kowalska</h3>
+                    <p class="text-center text-muted fst-italic mb-4">La Apóstol de la Divina Misericordia</p>
+                    
+                    <div class="text-secondary" style="line-height: 1.8; font-size: 0.95rem;">
+                        <p>Santa María Faustina Kowalska es una de las místicas y videntes más destacadas de la Iglesia Católica en el siglo XX. Elegida por Jesús para recordar al mundo el mensaje de la infinita compasión de Dios, su vida fue un testimonio de humildad, sufrimiento oculto y profunda unión con lo divino.</p>
+                        
+                        <h5 class="fw-bold text-dark mt-4">Sus Primeros Años</h5>
+                        <p>Nació el 25 de agosto de 1905 en el pequeño pueblo de Głogowiec, en Polonia, y fue bautizada con el nombre de <strong>Helena Kowalska</strong>. Fue la tercera de los diez hijos de una familia campesina pobre pero profundamente religiosa. Desde muy pequeña, Helena se destacó por su amor a la oración, su obediencia y su sensibilidad hacia la pobreza humana.</p>
+                        <p>Apenas pudo asistir a la escuela durante tres años. A los 16 años, tuvo que dejar la casa familiar para trabajar como empleada doméstica en las ciudades de Aleksandrów, Łódź y Ostrówek, con el fin de mantenerse a sí misma y ayudar a sus padres. Aunque sintió el llamado a la vida religiosa desde los siete años, sus padres se negaron repetidamente a darle permiso para entrar en un convento debido a la falta de recursos para la dote.</p>
+                        
+                        <h5 class="fw-bold text-dark mt-4">El Llamado Divino</h5>
+                        <p>El punto de inflexión en su vida ocurrió durante un baile en Łódź. Mientras intentaba llevar una vida de joven normal y ahogar su llamado interior, tuvo una visión de Cristo cubierto de llagas y sufriente, quien le preguntó: <em>"¿Hasta cuándo me harás sufrir, hasta cuándo me engañarás?"</em>.</p>
+                        <p>Profundamente conmovida, Helena abandonó el baile inmediatamente, se dirigió a una catedral a rezar y, siguiendo una instrucción interior, partió hacia Varsovia sin nada más que la ropa que llevaba puesta. Tras ser rechazada en varios conventos (principalmente por su pobreza y falta de educación), fue finalmente aceptada en la <strong>Congregación de las Hermanas de la Madre de Dios de la Misericordia</strong> el 1 de agosto de 1925. Al tomar los hábitos, recibió el nombre de <strong>Sor María Faustina</strong>.</p>
+                        
+                        <h5 class="fw-bold text-dark mt-4">La Vida en el Convento</h5>
+                        <p>Durante los 13 años que vivió en el convento, Sor Faustina residió en varias casas de la congregación, principalmente en Cracovia, Vilna y Płock. Trabajó en tareas humildes como cocinera, jardinera y portera.</p>
+                        <p>Exteriormente, su vida era ordinaria, monótona y gris. Nadie a su alrededor sospechaba de la profunda vida mística que experimentaba. Interiormente, sin embargo, vivía en constante unión con Dios. Recibió gracias extraordinarias: visiones, revelaciones, estigmas ocultos, el don de la profecía y el don de leer en las almas humanas.</p>
+                        
+                        <h5 class="fw-bold text-dark mt-4">Las Revelaciones de la Divina Misericordia</h5>
+                        <p>La misión de Sor Faustina comenzó de manera definitiva el <strong>22 de febrero de 1931</strong>, en el convento de Płock. Ese día, tuvo una visión de Jesucristo vestido con una túnica blanca. De su corazón emanaban dos grandes rayos, uno rojo y otro pálido (que representan la Sangre y el Agua). Jesús le ordenó:</p>
+                        <blockquote class="border-start border-3 border-danger ps-3 fst-italic my-3 bg-light p-3 rounded">
+                            "Pinta una imagen según el modelo que ves, y firma: Jesús, en Ti confío. Deseo que esta imagen sea venerada primero en su capilla y luego en el mundo entero."
+                        </blockquote>
+                        <p>A lo largo de los años siguientes, Jesús le reveló las nuevas formas de devoción a la Divina Misericordia:</p>
+                        <ul class="list-unstyled">
+                            <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> <strong>La Imagen de Jesús Misericordioso:</strong> Con la firma "Jesús, en Ti confío".</li>
+                            <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> <strong>La Fiesta de la Divina Misericordia:</strong> A celebrarse el primer domingo después de Pascua.</li>
+                            <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> <strong>La Coronilla de la Divina Misericordia:</strong> Una poderosa oración de intercesión por el perdón de los pecados del mundo.</li>
+                            <li class="mb-2"><i class="bi bi-check-circle-fill text-success me-2"></i> <strong>La Hora de la Misericordia:</strong> Las 3:00 p.m., la hora de la muerte de Cristo en la cruz, un momento para sumergirse en Su pasión y pedir gracia.</li>
+                        </ul>
+                        
+                        <h5 class="fw-bold text-dark mt-4">El Diario: "La Divina Misericordia en mi alma"</h5>
+                        <p>El confesor y director espiritual de Sor Faustina en Vilna, el Beato Padre Michał Sopoćko, se dio cuenta de la magnitud de sus experiencias. Le ordenó que escribiera todo lo que Jesús le decía y revelaba. Obedeciendo a su confesor y al mismo Jesús, Faustina llenó varios cuadernos que hoy componen su famoso <em>Diario</em>.</p>
+                        <p>El <em>Diario</em> es un registro asombroso de su ascenso espiritual y de los diálogos íntimos que mantenía con Cristo. Es hoy en día uno de los libros espirituales más leídos en todo el mundo.</p>
+                        
+                        <h5 class="fw-bold text-dark mt-4">Sufrimiento, Muerte y Legado</h5>
+                        <p>Sor Faustina ofreció su vida como sacrificio por los pecadores. Su salud comenzó a deteriorarse gravemente debido a la tuberculosis, que afectó sus pulmones y su tracto digestivo. Soportó enormes sufrimientos físicos y espirituales (la "noche oscura del alma") con heroica paciencia.</p>
+                        <p>Falleció el <strong>5 de octubre de 1938</strong> en Cracovia, a la temprana edad de 33 años, consumida por la enfermedad pero espiritualmente madura y unida a Dios.</p>
+                        <p>Su mensaje, sin embargo, apenas comenzaba a difundirse. A pesar de las prohibiciones iniciales de la Iglesia (debido a traducciones defectuosas de su Diario), el entonces Arzobispo de Cracovia, Karol Wojtyła (el futuro <strong>Papa San Juan Pablo II</strong>), defendió tenazmente su causa y promovió la investigación rigurosa de su vida.</p>
+                        <p>El 30 de abril de 2000, el Papa Juan Pablo II canonizó a Sor Faustina Kowalska, convirtiéndola en la <strong>primera santa del nuevo milenio</strong>, y estableció oficialmente el <strong>Domingo de la Divina Misericordia</strong> para toda la Iglesia universal. Sus restos descansan hoy en el Santuario de la Divina Misericordia en Łagiewniki, Cracovia.</p>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 justify-content-center">
+                    <button class="btn btn-outline-custom btn-custom px-4" data-bs-toggle="modal" data-bs-target="#settingsModal">
+                        <i class="bi bi-arrow-left"></i> Volver al Menú
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Acerca de La Tribu de Los Libres -->
+    <div class="modal fade" id="aboutModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content clean-card border-0 text-center p-4">
+                <div class="modal-header border-0 pb-0 justify-content-end px-0">
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body pt-0">
+                    <div class="display-4 text-success mb-3 opacity-75">
+                        <i class="bi bi-tree"></i>
+                    </div>
+                    <h2 class="prayer-title fw-bold mb-3 text-dark fs-3">La Tribu de Los Libres</h2>
+                    <p class="text-secondary small mb-4" style="line-height: 1.6;">
+                        Este devocionario fue creado por el equipo de Senderismo de <strong>La Tribu de Los Libres</strong> de La Unión de Cartago, Costa Rica, en honor a las compañeras y compañeros creyentes y quienes en su fe prevalece la protección de DIOS en nuestro andar.
+                    </p>
+                    
+                    <hr class="w-50 mx-auto text-muted mb-4 opacity-25">
+
+                    <h4 class="prayer-title fw-bold text-dark mb-3 fs-5">Oración de La Tribu de Los Libres</h4>
+                    
+                    <div class="card card-body bg-light border-0 shadow-sm text-center fst-italic text-secondary" style="font-size: 0.9rem; line-height: 1.8;">
+                        <p>GRACIAS SEÑOR POR ESTE HERMOSO DÍA QUE NOS HAS REGALADO.</p>
+                        <p>POR NUESTROS AMIGOS Y AMIGAS QUE NOS ACOMPAÑAN EN ESTA ACTIVIDAD Y AQUELLOS QUE NO PUDIERON ESTAR HOY CON NOSOTROS.</p>
+                        <p>NOS AMPARAMOS A TU PROTECCIÓN Y LA DE NUESTROS FAMILIARES QUE NOS ESPERAN EN CASA.</p>
+                        <p>PROTEGE A LOS INDEFENSOS QUE SUFREN LA AGRESIÓN Y ABANDONO DE CUALQUIER TIPO.</p>
+                        <p>PONEMOS A TODAS LAS PERSONAS QUE ESTÁN EN LOS HOSPITALES, A LOS PRIVADOS DE LIBERTAD Y DE MOVIMIENTO QUE DESEAN TENER LA OPORTUNIDAD QUE NOSOTROS TENEMOS EN ESTE DÍA... ACOMPÁÑALOS Y DALES FUERZA PARA VENCER SU ANGUSTIA.</p>
+                        <p>QUE TU PROTECCIÓN LLEGUE A LOS DEMÁS GRUPOS Y SENDERISTAS DEL MUNDO QUE COMPARTEN NUESTRA MISMA PASIÓN PARA QUE LLEVEMOS UN CORAZÓN PASIVO, ALEGRE Y SERENO CON UN ESPÍRITU PROTECTOR DE LA NATURALEZA Y NUESTRO ENTORNO, DISFRUTANDO ASÍ CADA PASO QUE DAMOS EN NUESTRA NACIÓN Y NUESTRA TIERRA.</p>
+                        <p>QUE HOY LA NATURALEZA Y LA MONTAÑA SE SOMETAN A TU ORDEN Y A TU PROTECCIÓN..... PARA QUE CONVIVAMOS CON ELLA DE MANERA PASIVA Y ARMONIOSA.</p>
+                        <p class="mb-0 fw-bold">FORTALECE NUESTRA AMISTAD, NUESTRA HERMANDAD Y DIOS CUBRA CON SU SANGRE PRECIOSA A ESTE GRUPO LLAMADO LA TRIBU.</p>
+                    </div>
+
+                    <div class="mt-4 text-center">
+                        <h5 class="prayer-title fw-bold text-dark fs-6 mb-3">Perfil de Senderismo</h5>
+                        <div class="d-flex flex-column gap-2 justify-content-center align-items-center small">
+                            <a href="https://www.facebook.com/LaTribuDeLosLibres" target="_blank" class="text-decoration-none social-link fw-bold"><i class="bi bi-facebook me-2"></i>La Tribu de Los Libres</a>
+                            <a href="https://latribu.top" target="_blank" class="text-decoration-none social-link fw-bold"><i class="bi bi-globe me-2"></i>latribu.top</a>
+                            <a href="mailto:lthikingcr@gmail.com" class="text-decoration-none social-link fw-bold"><i class="bi bi-envelope-fill me-2"></i>lthikingcr@gmail.com</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 justify-content-center">
+                    <button class="btn btn-outline-custom btn-custom px-4" data-bs-toggle="modal" data-bs-target="#settingsModal">
+                        <i class="bi bi-arrow-left"></i> Volver al Menú
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Oraciones Comunes -->
+    <div class="modal fade" id="prayersModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable">
+            <div class="modal-content clean-card border-0">
+                <div class="modal-header border-0 pb-0">
+                    <h4 class="modal-title prayer-title fw-bold text-dark"><i class="bi bi-journal-text text-danger me-2"></i> Oraciones Comunes</h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body pt-3">
+                    <div class="accordion accordion-flush shadow-sm rounded-3 overflow-hidden" id="accordionPrayers">
+                        
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapsePadre">Padre Nuestro</button>
+                            </h2>
+                            <div id="collapsePadre" class="accordion-collapse collapse" data-bs-parent="#accordionPrayers">
+                                <div class="accordion-body text-secondary lh-lg">
+                                    Padre nuestro que estás en el cielo, santificado sea tu Nombre; venga a nosotros tu reino; hágase tu voluntad en la tierra como en el cielo. Danos hoy nuestro pan de cada día; perdona nuestras ofensas, como también nosotros perdonamos a los que nos ofenden; no nos dejes caer en la tentación, y líbranos del mal. Amén.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAve">Ave María</button>
+                            </h2>
+                            <div id="collapseAve" class="accordion-collapse collapse" data-bs-parent="#accordionPrayers">
+                                <div class="accordion-body text-secondary lh-lg">
+                                    Dios te salve, María, llena eres de gracia, el Señor es contigo. Bendita tú eres entre todas las mujeres, y bendito es el fruto de tu vientre, Jesús. Santa María, Madre de Dios, ruega por nosotros, pecadores, ahora y en la hora de nuestra muerte. Amén.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseGloria">Gloria al Padre</button>
+                            </h2>
+                            <div id="collapseGloria" class="accordion-collapse collapse" data-bs-parent="#accordionPrayers">
+                                <div class="accordion-body text-secondary lh-lg">
+                                    Gloria al Padre, y al Hijo, y al Espíritu Santo. Como era en el principio, ahora y siempre, por los siglos de los siglos. Amén.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFatima">Jaculatoria de Fátima</button>
+                            </h2>
+                            <div id="collapseFatima" class="accordion-collapse collapse" data-bs-parent="#accordionPrayers">
+                                <div class="accordion-body text-secondary lh-lg">
+                                    Oh Jesús mío, perdona nuestros pecados, líbranos del fuego del infierno, lleva al cielo a todas las almas, especialmente a las más necesitadas de tu infinita misericordia. Amén.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSalve">La Salve</button>
+                            </h2>
+                            <div id="collapseSalve" class="accordion-collapse collapse" data-bs-parent="#accordionPrayers">
+                                <div class="accordion-body text-secondary lh-lg">
+                                    Dios te salve, Reina y Madre de misericordia, vida, dulzura y esperanza nuestra; Dios te salve. A ti llamamos los desterrados hijos de Eva; a ti suspiramos, gimiendo y llorando en este valle de lágrimas. Ea, pues, Señora, abogada nuestra, vuelve a nosotros esos tus ojos misericordiosos; y después de este destierro muéstranos a Jesús, fruto bendito de tu vientre. ¡Oh clementísima, oh piadosa, oh dulce siempre Virgen María! Ruega por nosotros, Santa Madre de Dios, para que seamos dignos de alcanzar las promesas de Nuestro Señor Jesucristo. Amén.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCredo">El Credo</button>
+                            </h2>
+                            <div id="collapseCredo" class="accordion-collapse collapse" data-bs-parent="#accordionPrayers">
+                                <div class="accordion-body text-secondary lh-lg">
+                                    Creo en Dios Padre, Todopoderoso, Creador del cielo y de la tierra. Y en Jesucristo, su único Hijo, Nuestro Señor, que fue concebido por obra y gracia del Espíritu Santo, nació de Santa María Virgen, padeció bajo el poder de Poncio Pilato, fue crucificado, muerto y sepultado, descendió a los infiernos, al tercer día resucitó entre los muertos, subió a los cielos y está sentado a la derecha de Dios Padre, Todopoderoso. Desde allí vendrá a juzgar a vivos y a muertos. Creo en el Espíritu Santo, la Santa Iglesia Católica, la comunión de los santos, el perdón de los pecados, la resurrección de la carne y la vida perdurable. Amén.
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                <div class="modal-footer border-0 justify-content-center">
+                    <button class="btn btn-outline-custom btn-custom px-4" data-bs-toggle="modal" data-bs-target="#settingsModal">
+                        <i class="bi bi-arrow-left"></i> Volver al Menú
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Oraciones de Santa Faustina -->
+    <div class="modal fade" id="faustinaModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content clean-card border-0">
+                <div class="modal-header border-0 pb-0">
+                    <h4 class="modal-title prayer-title fw-bold text-dark"><i class="bi bi-suit-heart-fill text-danger me-2"></i> Santa Faustina Kowalska</h4>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body pt-3">
+                    <div class="accordion accordion-flush accordion-faustina shadow-sm rounded-3 overflow-hidden" id="accordionFaustina">
+                        
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#f1">1. Poema a la Imagen y a la Divina Misericordia (Diario, 1)</button>
+                            </h2>
+                            <div id="f1" class="accordion-collapse collapse" data-bs-parent="#accordionFaustina">
+                                <div class="accordion-body text-secondary">"Oh Amor Eterno, mandas pintar Tu Santa Imagen y nos revelas la fuente inconcebible de la misericordia. Bendices a quien se acerca a Tus rayos, Y el alma negra se convierte en nieve. Oh dulce Jesús, aquí has establecido el trono de Tu misericordia Para dar alegría y ayudar al pecador, De Tu Corazón abierto, como de un manantial puro, Fluye el consuelo para el alma y el corazón contrito. Que el honor y la gloria para esta imagen No dejen de fluir de las almas de los hombres, Que cada corazón glorifique la Divina Misericordia Ahora y por los siglos de los siglos y en cada hora."</div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#f2">2. Oración para vivir el momento actual (Diario, 2)</button>
+                            </h2>
+                            <div id="f2" class="accordion-collapse collapse" data-bs-parent="#accordionFaustina">
+                                <div class="accordion-body text-secondary">"Oh, Dios mío. Cuando miro hacia el futuro, me atemorizo, Pero ¿por qué sumergirse en el futuro?. Para mi solamente el momento actual es de gran valor, Ya que quizá el futuro nunca llegue a mi alma. El tiempo que ha pasado no está en mi poder. Cambiar, corregir o agregar, No pudo hacerlo ningún sabio ni profeta, Así que debo confiar a Dios lo que pertenece al pasado. Oh momento actual, tú me perteneces por completo, Deseo aprovecharte cuanto pueda, Y aunque soy débil y pequeña, Me concedes la gracia de tu omnipotencia. Por eso, confiando en Tu misericordia, Camino por la vida como un niño pequeño Y cada día Te ofrezco mi corazón Inflamado del amor por Tu mayor gloria."</div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#f3">3. Oración de confianza y al Santísimo Sacramento (Diario, 4)</button>
+                            </h2>
+                            <div id="f3" class="accordion-collapse collapse" data-bs-parent="#accordionFaustina">
+                                <div class="accordion-body text-secondary">"Oh Jesús mío, por la confianza en Ti Trenzo miles de coronas y sé Que todas florecerán Y sé que florecerán cuando las Ilumine el Sol Divino. + Oh gran y Divino Sacramento Que ocultas a mi Dios Jesús acompáñame en cada momento, Y ningún temor invadirá mi corazón."</div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#f4">4. Alabanza a la Santísima Trinidad (Diario, 5)</button>
+                            </h2>
+                            <div id="f4" class="accordion-collapse collapse" data-bs-parent="#accordionFaustina">
+                                <div class="accordion-body text-secondary">"Seas adorada, oh Santísima Trinidad, ahora y siempre, Seas alabada en todas Tus Obras y en todas Tus criaturas. Que la grandeza de Tu misericordia, oh Dios, sea Admirada y glorificada."</div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#f5">5. Poema a la Virgen María (Diario, 161)</button>
+                            </h2>
+                            <div id="f5" class="accordion-collapse collapse" data-bs-parent="#accordionFaustina">
+                                <div class="accordion-body text-secondary">"Oh Maria, Virgen Inmaculada, Puro cristal para mi corazón, Tú eres mi fuerza, oh ancla poderosa, Tú eres el escudo y la defensa para el corazón débil. Oh Maria, Tú eres pura e incomparable, Virgen y Madre a la vez Tú eres bella como el sol, sin mancha alguna, Nada se puede comparar con la imagen de Tu alma Tu belleza encantó el ojo del tres veces Santo, Y bajó del cielo, abandonando el trono de la sede eterna, Y tomó el cuerpo y la sangre de Tu Corazón, Durante nueve meses escondiéndose en el Corazón de la Virgen Oh Madre, Virgen, nadie comprenderá, Que el inmenso Dios se hace hombre, Sólo por amor y por su insondable misericordia, A través de Ti, oh Madre, viviremos con Él eternamente. Oh Maria, Virgen Madre y Puerta Celestial, A través de Ti nos ha llegado la salvación Todas las gracias brotan para nosotros a través de Tus manos Y me santificara solamente un fiel seguimiento de Ti. Oh Maria, Virgen, Azucena mas bella, Tu corazón fue el primer tabernáculo para Jesús en la tierra, Y por eso porque Tu humildad fue la más profunda, Y por eso fuiste elevada por encima de los coros de los ángeles y de los santos. Oh Maria, dulce Madre mía, Te entrego el alma, el cuerpo y mi pobre corazón, Sé [tú] la custodia de mi vida, Y especialmente en la hora de la muerte, En el último combate."</div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#f6">6. Petición de luz y fuerza (Diario, 495)</button>
+                            </h2>
+                            <div id="f6" class="accordion-collapse collapse" data-bs-parent="#accordionFaustina">
+                                <div class="accordion-body text-secondary">"Oh Jesús, Luz eterna, ilumina mi mente, fortalece mi voluntad e incendia mi corazón. Quédate conmigo como me has prometido, porque sin Ti no soy nada. Tú sabes, oh Jesús mío, lo débil que soy seguro que no tengo que decírtelo, ya que tú eres quien sabe mejor lo miserable que soy. En Ti toda mi fuerza."</div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#f7">7. La Coronilla a la Divina Misericordia (Diario, 476)</button>
+                            </h2>
+                            <div id="f7" class="accordion-collapse collapse" data-bs-parent="#accordionFaustina">
+                                <div class="accordion-body text-secondary">Oración al inicio en las cuentas grandes: "Padre Eterno, Te ofrezco el Cuerpo y la Sangre, el Alma y la Divinidad de Tu Amadísimo Hijo, nuestro Señor Jesucristo, como propiciación por nuestros pecados y los del mundo entero."
+
+En las cuentas pequeñas (Ave María): "Por su dolorosa Pasión, ten misericordia de nosotros y del mundo entero."
+
+Para terminar (tres veces): "Santo Dios, Santo Fuerte, Santo Inmortal, ten piedad de nosotros y del mundo entero."</div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#f8">8. Oración a la Sangre y el Agua (Diario, 84)</button>
+                            </h2>
+                            <div id="f8" class="accordion-collapse collapse" data-bs-parent="#accordionFaustina">
+                                <div class="accordion-body text-secondary">"Oh Sangre y Agua que brotaste del Corazón de Jesús, como una Fuente de Misericordia para nosotros, en Ti confío."</div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#f9">9. Letanía a la Santa Hostia (Diario, 356)</button>
+                            </h2>
+                            <div id="f9" class="accordion-collapse collapse" data-bs-parent="#accordionFaustina">
+                                <div class="accordion-body text-secondary" style="font-size: 0.9rem;">"Oh Santa Hostia, en la que está encerrado el testamento de la Divina Misericordia para nosotros y, especialmente para los pobres pecadores.
+Oh Santa Hostia, en [la que] está oculto el Cuerpo y la Sangre del Señor Jesús como testimonio de la infinita misericordia hacia nosotros y, especialmente, hacia los pobres pecadores.
+Oh Santa Hostia, que contiene la vida eterna que [de] la infinita misericordia es donada en abundancia a nosotros y, especialmente, a los pobres pecadores.
+Oh Santa Hostia, en la que está la misericordia del Padre, del Hijo y del Espíritu santo hacia nosotros y, especialmente, a los pobres pecadores.
+Oh Santa Hostia, en la que está encerrado el precio infinito de la misericordia, que compensará todas nuestras deudas y, especialmente, la de los pobres pecadores.
+Oh Santa Hostia, en la encierra la fuente de agua viva que brota de la infinita misericordia hacia nosotros y, especialmente, para los pobres pecadores.
+Oh Santa Hostia, en la que está encerrado el fuego del amor purísimo que arde del seno del Padre Eterno, como del abismo de la infinita misericordia para nosotros y, especialmente, para los pobres pecadores.
+Oh Santa Hostia, en la que está guardado el remedio para todas nuestras debilidades, [remedio] que mana de la infinita misericordia, como de una fuente para nosotros y, especialmente, para los pobres pecadores.
+Oh Santa Hostia, en la que está encerrado el vínculo de unión entre Dios y nosotros, gracias a la infinita misericordia para nosotros y, especialmente para los pobres pecadores.
+Oh Santa Hostia, en la que están encerrados todos los sentimientos del dulcísimo Corazón de Jesús hacia nosotros y, especialmente, hacia los pobres pecadores.
+Oh Santa Hostia, nuestra única esperanza en todos los sufrimientos y contrariedades de la vida.
+Oh Santa Hostia, nuestra única esperanza entre las tinieblas y las tormentas interiores y exteriores.
+Oh Santa Hostia, nuestra única esperanza en la vida y en la hora de la muerte.
+Oh Santa Hostia, nuestra única esperanza entre los fracasos y el abismo de la desesperación.
+Oh Santa Hostia, nuestra única esperanza entre las mentiras y las traiciones.
+Oh Santa Hostia, nuestra única esperanza entre las tinieblas y la impiedad que sumergen la tierra.
+Oh Santa Hostia, nuestra única esperanza entre la nostalgia y el dolor, en el que nadie nos comprende.
+Oh Santa Hostia, nuestra única esperanza entre las fatigas y la vida gris de todos los días.
+Oh Santa Hostia, nuestra única esperanza cuando nuestras ilusiones y nuestros esfuerzos se esfuman.
+Oh Santa Hostia, nuestra única esperanza entre los golpes de los enemigos y los esfuerzos del infierno.
+Oh Santa Hostia, confiaré en Ti cuando las dificultades excedan mis fuerzas y cuando mis esfuerzos resulten inútiles.
+Oh Santa Hostia, confiaré en Ti cuando las tormentas agiten mi corazón y el espíritu aterrorizado comience a inclinarse hacia la desesperación.
+Oh Santa Hostia, confiaré en Ti cuando mi corazón comience a temblar y el sudor mortal nos bañe la frente.
+Oh Santa Hostia, confiaré en Ti cuando todo se conjure contra mí y la negra desesperación comience a introducirse en mi alma.
+Oh Santa Hostia, confiaré en Ti cuando mi vista se apague para todo lo que es terrenal y mi espíritu vea por primera vez los mundos desconocidos.
+Oh Santa Hostia, confiaré en Ti cuando mis obligaciones estén por encima de mis fuerzas y el fracaso sea mi destino habitual.
+Oh Santa Hostia, confiaré en Ti cuando el cumplimiento de las virtudes me parezca difícil y mi naturaleza se rebele.
+Oh Santa Hostia, confiaré en Ti cuando los golpes de los enemigos sean dirigidos contra mí.
+Oh Santa Hostia, confiaré en Ti cuando las fatigas y los esfuerzos sean condenados por la gente.
+Oh Santa Hostia, confiaré en Ti cuando Tu juicio resuene sobre mí, en aquel momento confiaré en el mar de Tu misericordia."</div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#f10">10. Oración de abandono a la Voluntad de Dios (Diario, 492)</button>
+                            </h2>
+                            <div id="f10" class="accordion-collapse collapse" data-bs-parent="#accordionFaustina">
+                                <div class="accordion-body text-secondary">"Oh Dios Eterno, Bondad misma, inconcebible en Tu misericordia por ninguna mente humana ni angélica, ayúdame, una niña débil, a cumplir Tu santa voluntad, tal y como me la das a conocer. No deseo otra cosa que cumplir los deseos de Dios. He aquí, Señor, mi alma y mi cuerpo, mi mente y mi voluntad, mi corazón y todo mi amor y dispón de mí según Tus eternos designios."</div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#f11">11. Oración breve de Confianza</button>
+                            </h2>
+                            <div id="f11" class="accordion-collapse collapse" data-bs-parent="#accordionFaustina">
+                                <div class="accordion-body text-secondary">"Jesús, en Ti confío." (Inscripción de la imagen revelada a Santa Faustina).
+
+En otra parte del diario también ora:
+"Jesús, en Ti confio, confio en el mar de Tu misericordia, Tu eres la madre para mi."</div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#f12">12. Oración para que los sentidos sean misericordiosos (Diario, 163)</button>
+                            </h2>
+                            <div id="f12" class="accordion-collapse collapse" data-bs-parent="#accordionFaustina">
+                                <div class="accordion-body text-secondary" style="font-size: 0.95rem;">"Ayúdame, oh Señor, a que mis ojos sean misericordiosos, para que yo jamás recele o juzgue según las apariencias, sino que busque lo bello en el alma de mi prójimo y acuda a ayudarla.
+Ayúdame a que mis oídos sean misericordiosos para que tome en cuenta las necesidades de mi prójimo y no sea indiferente a sus penas y gemidos.
+Ayúdame, oh Señor, a que mi lengua sea misericordiosa para que jamás hable negativamente de mis prójimos sino que tenga una palabra de consuelo y perdón para todos.
+Ayúdame, oh Señor, a que mis manos sean misericordiosas y llenas de buenas obras para que sepa hacer sólo el bien a mi prójimo y cargue sobre mí las tareas más difíciles y más penosas.
+Ayúdame a que mis pies sean misericordiosos para que siempre me apresure a socorrer a mi prójimo, dominando mi propia fatiga y mi cansancio. Mi reposo verdadero está en el servicio a mi prójimo.
+Ayúdame, oh Señor, a que mi corazón sea misericordioso para que yo sienta todos los sufrimientos de mi prójimo. A nadie le rehusaré mi corazón. Seré sincera incluso con aquellos de los cuales sé que abusarán de mi bondad. Y yo misma me encerrare en el misericordiosísimo Corazón de Jesús. Soportaré mis propios sufrimientos en silencio. Que tu misericordia, oh Señor mío, repose dentro de mí."</div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                <div class="modal-footer border-0 justify-content-center">
+                    <button class="btn btn-outline-custom btn-custom px-4" data-bs-toggle="modal" data-bs-target="#settingsModal">
+                        <i class="bi bi-arrow-left"></i> Volver al Menú
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Sangre y Agua (Cierre de Misericordia) -->
+    <div class="modal fade" id="sangreAguaModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content clean-card border-0 text-center p-4 p-md-5">
+                <div class="modal-body">
+                    <div class="display-1 text-danger mb-4" style="filter: drop-shadow(0 0 10px rgba(255,0,0,0.3));">
+                        <i class="bi bi-droplet-half"></i>
+                    </div>
+                    <h3 class="prayer-title fw-bold mb-5 text-dark" style="line-height: 1.6; font-size: 1.5rem;">
+                        "Oh Sangre y Agua que brotaste del Corazón de Jesús como una Fuente de Misericordia para nosotros, en Ti confío"
+                    </h3>
+                    <button type="button" class="btn btn-primary btn-custom px-5 py-2 w-100 fs-5" data-bs-dismiss="modal" onclick="showCompletion()">
+                        Amén
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Finalización Estándar -->
+    <div class="modal fade" id="completionModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content clean-card border-0 text-center p-4 p-md-5">
+                <div class="modal-body">
+                    <div class="display-1 text-danger mb-4" id="modal-icon">
+                        <i class="bi bi-heart-fill"></i>
+                    </div>
+                    <h2 class="prayer-title fw-bold mb-3 text-dark">¡Devoción Completada!</h2>
+                    <p class="text-secondary fs-5 mb-4">Has finalizado tu momento de oración. Que la gracia te acompañe durante tu día.</p>
+                    <button type="button" class="btn btn-primary-custom btn-custom px-5 py-2 w-100 fs-5" id="btn-modal-close" data-bs-dismiss="modal" onclick="resetDecenario()">
+                        Volver a empezar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SVG Definition para la Cruz de Plata -->
+    <svg width="0" height="0" class="position-absolute">
+        <defs>
+            <linearGradient id="silver-cross-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#ffffff"/>
+                <stop offset="50%" stop-color="#adb5bd"/>
+                <stop offset="100%" stop-color="#6c757d"/>
+            </linearGradient>
+            
+            <g id="silver-cross-icon">
+                <path d="M 18 0 L 27 0 L 27 18 L 45 18 L 45 27 L 27 27 L 27 65 L 18 65 L 18 27 L 0 27 L 0 18 L 18 18 Z" 
+                      fill="url(#silver-cross-grad)" 
+                      stroke="#495057" 
+                      stroke-width="0.5"/>
+                <path d="M 20 2 L 25 2 L 25 20 L 43 20 L 43 25 L 25 25 L 25 63 L 20 63 L 20 25 L 2 25 L 2 20 L 20 20 Z" 
+                      fill="none" 
+                      stroke="#ffffff" 
+                      stroke-width="1.5" 
+                      opacity="0.8"/>
+            </g>
+        </defs>
+    </svg>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // --- CONSTANTES PARA ORACIONES COMPLETAS ---
+        const FULL_PADRE_NUESTRO = "Padre nuestro que estás en el cielo, santificado sea tu Nombre; venga a nosotros tu reino; hágase tu voluntad en la tierra como en el cielo. Danos hoy nuestro pan de cada día; perdona nuestras ofensas, como también nosotros perdonamos a los que nos ofenden; no nos dejes caer en la tentación, y líbranos del mal. Amén.";
+        const FULL_AVE_MARIA = "Dios te salve, María, llena eres de gracia, el Señor es contigo. Bendita tú eres entre todas las mujeres, y bendito es el fruto de tu vientre, Jesús. Santa María, Madre de Dios, ruega por nosotros, pecadores, ahora y en la hora de nuestra muerte. Amén.";
+        const FULL_GLORIA = "Gloria al Padre, y al Hijo, y al Espíritu Santo. Como era en el principio, ahora y siempre, por los siglos de los siglos. Amén.\n\nJaculatoria de Fátima:\nOh Jesús mío, perdona nuestros pecados, líbranos del fuego del infierno, lleva al cielo a todas las almas, especialmente a las más necesitadas de tu infinita misericordia. Amén.";
+        const FULL_CREDO = "Creo en Dios Padre, Todopoderoso, Creador del cielo y de la tierra. Y en Jesucristo, su único Hijo, Nuestro Señor, que fue concebido por obra y gracia del Espíritu Santo, nació de Santa María Virgen, padeció bajo el poder de Poncio Pilato, fue crucificado, muerto y sepultado, descendió a los infiernos, al tercer día resucitó entre los muertos, subió a los cielos y está sentado a la derecha de Dios Padre, Todopoderoso. Desde allí vendrá a juzgar a vivos y a muertos. Creo en el Espíritu Santo, la Santa Iglesia Católica, la comunión de los santos, el perdón de los pecados, la resurrection de la carne y la vida perdurable. Amén.";
+        const FULL_SALVE = "Dios te salve, Reina y Madre de misericordia, vida, dulzura y esperanza nuestra; Dios te salve. A ti llamamos los desterrados hijos de Eva; a ti suspiramos, gimiendo y llorando en este valle de lágrimas. Ea, pues, Señora, abogada nuestra, vuelve a nosotros esos tus ojos misericordiosos; y después de este destierro muéstranos a Jesús, fruto bendito de tu vientre. ¡Oh clementísima, oh piadosa, oh dulce siempre Virgen María! Ruega por nosotros, Santa Madre de Dios, para que seamos dignos de alcanzar las promesas de Nuestro Señor Jesucristo. Amén.";
+
+        // --- BASE DE DATOS DE LOS MISTERIOS DEL ROSARIO ---
+        const misteriosData = {
+            gozosos: [
+                "La Anunciación de Gabriel a María",
+                "La Visitación de María a Isabel",
+                "El Nacimiento de Jesús",
+                "La Presentación en el Templo",
+                "El Niño perdido y hallado en el Templo"
+            ],
+            dolorosos: [
+                "La Oración en el Huerto",
+                "La Flagelación",
+                "La Coronación de espinas",
+                "Jesús con la Cruz a cuestas",
+                "La Crucifixión y Muerte"
+            ],
+            gloriosos: [
+                "La Resurrección",
+                "La Ascensión",
+                "La Venida del Espíritu Santo (Pentecostés)",
+                "La Asunción de María al Cielo",
+                "La Coronación de María como Reina"
+            ],
+            luminosos: [
+                "El Bautismo en el Jordán",
+                "Las Bodas de Caná",
+                "El Anuncio del Reino de Dios",
+                "La Transfiguración",
+                "La Institución de la Eucaristía"
+            ]
+        };
+
+        function getMisteriosHoy() {
+            const day = new Date().getDay(); 
+            if (day === 1 || day === 6) return { key: 'gozosos', title: 'Misterios Gozosos', list: misteriosData.gozosos };
+            if (day === 2 || day === 5) return { key: 'dolorosos', title: 'Misterios Dolorosos', list: misteriosData.dolorosos };
+            if (day === 4) return { key: 'luminosos', title: 'Misterios Luminosos', list: misteriosData.luminosos };
+            return { key: 'gloriosos', title: 'Misterios Gloriosos', list: misteriosData.gloriosos }; 
+        }
+
+        // --- GENERADOR DE SECUENCIAS LÓGICAS ---
+        function generateSteps(devotionType) {
+            let steps = [];
+            
+            if (devotionType === 'misericordia') {
+                steps.push({ physicalId: 0, loopId: 0, title: 'La Señal de la Cruz', badge: 'Inicio', text: 'Por la señal de la Santa Cruz, de nuestros enemigos, líbranos, Señor, Dios nuestro. En el nombre del Padre y del Hijo y del Espíritu Santo. Amén.' });
+                steps.push({ physicalId: 1, loopId: 0, title: 'Padre Nuestro', badge: 'Inicio', text: 'Padre nuestro que estás en el cielo...', fullText: FULL_PADRE_NUESTRO });
+                steps.push({ physicalId: 2, loopId: 0, title: 'Ave María', badge: 'Inicio', text: 'Dios te salve, María, llena eres de gracia...', fullText: FULL_AVE_MARIA });
+                steps.push({ physicalId: 3, loopId: 0, title: 'El Credo de los Apóstoles', badge: 'Inicio', text: 'Creo en Dios Padre, Todopoderoso...', fullText: FULL_CREDO });
+
+                for (let paso = 1; paso <= 5; paso++) {
+                    steps.push({ 
+                        physicalId: 4, loopId: paso, title: 'Padre Eterno', badge: `Paso ${paso} de 5`, 
+                        text: '«Padre Eterno, te ofrezco el Cuerpo,\nla Sangre, el Alma y la Divinidad\nde Tu Amadísimo Hijo,\nNuestro Señor Jesucristo,\npara el perdón de nuestros\npecados y los del mundo entero.»' 
+                    });
+                    for (let jac = 1; jac <= 10; jac++) {
+                        steps.push({ 
+                            physicalId: 4 + jac, loopId: paso, title: `Jaculatoria (${jac}/10)`, badge: `Paso ${paso} de 5`, 
+                            text: 'Por su dolorosa Pasión,\nten misericordia de nosotros y del mundo entero.' 
+                        });
+                    }
+                }
+
+                for (let tris = 1; tris <= 3; tris++) {
+                    steps.push({ 
+                        physicalId: 4, loopId: 6, title: `Santo Dios, Santo Fuerte (${tris}/3)`, badge: 'Cierre', 
+                        text: 'Te invitamos a tocar la medalla (o Siguiente) 3 veces:\n\nSanto Dios, Santo Fuerte, Santo Inmortal, ten piedad de nosotros y del mundo entero.' 
+                    });
+                }
+                
+                steps.push({ physicalId: 0, loopId: 7, title: 'Oración Final', badge: 'Despedida', text: '¡Toca la cruz iluminada para decir la oración final de Sangre y Agua!' });
+
+            } else {
+                const selectorVal = document.getElementById('mysterySelector').value || 'auto';
+                let misteriosActuales;
+
+                if (selectorVal === 'auto') {
+                    misteriosActuales = getMisteriosHoy();
+                } else {
+                    const titleMap = { 'gozosos': 'Misterios Gozosos', 'dolorosos': 'Misterios Dolorosos', 'gloriosos': 'Misterios Gloriosos', 'luminosos': 'Misterios Luminosos' };
+                    misteriosActuales = { key: selectorVal, title: titleMap[selectorVal], list: misteriosData[selectorVal] };
+                }
+
+                steps.push({ physicalId: 0, loopId: 0, title: 'La Señal de la Cruz', badge: 'Inicio', text: 'Por la señal de la Santa Cruz, de nuestros enemigos, líbranos, Señor, Dios nuestro...' });
+                steps.push({ physicalId: 1, loopId: 0, title: 'Padre Nuestro', badge: 'Inicio', text: 'Iniciamos rezando:\n\nPadre nuestro que estás en el cielo...', fullText: FULL_PADRE_NUESTRO });
+                steps.push({ physicalId: 2, loopId: 0, title: '3 Ave Marías', badge: 'Inicio', text: 'Para aumentar nuestra Fe, Esperanza y Caridad:\n\nDios te salve María...', fullText: FULL_AVE_MARIA });
+                steps.push({ physicalId: 3, loopId: 0, title: 'Gloria', badge: 'Inicio', text: 'Gloria al Padre, y al Hijo, y al Espíritu Santo...', fullText: FULL_GLORIA });
+
+                for (let paso = 1; paso <= 5; paso++) {
+                    const misterioTexto = misteriosActuales.list[paso - 1];
+                    
+                    steps.push({ physicalId: 4, loopId: paso, title: `Misterio ${paso}: ${misteriosActuales.title}`, badge: `Misterio ${paso} de 5`, text: `Meditamos:\n${misterioTexto}.\n\n(Rezar el Padre Nuestro)`, fullText: FULL_PADRE_NUESTRO });
+                    for (let ave = 1; ave <= 10; ave++) {
+                        steps.push({ physicalId: 4 + ave, loopId: paso, title: `Ave María (${ave}/10)`, badge: `Misterio ${paso} de 5`, text: 'Dios te salve, María, llena eres de gracia, el Señor es contigo...', fullText: FULL_AVE_MARIA });
+                    }
+                }
+                
+                steps.push({ physicalId: 4, loopId: 6, title: 'La Salve', badge: 'Cierre', text: 'Dios te salve, Reina y Madre de misericordia, vida, dulzura y esperanza nuestra...', fullText: FULL_SALVE });
+                steps.push({ physicalId: 0, loopId: 7, title: 'Señal de la Cruz Final', badge: 'Despedida', text: 'Toca la cruz iluminada para terminar.\n\nEn el nombre del Padre, y del Hijo, y del Espíritu Santo. Amén.' });
+            }
+            return steps;
+        }
+
+        // Estado persistente
+        let currentDevotion = localStorage.getItem('selected_devotion') || 'misericordia';
+        let selectedMystery = localStorage.getItem('selected_mystery') || 'auto';
+        
+        let logicalSteps = generateSteps(currentDevotion);
+        let currentStepIndex = 0;
+        let beadPositions = [];
+
+        // Elementos DOM
+        const rosaryContainer = document.getElementById('rosary-container');
+        const prayerCardContent = document.getElementById('prayer-card-content');
+        const prayerTitle = document.getElementById('prayer-title');
+        const prayerText = document.getElementById('prayer-text');
+        const stepBadge = document.getElementById('step-badge');
+        const badgeIcon = document.getElementById('badge-icon');
+        const mysterySelectorContainer = document.getElementById('mystery-selector-container');
+        
+        const fabPrayer = document.getElementById('fab-prayer');
+        const fabPrayerMobile = document.getElementById('fab-prayer-mobile');
+        const fullPrayerTitle = document.getElementById('fullPrayerTitle');
+        const fullPrayerText = document.getElementById('fullPrayerText');
+        
+        const btnPrevFloat = document.getElementById('btn-prev-float');
+        const btnNextFloat = document.getElementById('btn-next-float');
+        
+        let completionModal, settingsModal, sangreAguaModal;
+
+        // Variables de Progreso Independientes
+        let completedCountMisericordia = parseInt(localStorage.getItem('misericordia_count')) || 0;
+        let userGoalMisericordia = parseInt(localStorage.getItem('misericordia_goal')) || 9;
+        
+        let completedCountRosario = parseInt(localStorage.getItem('rosario_count')) || 0;
+        let userGoalRosario = parseInt(localStorage.getItem('rosario_goal')) || 9;
+        
+        let runCompleted = false;
+
+        document.addEventListener("DOMContentLoaded", function() {
+            completionModal = new bootstrap.Modal(document.getElementById('completionModal'));
+            settingsModal = new bootstrap.Modal(document.getElementById('settingsModal'));
+            sangreAguaModal = new bootstrap.Modal(document.getElementById('sangreAguaModal'));
+            
+            // Restaurar selector de misterios si existe
+            const mysterySelector = document.getElementById('mysterySelector');
+            if(mysterySelector) {
+                mysterySelector.value = selectedMystery;
+            }
+
+            // Restaurar selección visual en UI
+            if (currentDevotion === 'rosario') {
+                document.getElementById('devRosario').checked = true;
+                mysterySelectorContainer.classList.remove('d-none');
+            } else {
+                document.getElementById('devMisericordia').checked = true;
+                mysterySelectorContainer.classList.add('d-none');
+            }
+
+            const modalIcon = document.getElementById('modal-icon');
+            const btnModalClose = document.getElementById('btn-modal-close');
+            if (currentDevotion === 'misericordia') {
+                modalIcon.innerHTML = '<i class="bi bi-droplet-half text-primary"></i>';
+                if(btnModalClose) btnModalClose.classList.replace('btn-primary-custom', 'btn-primary');
+            } else {
+                modalIcon.innerHTML = '<i class="bi bi-heart-fill text-danger"></i>';
+                if(btnModalClose) btnModalClose.classList.replace('btn-primary', 'btn-primary-custom');
+            }
+
+            // Recargar los pasos con la configuración restaurada
+            logicalSteps = generateSteps(currentDevotion);
+
+            // Inicializar progreso
+            updateProgressUI();
+            
+            renderRosary();
+            updateUI();
+        });
+
+        // --- SISTEMA DE PROGRESO INDEPENDIENTE ---
+        function updateProgressUI() {
+            let currentCount = currentDevotion === 'misericordia' ? completedCountMisericordia : completedCountRosario;
+            let currentGoal = currentDevotion === 'misericordia' ? userGoalMisericordia : userGoalRosario;
+
+            document.getElementById('completed-count').textContent = currentCount;
+            document.getElementById('goal-selector').value = currentGoal;
+            
+            const progressPercent = Math.min((currentCount / currentGoal) * 100, 100);
+            const progressBar = document.getElementById('goal-progress-bar');
+            progressBar.style.width = `${progressPercent}%`;
+            progressBar.textContent = `${Math.round(progressPercent)}%`;
+            progressBar.setAttribute('aria-valuenow', progressPercent);
+
+            document.getElementById('progress-title').innerHTML = `<i class="bi bi-trophy text-warning me-1"></i> Progreso (${currentDevotion === 'misericordia' ? 'Divina Misericordia' : 'Santo Rosario'})`;
+        }
+
+        window.changeGoal = function() {
+            let newGoal = parseInt(document.getElementById('goal-selector').value);
+            if (currentDevotion === 'misericordia') {
+                userGoalMisericordia = newGoal;
+                localStorage.setItem('misericordia_goal', newGoal);
+            } else {
+                userGoalRosario = newGoal;
+                localStorage.setItem('rosario_goal', newGoal);
+            }
+            updateProgressUI();
+        };
+
+        window.hideSettingsModal = function() {
+            if(settingsModal) settingsModal.hide();
+        };
+
+        window.changeDevotion = function() {
+            currentDevotion = document.querySelector('input[name="devotion"]:checked').value;
+            localStorage.setItem('selected_devotion', currentDevotion);
+            
+            const mysteryVal = document.getElementById('mysterySelector').value;
+            localStorage.setItem('selected_mystery', mysteryVal);
+            
+            if (currentDevotion === 'rosario') {
+                mysterySelectorContainer.classList.remove('d-none');
+            } else {
+                mysterySelectorContainer.classList.add('d-none');
+            }
+
+            logicalSteps = generateSteps(currentDevotion);
+            
+            const modalIcon = document.getElementById('modal-icon');
+            const btnModalClose = document.getElementById('btn-modal-close');
+            
+            if (currentDevotion === 'misericordia') {
+                modalIcon.innerHTML = '<i class="bi bi-droplet-half text-primary"></i>';
+                btnModalClose.classList.replace('btn-primary-custom', 'btn-primary');
+            } else {
+                modalIcon.innerHTML = '<i class="bi bi-heart-fill text-danger"></i>';
+                btnModalClose.classList.replace('btn-primary', 'btn-primary-custom');
+            }
+
+            updateProgressUI();
+            resetDecenario();
+        };
+
+        function blendRGB(c1, c2, factor) {
+            return [
+                Math.round(c1[0] + (c2[0] - c1[0]) * factor),
+                Math.round(c1[1] + (c2[1] - c1[1]) * factor),
+                Math.round(c1[2] + (c2[2] - c1[2]) * factor)
+            ];
+        }
+
+        function getBeadColors(physicalId, isMisericordia) {
+            const r1 = [255, 179, 179], r2 = [255, 26, 26], r3 = [204, 0, 0], r4 = [102, 0, 0];
+            
+            if (!isMisericordia || physicalId < 5) {
+                return { c1: r1.join(','), c2: r2.join(','), c3: r3.join(','), c4: r4.join(',') };
+            } 
+            
+            const loopIndex = physicalId - 5; 
+            const factor = loopIndex / 9; 
+            const b1 = [179, 230, 255], b2 = [26, 179, 255], b3 = [0, 102, 204], b4 = [0, 51, 102];
+            
+            return {
+                c1: blendRGB(r1, b1, factor).join(','),
+                c2: blendRGB(r2, b2, factor).join(','),
+                c3: blendRGB(r3, b3, factor).join(','),
+                c4: blendRGB(r4, b4, factor).join(',')
+            };
+        }
+
+        // --- CÁLCULO DE POSICIONES: CÍRCULO PERFECTO GARANTIZADO ---
+        function calculatePositions() {
+            const pos = new Array(15);
+            
+            pos[0] = { x: 50, y: 95, type: 'cross' };   
+            pos[1] = { x: 50, y: 83, type: 'small-bead' }; 
+            pos[2] = { x: 50, y: 72, type: 'small-bead' }; 
+            pos[3] = { x: 50, y: 61, type: 'small-bead' }; 
+            pos[4] = { x: 50, y: 49, type: 'medal' };      
+
+            const cx = 50, cy = 25, radiusX = 35, radiusY = 25; 
+            const startAngle = Math.PI * 0.75; 
+            const endAngle = Math.PI * 2.25;   
+            
+            for (let i = 0; i < 10; i++) {
+                const angle = startAngle + (i / 9) * (endAngle - startAngle);
+                pos[i + 5] = { 
+                    x: cx + radiusX * Math.cos(angle), 
+                    y: cy + radiusY * Math.sin(angle), 
+                    type: 'small-bead' 
+                };
+            }
+            return pos;
+        }
+
+        function renderRosary() {
+            const floatPrev = document.getElementById('btn-prev-float');
+            const floatNext = document.getElementById('btn-next-float');
+            const fabPrayerMobile = document.getElementById('fab-prayer-mobile');
+            
+            rosaryContainer.innerHTML = '';
+            rosaryContainer.appendChild(floatPrev);
+            rosaryContainer.appendChild(floatNext);
+            rosaryContainer.appendChild(fabPrayerMobile);
+            
+            beadPositions = calculatePositions();
+            const isMisericordia = currentDevotion === 'misericordia';
+
+            const svgNS = "http://www.w3.org/2000/svg";
+            const svg = document.createElementNS(svgNS, "svg");
+            svg.setAttribute("viewBox", "0 0 100 100");
+            svg.setAttribute("preserveAspectRatio", "none");
+
+            const path = document.createElementNS(svgNS, "path");
+            path.setAttribute("fill", "none"); 
+            path.setAttribute("stroke", "#adb5bd");
+            path.setAttribute("stroke-width", "1.2");
+            path.setAttribute("stroke-dasharray", "2 1"); 
+
+            let d = `M ${beadPositions[0].x} ${beadPositions[0].y} `; 
+            for (let i = 1; i <= 4; i++) { d += `L ${beadPositions[i].x} ${beadPositions[i].y} `; } 
+            
+            d += `L ${beadPositions[5].x} ${beadPositions[5].y} `; 
+            for (let i = 6; i <= 14; i++) { d += `L ${beadPositions[i].x} ${beadPositions[i].y} `; } 
+            d += `L ${beadPositions[4].x} ${beadPositions[4].y} `; 
+
+            path.setAttribute("d", d);
+            svg.appendChild(path);
+            rosaryContainer.appendChild(svg);
+
+            beadPositions.forEach((pos, pId) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'bead-wrapper';
+                wrapper.style.left = `${pos.x}%`;
+                wrapper.style.top = `${pos.y}%`;
+                wrapper.id = `wrapper-${pId}`;
+
+                const btn = document.createElement('button');
+                btn.className = `bead`;
+                btn.onclick = () => handlePhysicalClick(pId);
+                
+                if (pos.type === 'cross') {
+                    btn.classList.add('realistic-cross');
+                    btn.innerHTML = `<svg viewBox="0 0 45 65" style="width:100%; height:100%;"><use href="#silver-cross-icon"></use></svg>`;
+                } else if (pos.type === 'medal') {
+                    btn.classList.add('realistic-medal');
+                    btn.classList.add(isMisericordia ? 'medal-misericordia' : 'medal-rosario');
+                } else {
+                    btn.classList.add('realistic-bead');
+                    const colors = getBeadColors(pId, isMisericordia);
+                    btn.style.setProperty('--b-c1', `rgb(${colors.c1})`);
+                    btn.style.setProperty('--b-c2', `rgb(${colors.c2})`);
+                    btn.style.setProperty('--b-c3', `rgb(${colors.c3})`);
+                    btn.style.setProperty('--b-c4', `rgb(${colors.c4})`);
+                }
+
+                wrapper.appendChild(btn);
+                rosaryContainer.appendChild(wrapper);
+            });
+        }
+
+        function updateUI() {
+            prayerCardContent.style.opacity = '0';
+            const step = logicalSteps[currentStepIndex];
+
+            setTimeout(() => {
+                prayerTitle.textContent = step.title;
+                prayerText.innerHTML = step.text; 
+                stepBadge.textContent = step.badge;
+                
+                // Mostrar botón flotante de oración si hay texto completo
+                if (step.fullText) {
+                    fabPrayer.classList.remove('prayer-btn-hidden');
+                    fabPrayerMobile.classList.remove('prayer-btn-hidden');
+                    fullPrayerTitle.textContent = step.title;
+                    fullPrayerText.textContent = step.fullText; 
+                } else {
+                    fabPrayer.classList.add('prayer-btn-hidden');
+                    fabPrayerMobile.classList.add('prayer-btn-hidden');
+                }
+                
+                if (currentDevotion === 'misericordia') {
+                    badgeIcon.className = 'bi bi-droplet-half text-primary me-1';
+                } else {
+                    badgeIcon.className = 'bi bi-suit-heart-fill text-danger me-1';
+                }
+                
+                prayerCardContent.style.opacity = '1';
+            }, 250);
+
+            const activePhysicalId = step.physicalId;
+            const currentLoop = step.loopId;
+            
+            const wrappers = document.querySelectorAll('.bead-wrapper');
+            wrappers.forEach((wrapper, pId) => {
+                wrapper.classList.remove('active', 'completed');
+                
+                if (pId === activePhysicalId) {
+                    wrapper.classList.add('active');
+                } else {
+                    if (currentLoop === 0) {
+                        if (pId < activePhysicalId) wrapper.classList.add('completed');
+                    } else if (currentLoop >= 6) { 
+                        if (pId !== 4 && pId !== 0) wrapper.classList.add('completed');
+                    } else {
+                        if (pId < 5) {
+                            wrapper.classList.add('completed'); 
+                        } else if (pId < activePhysicalId) {
+                            wrapper.classList.add('completed'); 
+                        }
+                    }
+                }
+            });
+
+            btnPrevFloat.disabled = currentStepIndex === 0;
+
+            if (currentStepIndex === logicalSteps.length - 1) {
+                btnNextFloat.innerHTML = '<i class="bi bi-check-lg"></i>';
+                btnNextFloat.className = 'btn-float-nav nav-next bg-success text-white';
+            } else {
+                btnNextFloat.innerHTML = '<i class="bi bi-chevron-right"></i>';
+                if (currentDevotion === 'misericordia') {
+                    btnNextFloat.className = 'btn-float-nav nav-next bg-primary text-white';
+                } else {
+                    btnNextFloat.className = 'btn-float-nav nav-next text-white';
+                    btnNextFloat.style.backgroundColor = '#b91c1c';
+                }
+            }
+        }
+
+        function handlePhysicalClick(pId) {
+            const currentStep = logicalSteps[currentStepIndex];
+            
+            if (pId === currentStep.physicalId && currentStepIndex < logicalSteps.length - 1) {
+                if (logicalSteps[currentStepIndex + 1].physicalId === pId) {
+                    handleNext();
+                    return;
+                }
+            }
+            
+            if (pId === 0 && currentStep.loopId === 7) {
+                handleNext();
+                return;
+            }
+
+            let targetLoop = currentStep.loopId;
+
+            if (pId === 4) { 
+                if (currentStep.loopId === 0) {
+                    targetLoop = 1; 
+                } else if (currentStep.physicalId === 14) {
+                    targetLoop = currentStep.loopId < 5 ? currentStep.loopId + 1 : 6;
+                }
+            } else if (pId === 5 && currentStep.physicalId === 14 && currentStep.loopId < 5) {
+                targetLoop = currentStep.loopId + 1;
+            } else if (pId > 4) { 
+                if (currentStep.loopId === 0 || currentStep.loopId >= 6) {
+                    targetLoop = 1; 
+                }
+            } else if (pId < 4) { 
+                targetLoop = 0; 
+            }
+
+            let foundIndex = logicalSteps.findIndex(s => s.physicalId === pId && s.loopId === targetLoop);
+            
+            if (foundIndex !== -1) {
+                currentStepIndex = foundIndex;
+                updateUI();
+            }
+        }
+
+        function handleNext() {
+            if (currentStepIndex < logicalSteps.length - 1) {
+                currentStepIndex++;
+                updateUI();
+                
+                // Si llegamos al último paso, registramos la finalización
+                if (currentStepIndex === logicalSteps.length - 1 && !runCompleted) {
+                    runCompleted = true;
+                    if (currentDevotion === 'misericordia') {
+                        completedCountMisericordia++;
+                        localStorage.setItem('misericordia_count', completedCountMisericordia);
+                    } else {
+                        completedCountRosario++;
+                        localStorage.setItem('rosario_count', completedCountRosario);
+                    }
+                    updateProgressUI();
+                }
+            } else {
+                if (currentDevotion === 'misericordia') {
+                    if(sangreAguaModal) sangreAguaModal.show();
+                } else {
+                    if(completionModal) completionModal.show();
+                }
+            }
+        }
+
+        function handlePrev() {
+            if (currentStepIndex > 0) {
+                currentStepIndex--;
+                updateUI();
+            }
+        }
+
+        function resetDecenario() {
+            currentStepIndex = 0;
+            runCompleted = false;
+            renderRosary();
+            updateUI();
+        }
+        
+        window.showCompletion = function() {
+            if(sangreAguaModal) sangreAguaModal.hide();
+            if(completionModal) completionModal.show();
+        };
+
+        btnNextFloat.addEventListener('click', handleNext);
+        btnPrevFloat.addEventListener('click', handlePrev);
+
+        window.addEventListener('resize', () => {
+            renderRosary();
+            updateUI();
+        });
+
+    </script>
+</body>
+</html>

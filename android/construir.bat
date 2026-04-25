@@ -1,30 +1,31 @@
 @echo off
 setlocal enabledelayedexpansion
 
-:: 1. IR AL DIRECTORIO DEL SCRIPT
+:: 1. IR AL DIRECTORIO DEL SCRIPT (Carpeta android)
 cd /d "%~dp0"
 
 echo ==========================================
 echo   MOTOR COMPILADOR ANDROID (CORE V5 - UI FIX)
 echo ==========================================
 
-:: 2. CARGAR VARIABLES DIRECTAMENTE DESDE CAPACITOR (SIN ARCHIVOS PUENTE)
+:: 2. CARGAR VARIABLES DIRECTAMENTE DESDE CAPACITOR
 echo [INFO] Leyendo la configuracion real del proyecto...
 for /f "delims=" %%I in ('node -p "require('../capacitor.config.json').appName"') do set "CUSTOM_NAME=%%I"
 for /f "delims=" %%I in ('node -p "require('../capacitor.config.json').appId"') do set "CUSTOM_APP_ID=%%I"
-set "ICON_PATH="
 
 if "!CUSTOM_NAME!"=="" set "CUSTOM_NAME=LaTribu"
 if "!CUSTOM_APP_ID!"=="" set "CUSTOM_APP_ID=com.latribu.app"
 
-:: Traductor WSL silencioso
+:: 🔥 AUTO-DETECCION DEL ICONO EN LA RAIZ DEL PROYECTO
+echo [INFO] Buscando icono de la aplicacion...
+set "ICON_PATH="
+if exist "..\icon.png" set "ICON_PATH=..\icon.png"
+if exist "..\logo.png" set "ICON_PATH=..\logo.png"
+
 if not "!ICON_PATH!"=="" (
-    echo "!ICON_PATH!" | findstr /i /c:"/mnt/" >nul
-    if !errorlevel! equ 0 (
-        set "ICON_PATH=!ICON_PATH:/mnt/c/=C:\!"
-        set "ICON_PATH=!ICON_PATH:/mnt/C/=C:\!"
-        set "ICON_PATH=!ICON_PATH:/=\!"
-    )
+    echo [OK] Icono detectado en: !ICON_PATH!
+) else (
+    echo [ADVERTENCIA] No se detecto icon.png en la raiz. Se usara el logo por defecto de Android.
 )
 
 :: 3. CONFIGURACION VISUAL Y FIX DE UI OVERLAP
@@ -42,7 +43,7 @@ if exist "%STRINGS_FILE%" (
     ) > "%STRINGS_FILE%"
 )
 
-:: --- NUEVO: FIX DE BARRA DE ESTADO PARA ANDROID 15 ---
+:: --- FIX DE BARRA DE ESTADO PARA ANDROID 15 ---
 :: Forzamos a Android a respetar la ventana y no dibujar debajo de la barra de estado
 set "STYLES_FILE=app\src\main\res\values\styles.xml"
 if not exist "app\src\main\res\values" mkdir "app\src\main\res\values"
@@ -62,16 +63,25 @@ if exist "%STYLES_FILE%" (
         echo ^</resources^>
     ) > "%STYLES_FILE%"
 )
-:: --------------------------------------------------
 
+:: 🔥 PROCESAR E INYECTAR EL ICONO
 if not "!ICON_PATH!"=="" if exist "!ICON_PATH!" (
-    echo [INFO] Inyectando y optimizando iconos...
+    echo [INFO] Procesando e inyectando tu icono personalizado...
     set "FINAL_ICON=!ICON_PATH!"
+    
+    :: Soporte por si la imagen es JPG (la pasa a PNG dinámicamente)
     echo "!ICON_PATH!" | findstr /i "\.jpg \.jpeg" >nul
     if !errorlevel! equ 0 (
         powershell -Command "Add-Type -AssemblyName System.Drawing; try { [System.Drawing.Image]::FromFile('!ICON_PATH!').Save('icon_temp.png', [System.Drawing.Imaging.ImageFormat]::Png) } catch { exit 1 }"
         if exist "icon_temp.png" set "FINAL_ICON=icon_temp.png"
     )
+    
+    :: 🛑 FIX CRÍTICO: Eliminar Iconos Adaptativos (XML) por defecto
+    :: Si estos archivos XML existen, Android ignora por completo nuestros PNGs. Los purgamos.
+    if exist "app\src\main\res\mipmap-anydpi-v26" (
+        del /f /q "app\src\main\res\mipmap-anydpi-v26\*.*" >nul 2>&1
+    )
+    
     for %%D in (mipmap-mdpi mipmap-hdpi mipmap-xhdpi mipmap-xxhdpi mipmap-xxxhdpi) do (
         if exist "app\src\main\res\%%D" (
             copy /y "!FINAL_ICON!" "app\src\main\res\%%D\ic_launcher.png" >nul
@@ -80,6 +90,7 @@ if not "!ICON_PATH!"=="" if exist "!ICON_PATH!" (
         )
     )
     if exist "icon_temp.png" del "icon_temp.png"
+    echo [OK] Iconos reemplazados correctamente en el proyecto Android.
 )
 
 :: 4. LIMPIEZA DEL ENTORNO
@@ -142,7 +153,6 @@ if exist "!SDK_PATH!\cmdline-tools\latest\bin\sdkmanager.bat" (
 ) else if exist "!SDK_PATH!\tools\bin\sdkmanager.bat" (
     echo y | call "!SDK_PATH!\tools\bin\sdkmanager.bat" --licenses >nul 2>&1
 )
-:: -----------------------------------------------
 
 :: 6. SINCRONIZACION CAPACITOR
 echo.

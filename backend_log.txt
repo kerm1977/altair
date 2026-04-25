@@ -5,17 +5,12 @@
 [⚙️ OS Detectado] Windows
 [⚙️ Comando PB] Ejecutando: .\pocketbase.exe
 
-(node:4092) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(node:10356) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
 (Use `node --trace-deprecation ...` to show where the warning was created)
-[📦 PocketBase] 2026/04/02 14:39:28 Server started at http://127.0.0.1:8090
-[📦 PocketBase] ├─ REST API:  http://127.0.0.1:8090/api/
+[📦 PocketBase] 2026/04/24 17:55:35 Server started at http://127.0.0.1:8090
+├─ REST API:  http://127.0.0.1:8090/api/
 └─ Dashboard: http://127.0.0.1:8090/_/
 
 [🌐 Tailscale] Abriendo túnel global en el puerto 8090...
 
-[🌐 Tailscale] Available on the internet:
-
-https://desktop-71uhcug.tailb81e5f.ts.net/
-|-- proxy http://127.0.0.1:8090
-
-Press Ctrl+C to exit.
+[🌐 Tailscale ERROR] sending serve config: updating config: listener already exists for port 443

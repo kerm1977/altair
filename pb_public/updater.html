@@ -133,6 +133,27 @@
                     </div>
                 </div>
 
+                <!-- HERRAMIENTAS DE ADMINISTRADOR (NUEVO) -->
+                <div class="card mb-4 border-warning border-2">
+                    <div class="card-body p-4">
+                        <h5 class="fw-bold mb-3 text-warning"><i class="bi bi-tools me-2"></i>Herramientas de Administrador</h5>
+                        
+                        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between bg-light p-3 rounded">
+                            <div class="mb-3 mb-md-0">
+                                <h6 class="fw-bold mb-1 text-dark">Límite de Tamaño de Archivos (ZIP)</h6>
+                                <small class="text-muted">Establece el peso máximo permitido para subir actualizaciones.</small>
+                                <div class="input-group mt-2 shadow-sm" style="max-width: 200px;">
+                                    <input type="number" class="form-control fw-bold" id="input-limit-mb" value="50" min="1" step="1">
+                                    <span class="input-group-text bg-white">MB</span>
+                                </div>
+                            </div>
+                            <button class="btn btn-warning fw-bold text-dark text-nowrap mt-2 mt-md-0" id="btn-fix-limit" onclick="aumentarLimiteZip()">
+                                <i class="bi bi-cloud-check me-1"></i> Aplicar Límite
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
             </div>
 
         </div>
@@ -142,6 +163,66 @@
 <script>
     let adminToken = "";
     let selectedFiles = [];
+
+    // ==========================================
+    // SISTEMA INDEXEDDB PARA GUARDAR CONFIGURACIÓN
+    // ==========================================
+    const DB_NAME = 'OTA_Manager_DB';
+    const DB_VERSION = 1;
+    const STORE_NAME = 'settings';
+
+    function getDB() {
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(DB_NAME, DB_VERSION);
+            request.onerror = event => reject("Error abriendo IndexedDB");
+            request.onsuccess = event => resolve(event.target.result);
+            request.onupgradeneeded = event => {
+                const db = event.target.result;
+                if (!db.objectStoreNames.contains(STORE_NAME)) {
+                    db.createObjectStore(STORE_NAME);
+                }
+            };
+        });
+    }
+
+    async function setSetting(key, value) {
+        try {
+            const db = await getDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([STORE_NAME], 'readwrite');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.put(value, key);
+                request.onsuccess = () => resolve();
+                request.onerror = () => reject(request.error);
+            });
+        } catch (e) {
+            console.error("IndexedDB Set Error:", e);
+        }
+    }
+
+    async function getSetting(key, defaultValue) {
+        try {
+            const db = await getDB();
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction([STORE_NAME], 'readonly');
+                const store = transaction.objectStore(STORE_NAME);
+                const request = store.get(key);
+                request.onsuccess = () => resolve(request.result !== undefined ? request.result : defaultValue);
+                request.onerror = () => resolve(defaultValue);
+            });
+        } catch (e) {
+            console.error("IndexedDB Get Error:", e);
+            return defaultValue;
+        }
+    }
+
+    // Inicializar valores al cargar la página
+    window.addEventListener('DOMContentLoaded', async () => {
+        const savedLimit = await getSetting('maxZipSizeMB', 50);
+        const limitInput = document.getElementById('input-limit-mb');
+        if (limitInput) limitInput.value = savedLimit;
+    });
+    // ==========================================
 
     function togglePass() {
         const input = document.getElementById('pb-pass');
@@ -266,7 +347,9 @@
                 if (cleanPath) zip.file(cleanPath, file);
             });
 
-            const zipBlob = await zip.generateAsync({ type: "blob", compression: "DEFLATE" });
+            const zipBlobRaw = await zip.generateAsync({ type: "blob", compression: "DEFLATE" });
+            const zipBlob = new Blob([zipBlobRaw], { type: 'application/zip' });
+            
             btnUpload.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Subiendo...`;
 
             const formData = new FormData();
@@ -281,15 +364,26 @@
 
             if (!res.ok) {
                 const err = await res.json();
-                throw new Error(err.message || "Error al subir a PocketBase");
+                
+                if (err.data && err.data.archivo_zip && err.data.archivo_zip.code === "validation_file_size_limit") {
+                    throw new Error("⚠️ EL ARCHIVO ES DEMASIADO PESADO.\n\nPor favor, ve a la sección 'Herramientas de Administrador' abajo, aumenta el límite en MB y haz clic en 'Aplicar Límite' antes de intentar de nuevo.");
+                }
+
+                let errMsg = err.message || "Error al subir a PocketBase";
+                if (err.data && Object.keys(err.data).length > 0) {
+                    errMsg += "\n\nDetalles de PocketBase:\n" + JSON.stringify(err.data, null, 2);
+                }
+                throw new Error(errMsg);
             }
 
             alert(`✅ ¡Versión ${version} publicada con éxito!`);
             document.getElementById('app-version').value = "";
+            document.getElementById('folder-input').value = "";
+            analizarCarpeta();
             cargarHistorial();
 
         } catch (error) {
-            alert("❌ Error: " + error.message);
+            alert("❌ Falló la subida:\n\n" + error.message);
         } finally {
             btnUpload.disabled = false;
             btnUpload.innerHTML = `<i class="bi bi-box-seam-fill me-2"></i> Empaquetar ZIP y Publicar al Mundo`;
@@ -302,7 +396,6 @@
         const uploadCard = document.getElementById('upload-card');
         
         try {
-            // 1. Verificación ABSOLUTA: ¿Existe la colección?
             const colRes = await fetch(`${url}/api/collections/ota_updates`, {
                 headers: { 'Authorization': `Bearer ${adminToken}` }
             });
@@ -328,7 +421,6 @@
                 throw new Error(errData.message || `Error verificando tabla (Código ${colRes.status})`);
             }
 
-            // 2. Extraer registros de forma segura SIN el parámetro sort en la URL (Evita errores 400)
             const res = await fetch(`${url}/api/collections/ota_updates/records`, {
                 headers: { 'Authorization': `Bearer ${adminToken}` }
             });
@@ -346,7 +438,6 @@
 
             const items = data.items || [];
 
-            // 3. Ordenar localmente usando JavaScript (El más nuevo primero)
             items.sort((a, b) => new Date(b.created || 0) - new Date(a.created || 0));
 
             if (items.length === 0) {
@@ -386,15 +477,33 @@
         btnCrear.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Creando...`;
 
         try {
-            // Estructura universal, limpia y directa (PocketBase creará los campos del sistema solo)
+            let systemFields = [];
+            try {
+                const usersRes = await fetch(`${url}/api/collections/users`, {
+                    headers: { 'Authorization': `Bearer ${adminToken}` }
+                });
+                if (usersRes.ok) {
+                    const usersCol = await usersRes.json();
+                    if (usersCol.fields) {
+                        systemFields = usersCol.fields.filter(f => f.system === true);
+                    }
+                }
+            } catch (e) { console.log("No se pudo leer fields del sistema."); }
+
+            // Leemos de la UI o de IndexedDB
+            let inputMB = parseFloat(document.getElementById('input-limit-mb').value);
+            if (isNaN(inputMB) || inputMB <= 0) inputMB = 50; // Fallback
+            const maxBytesLimit = Math.floor(inputMB * 1024 * 1024);
+
             const payloadV23 = {
                 name: "ota_updates",
                 type: "base",
-                listRule: "", // Para que los celulares lo puedan descargar sin iniciar sesión
-                viewRule: "", // Para que los celulares lo puedan ver sin iniciar sesión
+                listRule: "", 
+                viewRule: "", 
                 fields: [
+                    ...systemFields, 
                     { name: "version", type: "text", required: true },
-                    { name: "archivo_zip", type: "file", required: true, options: { maxSelect: 1, maxSize: 52428800 } }
+                    { name: "archivo_zip", type: "file", required: true, options: { maxSelect: 1, maxSize: maxBytesLimit } }
                 ]
             };
 
@@ -404,7 +513,6 @@
                 body: JSON.stringify(payloadV23)
             });
 
-            // FALLBACK: Si falla, usamos el modo viejo (v0.22)
             if (!res.ok) {
                 const payloadV22 = {
                     name: "ota_updates",
@@ -413,7 +521,7 @@
                     viewRule: "",
                     schema: [
                         { name: "version", type: "text", required: true },
-                        { name: "archivo_zip", type: "file", required: true, options: { maxSelect: 1, maxSize: 52428800 } }
+                        { name: "archivo_zip", type: "file", required: true, options: { maxSelect: 1, maxSize: maxBytesLimit } }
                     ]
                 };
                 
@@ -428,18 +536,19 @@
                 } else {
                     const errData = await res.json(); 
                     let msjError = errData.message || "Error al crear tabla.";
-                    if (errData.data) {
-                        msjError += "\nDetalles de PocketBase:\n" + JSON.stringify(errData.data, null, 2);
-                    }
+                    if (errData.data) msjError += "\nDetalles:\n" + JSON.stringify(errData.data, null, 2);
                     throw new Error(msjError);
                 }
             }
 
-            alert("✅ ¡Tabla 'ota_updates' creada exitosamente!");
-            cargarHistorial(); // Refrescamos y mostramos la interfaz
+            // Guardar configuración en IndexedDB
+            await setSetting('maxZipSizeMB', inputMB);
+
+            alert(`✅ ¡Tabla 'ota_updates' creada exitosamente con soporte para ${inputMB} MB!`);
+            cargarHistorial(); 
 
         } catch (error) {
-            alert("❌ PocketBase rechazó la petición:\n" + error.message);
+            alert("❌ Falló al crear tabla:\n" + error.message);
             btnCrear.disabled = false;
             btnCrear.innerHTML = `<i class="bi bi-magic me-2"></i> Crear Tabla Automáticamente`;
         }
@@ -457,6 +566,75 @@
             if (res.ok) cargarHistorial();
         } catch (error) {
             alert("Error: " + error.message);
+        }
+    }
+
+    // MAGIA ADMINISTRATIVA: AUMENTAR LÍMITE DE TAMAÑO DINÁMICO Y SEGURO
+    async function aumentarLimiteZip() {
+        const url = document.getElementById('pb-url').value.trim();
+        const btn = document.getElementById('btn-fix-limit');
+        const inputMB = parseFloat(document.getElementById('input-limit-mb').value);
+
+        if (isNaN(inputMB) || inputMB <= 0) {
+            return alert("Por favor ingresa una cantidad válida de MB (mayor a 0).");
+        }
+
+        const newLimitBytes = Math.floor(inputMB * 1024 * 1024);
+
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Aplicando...`;
+
+        try {
+            const resGet = await fetch(`${url}/api/collections/ota_updates`, {
+                headers: { 'Authorization': `Bearer ${adminToken}` }
+            });
+
+            if (!resGet.ok) throw new Error("No se pudo obtener la información de la tabla. ¿Estás seguro que existe?");
+            const collection = await resGet.json();
+
+            let modificado = false;
+            // Clonamos el arreglo correcto dependiendo de la versión de PocketBase
+            const arrayCampos = collection.fields ? [...collection.fields] : (collection.schema ? [...collection.schema] : []);
+
+            for (let i = 0; i < arrayCampos.length; i++) {
+                if (arrayCampos[i].name === 'archivo_zip') {
+                    if (!arrayCampos[i].options) arrayCampos[i].options = {};
+                    arrayCampos[i].options.maxSize = newLimitBytes;
+                    modificado = true;
+                    break;
+                }
+            }
+
+            if (!modificado) throw new Error("No se encontró el campo 'archivo_zip' en la tabla.");
+
+            // PREPARAR PAYLOAD LIMPIO: Enviar solo la configuración de campos para no colisionar con variables del sistema
+            const patchPayload = {};
+            if (collection.fields) patchPayload.fields = arrayCampos;
+            else patchPayload.schema = arrayCampos;
+
+            const resPatch = await fetch(`${url}/api/collections/${collection.id}`, {
+                method: 'PATCH',
+                headers: { 'Authorization': `Bearer ${adminToken}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(patchPayload)
+            });
+
+            if (!resPatch.ok) {
+                const errData = await resPatch.json();
+                let msjError = errData.message || "Fallo al actualizar la tabla en el servidor.";
+                if(errData.data) msjError += "\n\nDetalles del rechazo:\n" + JSON.stringify(errData.data, null, 2);
+                throw new Error(msjError);
+            }
+
+            // Guardar configuración en IndexedDB
+            await setSetting('maxZipSizeMB', inputMB);
+
+            alert(`✅ ¡LÍMITE AMPLIADO A ${inputMB} MB EXITOSAMENTE!\n\nTu base de datos ha sido actualizada.`);
+
+        } catch (error) {
+            alert("❌ Error al aplicar el límite:\n\n" + error.message);
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = `<i class="bi bi-cloud-check me-1"></i> Aplicar Límite`;
         }
     }
 </script>

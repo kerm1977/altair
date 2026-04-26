@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">DIVINAMISERICORDIA</string>
-    <string name="title_activity_main">DIVINAMISERICORDIA</string>
+    <string name="app_name">Divina Misericordia</string>
+    <string name="title_activity_main">Divina Misericordia</string>
     <string name="package_name">com.divinamisericordia.app</string>
     <string name="custom_url_scheme">com.divinamisericordia.app</string>
 </resources>

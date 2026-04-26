@@ -110,9 +110,9 @@
                     <h1 class="fs-2 fw-bold mb-1 text-dark prayer-title">Mi Decenario</h1>
                     <p class="text-muted fst-italic fs-6 mb-4">Un momento de paz y oración</p>
 
-                    <!-- NUEVO: Indicador de Conexión a la Base de Datos -->
+                    <!-- NUEVO: Indicador de Conexión a la Base de Datos (Ahora con click oculto) -->
                     <div class="d-flex justify-content-center align-items-center mb-4">
-                        <div class="badge bg-light text-secondary border shadow-sm px-3 py-2 fs-6 rounded-pill" id="db-status-badge">
+                        <div class="badge bg-light text-secondary border shadow-sm px-3 py-2 fs-6 rounded-pill cursor-pointer" id="db-status-badge" onclick="abrirModalConexion()" style="cursor: pointer;" title="Toca aquí si estás sin conexión">
                             <i class="bi bi-circle-fill text-warning me-1" id="db-status-icon"></i>
                             <span id="db-status-text">Verificando conexión...</span>
                         </div>
@@ -665,6 +665,43 @@ Ayúdame, oh Señor, a que mi corazón sea misericordioso para que yo sienta tod
         </div>
     </div>
 
+    <!-- NUEVO: Modal de Conexión Segura (PocketBase) -->
+    <div class="modal fade" id="dbAuthModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content clean-card border-0 text-center p-4">
+                <div class="modal-header border-0 pb-0 justify-content-end px-0">
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body pt-0">
+                    <div class="display-4 text-warning mb-3">
+                        <i class="bi bi-shield-lock-fill"></i>
+                    </div>
+                    <h3 class="prayer-title fw-bold mb-3 text-dark">Conexión Segura</h3>
+                    <p class="text-secondary mb-4 small">Ingresa las credenciales de administrador y el PIN para forzar la validación de la base de datos.</p>
+                    
+                    <div id="db-auth-error" class="alert alert-danger d-none small py-2 mb-3"></div>
+
+                    <div class="form-floating mb-3">
+                        <input type="email" class="form-control" id="db-user" placeholder="name@example.com">
+                        <label for="db-user">Usuario (Email PocketBase)</label>
+                    </div>
+                    <div class="form-floating mb-3">
+                        <input type="password" class="form-control" id="db-pass" placeholder="Contraseña">
+                        <label for="db-pass">Contraseña</label>
+                    </div>
+                    <div class="form-floating mb-4">
+                        <input type="password" class="form-control" id="db-pin" placeholder="PIN de Seguridad">
+                        <label for="db-pin">PIN de Seguridad (CR129...)</label>
+                    </div>
+
+                    <button type="button" class="btn btn-warning btn-custom px-4 py-2 w-100 mb-2 fw-bold text-dark" id="btn-force-connect" onclick="forzarConexionPB()">
+                        <i class="bi bi-plug-fill me-2"></i> Conectar a PocketBase
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- SVG Definition para la Cruz de Plata -->
     <svg width="0" height="0" class="position-absolute">
         <defs>
@@ -690,8 +727,94 @@ Ayúdame, oh Señor, a que mi corazón sea misericordioso para que yo sienta tod
 
     <!-- Bootstrap JS -->
     <script src="js/bootstrap.bundle.min.js"></script>
+    <script src="js/api_db.js"></script>
     <script src="js/index.js"></script>
     <script src="js/ota_updater.js"></script>
     <script src="js/conexion_checker.js"></script>
+    
+    <!-- Script para Lógica de Conexión Segura (Botón Oculto) -->
+    <script>
+        function abrirModalConexion() {
+            const statusText = document.getElementById('db-status-text').innerText;
+            // Solo abrir el modal secreto si está sin conexión o verificando
+            if (statusText.includes('Sin conexión') || statusText.includes('Verificando')) {
+                // Ocultar modal de ajustes temporalmente
+                const settingsModal = bootstrap.Modal.getInstance(document.getElementById('settingsModal'));
+                if(settingsModal) settingsModal.hide(); 
+                
+                // Mostrar modal de Autenticación
+                const authModal = new bootstrap.Modal(document.getElementById('dbAuthModal'));
+                authModal.show();
+            }
+        }
+
+        async function forzarConexionPB() {
+            const user = document.getElementById('db-user').value.trim();
+            const pass = document.getElementById('db-pass').value.trim();
+            const pin = document.getElementById('db-pin').value.trim();
+            const errorDiv = document.getElementById('db-auth-error');
+            const btn = document.getElementById('btn-force-connect');
+
+            errorDiv.classList.add('d-none');
+
+            // 1. Validación de campos vacíos
+            if (!user || !pass || !pin) {
+                errorDiv.innerText = "Por favor, completa todos los campos.";
+                errorDiv.classList.remove('d-none');
+                return;
+            }
+
+            // 2. Validación estricta del PIN de seguridad
+            if (pin !== "CR129x7848n") {
+                errorDiv.innerText = "El PIN de seguridad es incorrecto.";
+                errorDiv.classList.remove('d-none');
+                return;
+            }
+
+            // UI: Modo carga
+            btn.disabled = true;
+            btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Conectando...`;
+
+            try {
+                // 3. Intento de inicio de sesión a través del Funnel de Tailscale
+                const baseUrl = typeof POCKETBASE_URL !== 'undefined' ? POCKETBASE_URL : 'http://127.0.0.1:8090/api';
+                
+                // Probamos conectar como Admin (o usuario, PocketBase validará)
+                const response = await fetch(`${baseUrl}/admins/auth-with-password`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ identity: user, password: pass })
+                });
+
+                if (response.ok) {
+                    // Éxito: Modificamos la UI a verde forzado
+                    const statusIcon = document.getElementById('db-status-icon');
+                    const statusText = document.getElementById('db-status-text');
+                    const statusBadge = document.getElementById('db-status-badge');
+                    
+                    statusIcon.className = 'bi bi-circle-fill text-success me-1';
+                    statusText.textContent = 'Base de datos en línea (Forzado)';
+                    statusText.className = 'text-success fw-bold';
+                    statusBadge.style.cursor = 'default';
+                    statusBadge.onclick = null; // Desactivar el botón oculto tras éxito
+
+                    // Cerrar este modal y volver al menú
+                    bootstrap.Modal.getInstance(document.getElementById('dbAuthModal')).hide();
+                    const settingsModal = new bootstrap.Modal(document.getElementById('settingsModal'));
+                    settingsModal.show();
+                    
+                } else {
+                    errorDiv.innerText = "Usuario o contraseña de PocketBase incorrectos.";
+                    errorDiv.classList.remove('d-none');
+                }
+            } catch (e) {
+                errorDiv.innerText = "Fallo crítico de red: El servidor Funnel sigue inalcanzable.";
+                errorDiv.classList.remove('d-none');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="bi bi-plug-fill me-2"></i> Conectar a PocketBase`;
+            }
+        }
+    </script>
 </body>
 </html>

@@ -14,9 +14,9 @@ Default File Extension: none
 
 Available on:
   http://100.86.0.13:8081
-  http://192.168.100.196:8081
+  http://192.168.100.187:8081
   http://127.0.0.1:8081
 Hit CTRL-C to stop the server
 
-[2026-04-24T23:55:42.654Z]  "GET /base.html" "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:150.0) Gecko/20100101 Firefox/150.0"
-[2026-04-24T23:55:42.675Z]  "GET /base.html" Error (404): "Not found"
+[2026-04-25T14:11:10.579Z]  "GET /base.html" "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:150.0) Gecko/20100101 Firefox/150.0"
+[2026-04-25T14:11:10.588Z]  "GET /base.html" Error (404): "Not found"

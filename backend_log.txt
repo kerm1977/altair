@@ -5,9 +5,9 @@
 [⚙️ OS Detectado] Windows
 [⚙️ Comando PB] Ejecutando: .\pocketbase.exe
 
-(node:10356) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(node:72) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
 (Use `node --trace-deprecation ...` to show where the warning was created)
-[📦 PocketBase] 2026/04/24 17:55:35 Server started at http://127.0.0.1:8090
+[📦 PocketBase] 2026/04/25 08:11:01 Server started at http://127.0.0.1:8090
 ├─ REST API:  http://127.0.0.1:8090/api/
 └─ Dashboard: http://127.0.0.1:8090/_/
 

@@ -24,7 +24,7 @@ const API_URL = ESTOY_EN_LOCAL
 // ==============================================================================
 const POCKETBASE_URL = ESTOY_EN_LOCAL 
     ? `http://127.0.0.1:8090/api` 
-    : `https://desktop-71uhcug.tailb81e5f.ts.net/api`;
+    : `https://desktop-71uhcug.tailb81e5f.ts.net:8443/api`; // <-- CORREGIDO: Añadido puerto :8443
 
 console.log(`🌍 Entorno configurado (Real) apuntando a: ${POCKETBASE_URL}`);
 

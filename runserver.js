@@ -31,8 +31,11 @@ pbProcess.stderr.on('data', (data) => {
 
 // 3. Iniciar Tailscale Funnel (después de 2 segundos para dar tiempo a la BD)
 setTimeout(() => {
-    console.log("\n[🌐 Tailscale] Abriendo túnel global en el puerto 8090...\n");
-    const tsProcess = spawn('tailscale', ['funnel', '8090'], { shell: true });
+    console.log("\n[🌐 Tailscale] Abriendo túnel global de BD en el puerto local 8090 -> Público: 8443...\n");
+    
+    // CORRECCIÓN FINAL: Volvemos a usar "funnel" para que sea PÚBLICO y accesible desde 
+    // el internet del celular (4G/WiFi), manteniendo los parámetros de segundo plano.
+    const tsProcess = spawn('tailscale', ['funnel', '--bg', '--https=8443', 'http://127.0.0.1:8090'], { shell: true });
 
     tsProcess.stdout.on('data', (data) => {
         const output = data.toString().trim();
@@ -43,13 +46,7 @@ setTimeout(() => {
         console.error(`[🌐 Tailscale ERROR] ${data.toString().trim()}`);
     });
 
-    // 4. Apagado seguro (Ctrl + C)
-    process.on('SIGINT', () => {
-        console.log("\n\n🛑 Apagando servidores de forma segura...");
-        pbProcess.kill();
-        tsProcess.kill();
-        console.log("✅ Servidores apagados. ¡Hasta pronto!");
-        process.exit();
+    tsProcess.on('close', (code) => {
+        console.log(`[🌐 Tailscale] Proceso cerrado con código ${code} (Ejecutándose en segundo plano)`);
     });
-
 }, 2000);

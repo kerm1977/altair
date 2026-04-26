@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestor OTA - Máquina del Tiempo</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- JSZip para comprimir carpetas en el navegador -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        body { background-color: #f8f9fa; }
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .folder-upload { border: 2px dashed #0d6efd; background-color: #f1f7ff; cursor: pointer; transition: 0.3s; }
+        .folder-upload:hover { background-color: #e2efff; }
+    </style>
+</head>
+<body class="py-5">
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10 col-lg-8">
+            
+            <div class="text-center mb-4">
+                <div class="display-3 text-primary mb-2"><i class="bi bi-rocket-takeoff-fill"></i></div>
+                <h2 class="fw-bold">Gestor de Actualizaciones OTA</h2>
+                <p class="text-muted">Publica nuevas versiones y gestiona rollbacks para tus apps</p>
+            </div>
+
+            <!-- SECCIÓN 1: LOGIN AL SERVIDOR -->
+            <div class="card mb-4" id="section-login">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-server me-2 text-primary"></i>Conexión a PocketBase</h5>
+                    <div class="alert alert-info small mb-3">
+                        <i class="bi bi-info-circle-fill me-2"></i><strong>Atención:</strong> Usa el correo y la contraseña de <strong>Administrador</strong> de tu base de datos.
+                    </div>
+                    
+                    <!-- ALERTA DE ERRORES DIAGNÓSTICO -->
+                    <div id="login-error-alert" class="alert alert-danger d-none small fw-bold"></div>
+
+                    <div class="row g-3">
+                        <div class="col-md-12">
+                            <label class="form-label small text-muted">URL del Servidor</label>
+                            <input type="text" class="form-control" id="pb-url" value="http://127.0.0.1:8090">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-muted">Email de Administrador</label>
+                            <input type="email" class="form-control" id="pb-email" placeholder="admin@tudominio.com" value="kenth1977@gmail.com">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-muted">Contraseña</label>
+                            
+                            <div class="input-group">
+                                <input type="password" class="form-control border-end-0" id="pb-pass">
+                                <span class="input-group-text bg-white cursor-pointer" onclick="togglePass()" style="cursor: pointer;">
+                                    <i class="bi bi-eye-slash" id="icon-pass"></i>
+                                </span>
+                            </div>
+                            
+                        </div>
+                        <div class="col-12 mt-4">
+                            <button class="btn btn-primary w-100 fw-bold" id="btn-login" onclick="iniciarSesion()">
+                                Conectar al Servidor
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 2: PANEL PRINCIPAL -->
+            <div id="section-panel" class="d-none">
+                
+                <!-- PUBLICAR NUEVA ACTUALIZACIÓN -->
+                <div class="card mb-4 border-primary border-2" id="upload-card">
+                    <div class="card-body p-4">
+                        <h5 class="fw-bold mb-3 text-primary"><i class="bi bi-cloud-upload-fill me-2"></i>Lanzar Nueva Versión</h5>
+                        
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Número de Versión:</label>
+                                <input type="text" class="form-control form-control-lg" id="app-version" placeholder="Ej: 1.0.5">
+                                <small class="text-muted">Debe ser diferente a la anterior.</small>
+                            </div>
+                            
+                            <div class="col-md-8">
+                                <label class="form-label fw-bold">Seleccionar Carpeta <code>www</code>:</label>
+                                <div class="folder-upload p-3 text-center rounded" onclick="document.getElementById('folder-input').click()">
+                                    <i class="bi bi-folder-symlink fs-3 text-primary mb-2 d-block"></i>
+                                    <span id="folder-label" class="fw-bold text-primary">Haz clic aquí para seleccionar tu carpeta "www"</span>
+                                    <input type="file" id="folder-input" class="d-none" webkitdirectory directory multiple onchange="analizarCarpeta()">
+                                </div>
+                                <small class="text-muted d-block mt-1" id="folder-stats">Esperando archivos...</small>
+                            </div>
+
+                            <div class="col-12 mt-4">
+                                <button class="btn btn-success btn-lg w-100 fw-bold shadow-sm" id="btn-upload" onclick="procesarYSubir()" disabled>
+                                    <i class="bi bi-box-seam-fill me-2"></i> Empaquetar ZIP y Publicar al Mundo
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- HISTORIAL Y ROLLBACK -->
+                <div class="card mb-4">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="fw-bold mb-0"><i class="bi bi-clock-history me-2 text-dark"></i>Historial de Versiones (Rollback)</h5>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="cargarHistorial()"><i class="bi bi-arrow-clockwise"></i> Refrescar</button>
+                        </div>
+                        
+                        <div class="alert alert-warning small">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i> <strong>¿Una actualización causó un error?</strong> Elimina la última versión de la lista. Las apps móviles retrocederán automáticamente a la versión anterior estable disponible.
+                        </div>
+
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Versión</th>
+                                        <th>Fecha de Lanzamiento</th>
+                                        <th>Archivo ZIP</th>
+                                        <th class="text-end">Acción</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="history-table">
+                                    <tr><td colspan="4" class="text-center text-muted">Cargando historial...</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script>
+    let adminToken = "";
+    let selectedFiles = [];
+
+    function togglePass() {
+        const input = document.getElementById('pb-pass');
+        const icon = document.getElementById('icon-pass');
+        if (input.type === "password") {
+            input.type = "text";
+            icon.classList.replace("bi-eye-slash", "bi-eye");
+        } else {
+            input.type = "password";
+            icon.classList.replace("bi-eye", "bi-eye-slash");
+        }
+    }
+
+    async function iniciarSesion() {
+        const url = document.getElementById('pb-url').value.trim();
+        const email = document.getElementById('pb-email').value.trim();
+        const pass = document.getElementById('pb-pass').value.trim();
+        const btn = document.getElementById('btn-login');
+        const errorDiv = document.getElementById('login-error-alert');
+
+        errorDiv.classList.add('d-none');
+
+        if (!email || !pass) {
+            errorDiv.innerText = "Por favor ingresa tu correo y contraseña.";
+            errorDiv.classList.remove('d-none');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Conectando...`;
+
+        try {
+            let res;
+            try {
+                res = await fetch(`${url}/api/collections/_superusers/auth-with-password`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ identity: email, password: pass })
+                });
+            } catch (networkError) {
+                throw new Error("Error de red. Verifica que PocketBase esté encendido y que uses http://127.0.0.1:8090/updater.html");
+            }
+
+            if (res.status === 404 || res.status === 400) {
+                res = await fetch(`${url}/api/admins/auth-with-password`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ identity: email, password: pass })
+                });
+            }
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.message || "Credenciales incorrectas");
+            }
+
+            const data = await res.json();
+            adminToken = data.token; 
+            
+            document.getElementById('section-login').classList.add('d-none');
+            document.getElementById('section-panel').classList.remove('d-none');
+            
+            cargarHistorial();
+
+        } catch (error) {
+            errorDiv.innerText = "❌ " + error.message;
+            errorDiv.classList.remove('d-none');
+            btn.disabled = false;
+            btn.innerHTML = "Conectar al Servidor";
+        }
+    }
+
+    function analizarCarpeta() {
+        const input = document.getElementById('folder-input');
+        const label = document.getElementById('folder-label');
+        const stats = document.getElementById('folder-stats');
+        const btnUpload = document.getElementById('btn-upload');
+
+        selectedFiles = Array.from(input.files);
+
+        if (selectedFiles.length === 0) {
+            label.innerText = "Haz clic aquí para seleccionar tu carpeta 'www'";
+            stats.innerText = "Esperando archivos...";
+            btnUpload.disabled = true;
+            return;
+        }
+
+        const hasIndexHtml = selectedFiles.some(f => f.webkitRelativePath.includes('/index.html'));
+        if (!hasIndexHtml) {
+            alert("⚠️ La carpeta seleccionada no parece contener un 'index.html'.");
+            label.classList.replace('text-primary', 'text-danger');
+            label.innerText = "Carpeta inválida seleccionada";
+            btnUpload.disabled = true;
+            return;
+        }
+
+        label.classList.replace('text-danger', 'text-success');
+        label.classList.replace('text-primary', 'text-success');
+        label.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i> Carpeta lista (${selectedFiles.length} archivos)`;
+        
+        const totalSize = selectedFiles.reduce((acc, file) => acc + file.size, 0);
+        stats.innerText = `Tamaño total: ${(totalSize / 1024 / 1024).toFixed(2)} MB`;
+        
+        btnUpload.disabled = false;
+    }
+
+    async function procesarYSubir() {
+        const version = document.getElementById('app-version').value.trim();
+        const url = document.getElementById('pb-url').value.trim();
+        const btnUpload = document.getElementById('btn-upload');
+
+        if (!version) return alert("Ingresa un número de versión");
+        btnUpload.disabled = true;
+        btnUpload.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Empaquetando...`;
+
+        try {
+            const zip = new JSZip();
+            selectedFiles.forEach(file => {
+                const pathParts = file.webkitRelativePath.split('/');
+                pathParts.shift();
+                const cleanPath = pathParts.join('/');
+                if (cleanPath) zip.file(cleanPath, file);
+            });
+
+            const zipBlob = await zip.generateAsync({ type: "blob", compression: "DEFLATE" });
+            btnUpload.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Subiendo...`;
+
+            const formData = new FormData();
+            formData.append('version', version);
+            formData.append('archivo_zip', zipBlob, `update_v${version}.zip`);
+
+            const res = await fetch(`${url}/api/collections/ota_updates/records`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${adminToken}` },
+                body: formData
+            });
+
+            if (!res.ok) {
+                const err = await res.json();
+                throw new Error(err.message || "Error al subir a PocketBase");
+            }
+
+            alert(`✅ ¡Versión ${version} publicada con éxito!`);
+            document.getElementById('app-version').value = "";
+            cargarHistorial();
+
+        } catch (error) {
+            alert("❌ Error: " + error.message);
+        } finally {
+            btnUpload.disabled = false;
+            btnUpload.innerHTML = `<i class="bi bi-box-seam-fill me-2"></i> Empaquetar ZIP y Publicar al Mundo`;
+        }
+    }
+
+    async function cargarHistorial() {
+        const url = document.getElementById('pb-url').value.trim();
+        const tbody = document.getElementById('history-table');
+        const uploadCard = document.getElementById('upload-card');
+        
+        try {
+            // 1. Verificación ABSOLUTA: ¿Existe la colección?
+            const colRes = await fetch(`${url}/api/collections/ota_updates`, {
+                headers: { 'Authorization': `Bearer ${adminToken}` }
+            });
+
+            if (colRes.status === 404) {
+                uploadCard.classList.add('d-none');
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="text-center py-5">
+                            <div class="text-warning mb-3"><i class="bi bi-exclamation-triangle-fill" style="font-size: 3rem;"></i></div>
+                            <h4 class="fw-bold">La tabla "ota_updates" no existe</h4>
+                            <p class="text-muted mb-4">Para poder publicar actualizaciones, PocketBase necesita una tabla especial.</p>
+                            <button class="btn btn-warning btn-lg fw-bold shadow-sm" id="btn-crear-tabla" onclick="crearTablaOTA()">
+                                <i class="bi bi-magic me-2"></i> Crear Tabla Automáticamente
+                            </button>
+                        </td>
+                    </tr>`;
+                return;
+            }
+
+            if (!colRes.ok) {
+                const errData = await colRes.json();
+                throw new Error(errData.message || `Error verificando tabla (Código ${colRes.status})`);
+            }
+
+            // 2. Extraer registros de forma segura SIN el parámetro sort en la URL (Evita errores 400)
+            const res = await fetch(`${url}/api/collections/ota_updates/records`, {
+                headers: { 'Authorization': `Bearer ${adminToken}` }
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                let errorDetails = data.message || `Error del servidor (Código ${res.status})`;
+                if (data.data && Object.keys(data.data).length > 0) errorDetails += " | Detalles: " + JSON.stringify(data.data);
+                throw new Error(errorDetails);
+            }
+
+            uploadCard.classList.remove('d-none');
+            tbody.innerHTML = "";
+
+            const items = data.items || [];
+
+            // 3. Ordenar localmente usando JavaScript (El más nuevo primero)
+            items.sort((a, b) => new Date(b.created || 0) - new Date(a.created || 0));
+
+            if (items.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Aún no has publicado ninguna actualización.</td></tr>`;
+                return;
+            }
+
+            items.forEach((item, index) => {
+                const fecha = new Date(item.created).toLocaleString('es-ES');
+                const isLatest = index === 0;
+                let badge = isLatest ? `<span class="badge bg-success ms-2">ACTIVA</span>` : '';
+                
+                tbody.innerHTML += `
+                    <tr class="${isLatest ? 'table-success' : ''}">
+                        <td class="fw-bold">${item.version} ${badge}</td>
+                        <td>${fecha}</td>
+                        <td><code class="text-muted">${item.archivo_zip}</code></td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-danger" onclick="eliminarVersion('${item.id}', '${item.version}')">
+                                <i class="bi bi-trash-fill"></i> ${isLatest ? 'Revertir' : 'Eliminar'}
+                            </button>
+                        </td>
+                    </tr>`;
+            });
+
+        } catch (e) {
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center text-danger py-4">
+                <i class="bi bi-bug-fill me-2"></i> Error al cargar historial: <br> <strong>${e.message}</strong>
+            </td></tr>`;
+        }
+    }
+
+    async function crearTablaOTA() {
+        const url = document.getElementById('pb-url').value.trim();
+        const btnCrear = document.getElementById('btn-crear-tabla');
+        btnCrear.disabled = true;
+        btnCrear.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Creando...`;
+
+        try {
+            // Estructura universal, limpia y directa (PocketBase creará los campos del sistema solo)
+            const payloadV23 = {
+                name: "ota_updates",
+                type: "base",
+                listRule: "", // Para que los celulares lo puedan descargar sin iniciar sesión
+                viewRule: "", // Para que los celulares lo puedan ver sin iniciar sesión
+                fields: [
+                    { name: "version", type: "text", required: true },
+                    { name: "archivo_zip", type: "file", required: true, options: { maxSelect: 1, maxSize: 52428800 } }
+                ]
+            };
+
+            let res = await fetch(`${url}/api/collections`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${adminToken}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(payloadV23)
+            });
+
+            // FALLBACK: Si falla, usamos el modo viejo (v0.22)
+            if (!res.ok) {
+                const payloadV22 = {
+                    name: "ota_updates",
+                    type: "base",
+                    listRule: "",
+                    viewRule: "",
+                    schema: [
+                        { name: "version", type: "text", required: true },
+                        { name: "archivo_zip", type: "file", required: true, options: { maxSelect: 1, maxSize: 52428800 } }
+                    ]
+                };
+                
+                const resV22 = await fetch(`${url}/api/collections`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${adminToken}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payloadV22)
+                });
+
+                if (resV22.ok) {
+                    res = resV22; 
+                } else {
+                    const errData = await res.json(); 
+                    let msjError = errData.message || "Error al crear tabla.";
+                    if (errData.data) {
+                        msjError += "\nDetalles de PocketBase:\n" + JSON.stringify(errData.data, null, 2);
+                    }
+                    throw new Error(msjError);
+                }
+            }
+
+            alert("✅ ¡Tabla 'ota_updates' creada exitosamente!");
+            cargarHistorial(); // Refrescamos y mostramos la interfaz
+
+        } catch (error) {
+            alert("❌ PocketBase rechazó la petición:\n" + error.message);
+            btnCrear.disabled = false;
+            btnCrear.innerHTML = `<i class="bi bi-magic me-2"></i> Crear Tabla Automáticamente`;
+        }
+    }
+
+    async function eliminarVersion(id, version) {
+        const url = document.getElementById('pb-url').value.trim();
+        if (!confirm(`¿Eliminar versión ${version}?`)) return;
+
+        try {
+            const res = await fetch(`${url}/api/collections/ota_updates/records/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${adminToken}` }
+            });
+            if (res.ok) cargarHistorial();
+        } catch (error) {
+            alert("Error: " + error.message);
+        }
+    }
+</script>
+</body>
+</html>

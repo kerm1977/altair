@@ -178,8 +178,12 @@
                         </button>
                         
                         <!-- NUEVO BOTÓN: Buscar actualizaciones manualmente -->
-                        <button class="btn btn-outline-dark btn-custom w-100 py-2 shadow-sm bg-white-hover-fix mt-2" id="btn-check-update" onclick="verificarActualizacionesOTA(true)">
-                            <i class="bi bi-cloud-download me-1"></i> Buscar actualizaciones
+                        <button class="btn btn-outline-dark btn-custom w-100 py-2 shadow-sm bg-white-hover-fix mt-2 position-relative" id="btn-check-update" onclick="descargarActualizacionDirecta()" disabled>
+                            <i class="bi bi-arrow-repeat me-1" id="icon-check-update"></i> 
+                            <span id="text-check-update">Buscando actualizaciones...</span>
+                            <span class="position-absolute top-0 start-100 translate-middle p-2 bg-success border border-light rounded-circle d-none" id="badge-update-available">
+                                <span class="visually-hidden">Actualización disponible</span>
+                            </span>
                         </button>
                     </div>
 
@@ -685,13 +689,25 @@ Ayúdame, oh Señor, a que mi corazón sea misericordioso para que yo sienta tod
                         <input type="email" class="form-control" id="db-user" placeholder="name@example.com">
                         <label for="db-user">Usuario (Email PocketBase)</label>
                     </div>
-                    <div class="form-floating mb-3">
-                        <input type="password" class="form-control" id="db-pass" placeholder="Contraseña">
-                        <label for="db-pass">Contraseña</label>
+                    
+                    <div class="input-group mb-3">
+                        <div class="form-floating flex-grow-1">
+                            <input type="password" class="form-control border-end-0 rounded-start" id="db-pass" placeholder="Contraseña">
+                            <label for="db-pass">Contraseña</label>
+                        </div>
+                        <span class="input-group-text bg-white border-start-0 rounded-end cursor-pointer" onclick="togglePasswordVisibility('db-pass', 'icono-ojo-pass')" style="cursor: pointer;">
+                            <i class="bi bi-eye-slash" id="icono-ojo-pass"></i>
+                        </span>
                     </div>
-                    <div class="form-floating mb-4">
-                        <input type="password" class="form-control" id="db-pin" placeholder="PIN de Seguridad">
-                        <label for="db-pin">PIN de Seguridad (CR129...)</label>
+
+                    <div class="input-group mb-4">
+                        <div class="form-floating flex-grow-1">
+                            <input type="password" class="form-control border-end-0 rounded-start" id="db-pin" placeholder="PIN de Seguridad">
+                            <label for="db-pin">PIN de Seguridad (CR129...)</label>
+                        </div>
+                        <span class="input-group-text bg-white border-start-0 rounded-end cursor-pointer" onclick="togglePasswordVisibility('db-pin', 'icono-ojo-pin')" style="cursor: pointer;">
+                            <i class="bi bi-eye-slash" id="icono-ojo-pin"></i>
+                        </span>
                     </div>
 
                     <button type="button" class="btn btn-warning btn-custom px-4 py-2 w-100 mb-2 fw-bold text-dark" id="btn-force-connect" onclick="forzarConexionPB()">
@@ -745,6 +761,22 @@ Ayúdame, oh Señor, a que mi corazón sea misericordioso para que yo sienta tod
                 // Mostrar modal de Autenticación
                 const authModal = new bootstrap.Modal(document.getElementById('dbAuthModal'));
                 authModal.show();
+            }
+        }
+
+        // Nueva función para alternar la visibilidad de contraseñas/PIN
+        function togglePasswordVisibility(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById(iconId);
+            
+            if (input.type === "password") {
+                input.type = "text";
+                icon.classList.remove("bi-eye-slash");
+                icon.classList.add("bi-eye");
+            } else {
+                input.type = "password";
+                icon.classList.remove("bi-eye");
+                icon.classList.add("bi-eye-slash");
             }
         }
 

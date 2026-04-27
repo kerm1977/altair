@@ -9,7 +9,7 @@
     "start-global": "node runserver.js"
   },
   "keywords": [],
-  "author": "",
+  "author": "La Tribu De Los Libres",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {

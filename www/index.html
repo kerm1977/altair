@@ -1,10 +1,9 @@
-<!-- index.html -->
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Devocionario - Decenario (Misericordia y Rosario)</title>
+    <title>Devocionario - Decenario</title>
     
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Lora:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
@@ -12,34 +11,83 @@
     <!-- Tu archivo CSS principal que importa a los demás -->
     <link rel="stylesheet" type="text/css" href="css/main.css">
 
-    <!-- NUEVO: Estilos para la animación del indicador de actualizaciones -->
     <style>
+        /* Animación del indicador de actualizaciones (Latido Verde) */
         @keyframes pulse-green {
             0% { transform: translate(-50%, -50%) scale(0.95); box-shadow: 0 0 0 0 rgba(25, 135, 84, 0.7); }
-            70% { transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 0 10px rgba(25, 135, 84, 0); }
+            70% { transform: translate(-50%, -50%) scale(1.2); box-shadow: 0 0 0 10px rgba(25, 135, 84, 0); }
             100% { transform: translate(-50%, -50%) scale(0.95); box-shadow: 0 0 0 0 rgba(25, 135, 84, 0); }
         }
         .pulse-badge {
             animation: pulse-green 1.5s infinite;
+            width: 14px;
+            height: 14px;
+        }
+
+        /* NUEVA BARRA LATERAL UNIFICADA (Action Sidebar) */
+        .action-sidebar {
+            position: fixed;
+            right: 15px;
+            bottom: 50px;
+            z-index: 1050;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .action-btn {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            transition: transform 0.2s, opacity 0.3s;
+            margin-bottom: 12px;
+        }
+        .action-btn:active {
+            transform: scale(0.9);
+        }
+        .prayer-btn-hidden {
+            opacity: 0 !important;
+            pointer-events: none;
+            transform: scale(0.5);
+            margin-bottom: 0 !important;
+            height: 0 !important;
+            overflow: hidden;
+            padding: 0;
+            border: none;
         }
     </style>
 </head>
 <body>
 
-    <!-- Botón Flotante para Menú/Ajustes -->
-    <button class="fab-settings" data-bs-toggle="modal" data-bs-target="#settingsModal" aria-label="Ajustes y Devociones">
-        <i class="bi bi-list"></i>
-    </button>
+    <!-- BARRA LATERAL DERECHA (Sustituye a los botones flotantes esparcidos) -->
+    <div class="action-sidebar">
+        <!-- Menú / Ajustes -->
+        <button class="btn btn-dark rounded-circle shadow action-btn" data-bs-toggle="modal" data-bs-target="#settingsModal" title="Menú">
+            <i class="bi bi-list"></i>
+        </button>
+        
+        <!-- Leer Completo -->
+        <button class="btn btn-info text-white rounded-circle shadow action-btn prayer-btn-hidden d-none" id="sidebar-btn-read" data-bs-toggle="modal" data-bs-target="#fullPrayerModal" title="Leer Completo">
+            <i class="bi bi-book-half"></i>
+        </button>
+        
+        <!-- Navegación: Siguiente -->
+        <button class="btn btn-primary rounded-circle shadow action-btn" id="sidebar-btn-next" title="Siguiente">
+            <i class="bi bi-chevron-right"></i>
+        </button>
 
-    <!-- Botón Flotante Oración Completa (PC) -->
-    <button class="fab-prayer prayer-btn-hidden d-none d-md-flex" id="fab-prayer" data-bs-toggle="modal" data-bs-target="#fullPrayerModal" aria-label="Leer oración completa">
-        <i class="bi bi-book-half"></i>
-    </button>
-
-    <!-- Botón Flotante Información (Acerca de La Tribu) -->
-    <button class="fab-info" data-bs-toggle="modal" data-bs-target="#aboutModal" aria-label="Acerca de La Tribu de Los Libres">
-        <i class="bi bi-info-circle"></i>
-    </button>
+        <!-- Navegación: Atrás -->
+        <button class="btn btn-secondary rounded-circle shadow action-btn" id="sidebar-btn-prev" title="Atrás" disabled>
+            <i class="bi bi-chevron-left"></i>
+        </button>
+        
+        <!-- Información (La Tribu) -->
+        <button class="btn btn-light text-secondary rounded-circle shadow action-btn border" data-bs-toggle="modal" data-bs-target="#aboutModal" title="Acerca de La Tribu">
+            <i class="bi bi-info-circle"></i>
+        </button>
+    </div>
 
     <!-- Indicador de Fase/Paso Flotante Centrado en lo Alto -->
     <div class="step-indicator-fixed badge text-secondary px-4 py-2 rounded-pill fs-6 shadow-sm">
@@ -56,20 +104,7 @@
                 <!-- Columna Izquierda: El Rosario Gráfico -->
                 <div class="col-md-5 col-lg-5 d-flex justify-content-center position-relative rosary-wrapper">
                     <div id="rosary-container">
-                        <!-- Generado por JS -->
-                        
-                        <!-- BOTONES FLOTANTES JUNTO A LA CRUZ -->
-                        <button id="btn-prev-float" class="btn-float-nav nav-prev bg-white text-dark" title="Anterior">
-                            <i class="bi bi-chevron-left"></i>
-                        </button>
-                        <button id="btn-next-float" class="btn-float-nav nav-next" title="Siguiente">
-                            <i class="bi bi-chevron-right"></i>
-                        </button>
-                        
-                        <!-- Botón Flotante Oración Completa (Móvil) -->
-                        <button class="fab-prayer-mobile prayer-btn-hidden d-flex d-md-none" id="fab-prayer-mobile" data-bs-toggle="modal" data-bs-target="#fullPrayerModal" aria-label="Leer oración completa">
-                            <i class="bi bi-book-half"></i>
-                        </button>
+                        <!-- El JS inyecta el SVG del rosario y las cuentas aquí -->
                     </div>
                 </div>
 
@@ -77,6 +112,7 @@
                 <div class="col-md-7 col-lg-7 prayer-content-wrapper">
                     <div class="d-flex flex-column text-center text-md-start">
                         <div id="prayer-card-content">
+                            <!-- Título y Texto principal -->
                             <h2 id="prayer-title" class="prayer-title mb-2 fw-bold text-dark fs-2">
                                 Cargando...
                             </h2>
@@ -100,6 +136,7 @@
                 <div class="modal-body pt-0">
                     <h5 class="modal-title prayer-title fw-bold text-dark w-100 text-center mb-4" id="fullPrayerTitle">Oración Completa</h5>
                     <div class="text-secondary" style="font-size: 1.15rem; white-space: pre-wrap; line-height: 1.6;" id="fullPrayerText">
+                        <!-- Oración inyectada por JS -->
                     </div>
                 </div>
             </div>
@@ -122,12 +159,13 @@
 
                     <!-- Indicador de Conexión a la Base de Datos -->
                     <div class="d-flex justify-content-center align-items-center mb-4">
-                        <div class="badge bg-light text-secondary border shadow-sm px-3 py-2 fs-6 rounded-pill cursor-pointer" id="db-status-badge" onclick="abrirModalConexion()" style="cursor: pointer;" title="Toca aquí si estás sin conexión">
+                        <div class="badge bg-light text-secondary border shadow-sm px-3 py-2 fs-6 rounded-pill cursor-pointer" id="db-status-badge" onclick="abrirModalConexion()" title="Toca aquí si estás sin conexión">
                             <i class="bi bi-circle-fill text-warning me-1" id="db-status-icon"></i>
                             <span id="db-status-text">Verificando conexión...</span>
                         </div>
                     </div>
                     
+                    <!-- Tu Progreso Dinámico -->
                     <div class="bg-white rounded-4 p-3 mb-4 shadow-sm border">
                         <h6 class="fw-bold text-dark mb-2 text-start" id="progress-title"><i class="bi bi-trophy text-warning me-1"></i> Tu Progreso</h6>
                         <div class="d-flex justify-content-between align-items-center mb-2">
@@ -145,14 +183,19 @@
 
                     <h5 class="mb-3 text-secondary" style="font-weight: 500;">Selecciona tu devoción</h5>
                     
-                    <div class="btn-group shadow-sm w-100 mb-3" role="group" aria-label="Selección de devoción">
+                    <!-- LOS TRES BOTONES DE SELECCIÓN -->
+                    <div class="btn-group shadow-sm w-100 mb-3 flex-wrap" role="group" aria-label="Selección de devoción">
                         <input type="radio" class="btn-check" name="devotion" id="devMisericordia" value="misericordia" autocomplete="off" onchange="changeDevotion()">
-                        <label class="btn btn-outline-primary px-2 px-md-3 fw-bold" for="devMisericordia">Divina Misericordia</label>
+                        <label class="btn btn-outline-primary px-1 px-md-2 fw-bold flex-grow-1" for="devMisericordia" style="font-size: 0.85rem;">Misericordia</label>
                         
                         <input type="radio" class="btn-check" name="devotion" id="devRosario" value="rosario" autocomplete="off" onchange="changeDevotion()">
-                        <label class="btn btn-outline-danger px-2 px-md-3 fw-bold" for="devRosario">Santo Rosario</label>
+                        <label class="btn btn-outline-danger px-1 px-md-2 fw-bold flex-grow-1" for="devRosario" style="font-size: 0.85rem;">Rosario</label>
+
+                        <input type="radio" class="btn-check" name="devotion" id="devNino" value="nino" autocomplete="off" onchange="changeDevotion()">
+                        <label class="btn btn-outline-warning text-dark px-1 px-md-2 fw-bold flex-grow-1" for="devNino" style="font-size: 0.85rem;">Niño Jesús</label>
                     </div>
 
+                    <!-- Selector de Misterios -->
                     <div id="mystery-selector-container" class="mb-3 d-none">
                         <label for="mysterySelector" class="form-label text-muted small">Día de los Misterios:</label>
                         <select class="form-select bg-light text-dark shadow-sm" id="mysterySelector" onchange="changeDevotion()">
@@ -164,31 +207,31 @@
                         </select>
                     </div>
 
+                    <!-- Botones de Guías -->
                     <div class="mt-4 mb-4 d-flex flex-column gap-2">
                         <button class="btn btn-outline-secondary btn-custom w-100 py-2 shadow-sm bg-white-hover-fix" data-bs-toggle="modal" data-bs-target="#prayersModal" onclick="hideSettingsModal()">
                             <i class="bi bi-journal-text me-1"></i> Guía de oraciones comunes
                         </button>
+                        
                         <button class="btn btn-outline-info btn-custom w-100 py-2 shadow-sm bg-white-hover-fix" data-bs-toggle="modal" data-bs-target="#guiaCoronillaModal" onclick="hideSettingsModal()">
                             <i class="bi bi-list-ol me-1"></i> Guía para la Coronilla
                         </button>
+
                         <button class="btn btn-outline-danger btn-custom w-100 py-2 shadow-sm bg-white-hover-fix" data-bs-toggle="modal" data-bs-target="#faustinaModal" onclick="hideSettingsModal()">
                             <i class="bi bi-suit-heart-fill me-1"></i> Oraciones de Santa Faustina
                         </button>
+                        
                         <button class="btn btn-outline-primary btn-custom w-100 py-2 shadow-sm bg-white-hover-fix" data-bs-toggle="modal" data-bs-target="#historiaFaustinaModal" onclick="hideSettingsModal()">
                             <i class="bi bi-person-lines-fill me-1"></i> Historia de Santa Faustina
                         </button>
-                        <button class="btn btn-outline-success btn-custom w-100 py-2 shadow-sm bg-white-hover-fix mt-2" data-bs-toggle="modal" data-bs-target="#aboutModal" onclick="hideSettingsModal()">
-                            <i class="bi bi-info-circle me-1"></i> Acerca de La Tribu
-                        </button>
                         
-                        <!-- NUEVO: CONTENEDOR DEL BOTÓN DE ACTUALIZACIÓN (Oculto si no hay BD) -->
+                        <!-- BOTÓN DE ACTUALIZACIÓN OTA -->
                         <div id="update-button-container" class="w-100 d-none mt-2">
                             <button class="btn btn-outline-dark btn-custom w-100 py-2 shadow-sm bg-white-hover-fix position-relative" id="btn-check-update" onclick="descargarActualizacionDirecta()" disabled>
                                 <i class="bi bi-arrow-repeat me-1" id="icon-check-update"></i> 
                                 <span id="text-check-update">Buscando actualizaciones...</span>
                                 
-                                <!-- Indicador Palpitante -->
-                                <span class="position-absolute top-0 start-100 translate-middle p-2 bg-success border border-light rounded-circle d-none pulse-badge" id="badge-update-available">
+                                <span class="position-absolute top-0 start-100 translate-middle bg-success border border-light rounded-circle d-none pulse-badge" id="badge-update-available">
                                     <span class="visually-hidden">Actualización disponible</span>
                                 </span>
                             </button>
@@ -269,7 +312,7 @@
                     </div>
                     <h2 class="prayer-title fw-bold mb-3 text-dark fs-3">La Tribu de Los Libres</h2>
                     <p class="text-secondary small mb-4" style="line-height: 1.6;">
-                        Este devocionario fue creado por el equipo de Senderismo de <strong>La Tribu de Los Libres</strong> de La Unión de Cartago, Costa Rica, en honor a las compañeras y compañeros creyentes y quienes en su fe prevalece la protección de DIOS en nuestro andar.
+                        Este devocionario fue creado por el equipo de Senderismo de <strong>La Tribu de Los Libres</strong> de La Unión de Cartago, Costa Rica, en honor a las compañeras y compañeros creyentes.
                     </p>
                     
                     <hr class="w-50 mx-auto text-muted mb-4 opacity-25">
@@ -278,11 +321,7 @@
                     
                     <div class="card card-body bg-light border-0 shadow-sm text-center fst-italic text-secondary" style="font-size: 0.9rem; line-height: 1.8;">
                         <p>GRACIAS SEÑOR POR ESTE HERMOSO DÍA QUE NOS HAS REGALADO.</p>
-                        <p>POR NUESTROS AMIGOS Y AMIGAS QUE NOS ACOMPAÑAN EN ESTA ACTIVIDAD Y AQUELLOS QUE NO PUDIERON ESTAR HOY CON NOSOTROS.</p>
                         <p>NOS AMPARAMOS A TU PROTECCIÓN Y LA DE NUESTROS FAMILIARES QUE NOS ESPERAN EN CASA.</p>
-                        <p>PROTEGE A LOS INDEFENSOS QUE SUFREN LA AGRESIÓN Y ABANDONO DE CUALQUIER TIPO.</p>
-                        <p>PONEMOS A TODAS LAS PERSONAS QUE ESTÁN EN LOS HOSPITALES, A LOS PRIVADOS DE LIBERTAD Y DE MOVIMIENTO QUE DESEAN TENER LA OPORTUNIDAD QUE NOSOTROS TENEMOS EN ESTE DÍA... ACOMPÁÑALOS Y DALES FUERZA PARA VENCER SU ANGUSTIA.</p>
-                        <p>QUE TU PROTECCIÓN LLEGUE A LOS DEMÁS GRUPOS Y SENDERISTAS DEL MUNDO QUE COMPARTEN NUESTRA MISMA PASIÓN PARA QUE LLEVEMOS UN CORAZÓN PASIVO, ALEGRE Y SERENO CON UN ESPÍRITU PROTECTOR DE LA NATURALEZA Y NUESTRO ENTORNO, DISFRUTANDO ASÍ CADA PASO QUE DAMOS EN NUESTRA NACIÓN Y NUESTRA TIERRA.</p>
                         <p>QUE HOY LA NATURALEZA Y LA MONTAÑA SE SOMETAN A TU ORDEN Y A TU PROTECCIÓN..... PARA QUE CONVIVAMOS CON ELLA DE MANERA PASIVA Y ARMONIOSA.</p>
                         <p class="mb-0 fw-bold">FORTALECE NUESTRA AMISTAD, NUESTRA HERMANDAD Y DIOS CUBRA CON SU SANGRE PRECIOSA A ESTE GRUPO LLAMADO LA TRIBU.</p>
                     </div>
@@ -292,7 +331,6 @@
                         <div class="d-flex flex-column gap-2 justify-content-center align-items-center small">
                             <a href="https://www.facebook.com/LaTribuDeLosLibres" target="_blank" class="text-decoration-none social-link fw-bold"><i class="bi bi-facebook me-2"></i>La Tribu de Los Libres</a>
                             <a href="https://latribu.top" target="_blank" class="text-decoration-none social-link fw-bold"><i class="bi bi-globe me-2"></i>latribu.top</a>
-                            <a href="mailto:lthikingcr@gmail.com" class="text-decoration-none social-link fw-bold"><i class="bi bi-envelope-fill me-2"></i>lthikingcr@gmail.com</a>
                         </div>
                     </div>
                 </div>
@@ -458,11 +496,7 @@
                                 <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#f7">7. La Coronilla a la Divina Misericordia (Diario, 476)</button>
                             </h2>
                             <div id="f7" class="accordion-collapse collapse" data-bs-parent="#accordionFaustina">
-                                <div class="accordion-body text-secondary">Oración al inicio en las cuentas grandes: "Padre Eterno, Te ofrezco el Cuerpo y la Sangre, el Alma y la Divinidad de Tu Amadísimo Hijo, nuestro Señor Jesucristo, como propiciación por nuestros pecados y los del mundo entero."
-
-En las cuentas pequeñas (Ave María): "Por su dolorosa Pasión, ten misericordia de nosotros y del mundo entero."
-
-Para terminar (tres veces): "Santo Dios, Santo Fuerte, Santo Inmortal, ten piedad de nosotros y del mundo entero."</div>
+                                <div class="accordion-body text-secondary">Oración al inicio en las cuentas grandes: "Padre Eterno, Te ofrezco el Cuerpo y la Sangre, el Alma y la Divinidad de Tu Amadísimo Hijo, nuestro Señor Jesucristo, como propiciación por nuestros pecados y los del mundo entero."<br><br>En las cuentas pequeñas (Ave María): "Por su dolorosa Pasión, ten misericordia de nosotros y del mundo entero."<br><br>Para terminar (tres veces): "Santo Dios, Santo Fuerte, Santo Inmortal, ten piedad de nosotros y del mundo entero."</div>
                             </div>
                         </div>
 
@@ -480,36 +514,7 @@ Para terminar (tres veces): "Santo Dios, Santo Fuerte, Santo Inmortal, ten pieda
                                 <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#f9">9. Letanía a la Santa Hostia (Diario, 356)</button>
                             </h2>
                             <div id="f9" class="accordion-collapse collapse" data-bs-parent="#accordionFaustina">
-                                <div class="accordion-body text-secondary" style="font-size: 0.9rem;">"Oh Santa Hostia, en la que está encerrado el testamento de la Divina Misericordia para nosotros y, especialmente para los pobres pecadores.
-Oh Santa Hostia, en [la que] está oculto el Cuerpo y la Sangre del Señor Jesús como testimonio de la infinita misericordia hacia nosotros y, especialmente, hacia los pobres pecadores.
-Oh Santa Hostia, que contiene la vida eterna que [de] la infinita misericordia es donada en abundancia a nosotros y, especialmente, a los pobres pecadores.
-Oh Santa Hostia, en la que está la misericordia del Padre, del Hijo y del Espíritu santo hacia nosotros y, especialmente, a los pobres pecadores.
-Oh Santa Hostia, en la que está encerrado el precio infinito de la misericordia, que compensará todas nuestras deudas y, especialmente, la de los pobres pecadores.
-Oh Santa Hostia, en la encierra la fuente de agua viva que brota de la infinita misericordia hacia nosotros y, especialmente, para los pobres pecadores.
-Oh Santa Hostia, en la que está encerrado el fuego del amor purísimo que arde del seno del Padre Eterno, como del abismo de la infinita misericordia para nosotros y, especialmente, para los pobres pecadores.
-Oh Santa Hostia, en la que está guardado el remedio para todas nuestras debilidades, [remedio] que mana de la infinita misericordia, como de una fuente para nosotros y, especialmente, para los pobres pecadores.
-Oh Santa Hostia, en la que está encerrado el vínculo de unión entre Dios y nosotros, gracias a la infinita misericordia para nosotros y, especialmente para los pobres pecadores.
-Oh Santa Hostia, en la que están encerrados todos los sentimientos del dulcísimo Corazón de Jesús hacia nosotros y, especialmente, hacia los pobres pecadores.
-Oh Santa Hostia, nuestra única esperanza en todos los sufrimientos y contrariedades de la vida.
-Oh Santa Hostia, nuestra única esperanza entre las tinieblas y las tormentas interiores y exteriores.
-Oh Santa Hostia, nuestra única esperanza en la vida y en la hora de la muerte.
-Oh Santa Hostia, nuestra única esperanza entre los fracasos y el abismo de la desesperación.
-Oh Santa Hostia, nuestra única esperanza entre las mentiras y las traiciones.
-Oh Santa Hostia, nuestra única esperanza entre las tinieblas y la impiedad que sumergen la tierra.
-Oh Santa Hostia, nuestra única esperanza entre la nostalgia y el dolor, en el que nadie nos comprende.
-Oh Santa Hostia, nuestra única esperanza entre las fatigas y la vida gris de todos los días.
-Oh Santa Hostia, nuestra única esperanza cuando nuestras ilusiones y nuestros esfuerzos se esfuman.
-Oh Santa Hostia, nuestra única esperanza entre los golpes de los enemigos y los esfuerzos del infierno.
-Oh Santa Hostia, confiaré en Ti cuando las dificultades excedan mis fuerzas y cuando mis esfuerzos resulten inútiles.
-Oh Santa Hostia, confiaré en Ti cuando las tormentas agiten mi corazón y el espíritu aterrorizado comience a inclinarse hacia la desesperación.
-Oh Santa Hostia, confiaré en Ti cuando mi corazón comience a temblar y el sudor mortal nos bañe la frente.
-Oh Santa Hostia, confiaré en Ti cuando todo se conjure contra mí y la negra desesperación comience a introducirse en mi alma.
-Oh Santa Hostia, confiaré en Ti cuando mi vista se apague para todo lo que es terrenal y mi espíritu vea por primera vez los mundos desconocidos.
-Oh Santa Hostia, confiaré en Ti cuando mis obligaciones estén por encima de mis fuerzas y el fracaso sea mi destino habitual.
-Oh Santa Hostia, confiaré en Ti cuando el cumplimiento de las virtudes me parezca difícil y mi naturaleza se rebele.
-Oh Santa Hostia, confiaré en Ti cuando los golpes de los enemigos sean dirigidos contra mí.
-Oh Santa Hostia, confiaré en Ti cuando las fatigas y los esfuerzos sean condenados por la gente.
-Oh Santa Hostia, confiaré en Ti cuando Tu juicio resuene sobre mí, en aquel momento confiaré en el mar de Tu misericordia."</div>
+                                <div class="accordion-body text-secondary" style="font-size: 0.9rem;">"Oh Santa Hostia, en la que está encerrado el testamento de la Divina Misericordia para nosotros y, especialmente para los pobres pecadores.<br>Oh Santa Hostia, en [la que] está oculto el Cuerpo y la Sangre del Señor Jesús como testimonio de la infinita misericordia hacia nosotros y, especialmente, hacia los pobres pecadores.<br>Oh Santa Hostia, que contiene la vida eterna que [de] la infinita misericordia es donada en abundancia a nosotros y, especialmente, a los pobres pecadores.<br>Oh Santa Hostia, en la que está la misericordia del Padre, del Hijo y del Espíritu santo hacia nosotros y, especialmente, a los pobres pecadores.<br>Oh Santa Hostia, en la que está encerrado el precio infinito de la misericordia, que compensará todas nuestras deudas y, especialmente, la de los pobres pecadores.<br>Oh Santa Hostia, en la encierra la fuente de agua viva que brota de la infinita misericordia hacia nosotros y, especialmente, para los pobres pecadores.<br>Oh Santa Hostia, en la que está encerrado el fuego del amor purísimo que arde del seno del Padre Eterno, como del abismo de la infinita misericordia para nosotros y, especialmente, para los pobres pecadores.<br>Oh Santa Hostia, en la que está guardado el remedio para todas nuestras debilidades, [remedio] que mana de la infinita misericordia, como de una fuente para nosotros y, especialmente, para los pobres pecadores.<br>Oh Santa Hostia, en la que está encerrado el vínculo de unión entre Dios y nosotros, gracias a la infinita misericordia para nosotros y, especialmente para los pobres pecadores.<br>Oh Santa Hostia, en la que están encerrados todos los sentimientos del dulcísimo Corazón de Jesús hacia nosotros y, especialmente, hacia los pobres pecadores.<br>Oh Santa Hostia, nuestra única esperanza en todos los sufrimientos y contrariedades de la vida.<br>Oh Santa Hostia, nuestra única esperanza entre las tinieblas y las tormentas interiores y exteriores.<br>Oh Santa Hostia, nuestra única esperanza en la vida y en la hora de la muerte.<br>Oh Santa Hostia, nuestra única esperanza entre los fracasos y el abismo de la desesperación.<br>Oh Santa Hostia, nuestra única esperanza entre las mentiras y las traiciones.<br>Oh Santa Hostia, nuestra única esperanza entre las tinieblas y la impiedad que sumergen la tierra.<br>Oh Santa Hostia, nuestra única esperanza entre la nostalgia y el dolor, en el que nadie nos comprende.<br>Oh Santa Hostia, nuestra única esperanza entre las fatigas y la vida gris de todos los días.<br>Oh Santa Hostia, nuestra única esperanza cuando nuestras ilusiones y nuestros esfuerzos se esfuman.<br>Oh Santa Hostia, nuestra única esperanza entre los golpes de los enemigos y los esfuerzos del infierno.<br>Oh Santa Hostia, confiaré en Ti cuando las dificultades excedan mis fuerzas y cuando mis esfuerzos resulten inútiles.<br>Oh Santa Hostia, confiaré en Ti cuando las tormentas agiten mi corazón y el espíritu aterrorizado comience a inclinarse hacia la desesperación.<br>Oh Santa Hostia, confiaré en Ti cuando mi corazón comience a temblar y el sudor mortal nos bañe la frente.<br>Oh Santa Hostia, confiaré en Ti cuando todo se conjure contra mí y la negra desesperación comience a introducirse en mi alma.<br>Oh Santa Hostia, confiaré en Ti cuando mi vista se apague para todo lo que es terrenal y mi espíritu vea por primera vez los mundos desconocidos.<br>Oh Santa Hostia, confiaré en Ti cuando mis obligaciones estén por encima de mis fuerzas y el fracaso sea mi destino habitual.<br>Oh Santa Hostia, confiaré en Ti cuando el cumplimiento de las virtudes me parezca difícil y mi naturaleza se rebele.<br>Oh Santa Hostia, confiaré en Ti cuando los golpes de los enemigos sean dirigidos contra mí.<br>Oh Santa Hostia, confiaré en Ti cuando las fatigas y los esfuerzos sean condenados por la gente.<br>Oh Santa Hostia, confiaré en Ti cuando Tu juicio resuene sobre mí, en aquel momento confiaré en el mar de Tu misericordia."</div>
                             </div>
                         </div>
 
@@ -527,10 +532,7 @@ Oh Santa Hostia, confiaré en Ti cuando Tu juicio resuene sobre mí, en aquel mo
                                 <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#f11">11. Oración breve de Confianza</button>
                             </h2>
                             <div id="f11" class="accordion-collapse collapse" data-bs-parent="#accordionFaustina">
-                                <div class="accordion-body text-secondary">"Jesús, en Ti confío." (Inscripción de la imagen revelada a Santa Faustina).
-
-En otra parte del diario también ora:
-"Jesús, en Ti confio, confio en el mar de Tu misericordia, Tu eres la madre para mi."</div>
+                                <div class="accordion-body text-secondary">"Jesús, en Ti confío." (Inscripción de la imagen revelada a Santa Faustina).<br><br>En otra parte del diario también ora:<br>"Jesús, en Ti confio, confio en el mar de Tu misericordia, Tu eres la madre para mi."</div>
                             </div>
                         </div>
 
@@ -539,12 +541,7 @@ En otra parte del diario también ora:
                                 <button class="accordion-button collapsed fw-bold" type="button" data-bs-toggle="collapse" data-bs-target="#f12">12. Oración para que los sentidos sean misericordiosos (Diario, 163)</button>
                             </h2>
                             <div id="f12" class="accordion-collapse collapse" data-bs-parent="#accordionFaustina">
-                                <div class="accordion-body text-secondary" style="font-size: 0.95rem;">"Ayúdame, oh Señor, a que mis ojos sean misericordiosos, para que yo jamás recele o juzgue según las apariencias, sino que busque lo bello en el alma de mi prójimo y acuda a ayudarla.
-Ayúdame a que mis oídos sean misericordiosos para que tome en cuenta las necesidades de mi prójimo y no sea indiferente a sus penas y gemidos.
-Ayúdame, oh Señor, a que mi lengua sea misericordiosa para que jamás hable negativamente de mis prójimos sino que tenga una palabra de consuelo y perdón para todos.
-Ayúdame, oh Señor, a que mis manos sean misericordiosas y llenas de buenas obras para que sepa hacer sólo el bien a mi prójimo y cargue sobre mí las tareas más difíciles y más penosas.
-Ayúdame a que mis pies sean misericordiosos para que siempre me apresure a socorrer a mi prójimo, dominando mi propia fatiga y mi cansancio. Mi reposo verdadero está en el servicio a mi prójimo.
-Ayúdame, oh Señor, a que mi corazón sea misericordioso para que yo sienta todos los sufrimientos de mi prójimo. A nadie le rehusaré mi corazón. Seré sincera incluso con aquellos de los cuales sé que abusarán de mi bondad. Y yo misma me encerrare en el misericordiosísimo Corazón de Jesús. Soportaré mis propios sufrimientos en silencio. Que tu misericordia, oh Señor mío, repose dentro de mí."</div>
+                                <div class="accordion-body text-secondary" style="font-size: 0.95rem;">"Ayúdame, oh Señor, a que mis ojos sean misericordiosos, para que yo jamás recele o juzgue según las apariencias, sino que busque lo bello en el alma de mi prójimo y acuda a ayudarla.<br>Ayúdame a que mis oídos sean misericordiosos para que tome en cuenta las necesidades de mi prójimo y no sea indiferente a sus penas y gemidos.<br>Ayúdame, oh Señor, a que mi lengua sea misericordiosa para que jamás hable negativamente de mis prójimos sino que tenga una palabra de consuelo y perdón para todos.<br>Ayúdame, oh Señor, a que mis manos sean misericordiosas y llenas de buenas obras para que sepa hacer sólo el bien a mi prójimo y cargue sobre mí las tareas más difíciles y más penosas.<br>Ayúdame a que mis pies sean misericordiosos para que siempre me apresure a socorrer a mi prójimo, dominando mi propia fatiga y mi cansancio. Mi reposo verdadero está en el servicio a mi prójimo.<br>Ayúdame, oh Señor, a que mi corazón sea misericordioso para que yo sienta todos los sufrimientos de mi prójimo. A nadie le rehusaré mi corazón. Seré sincera incluso con aquellos de los cuales sé que abusarán de mi bondad. Y yo misma me encerrare en el misericordiosísimo Corazón de Jesús. Soportaré mis propios sufrimientos en silencio. Que tu misericordia, oh Señor mío, repose dentro de mí."</div>
                             </div>
                         </div>
 
@@ -656,18 +653,18 @@ Ayúdame, oh Señor, a que mi corazón sea misericordioso para que yo sienta tod
         </div>
     </div>
 
-    <!-- Modal de Actualización Disponible (NUEVO) -->
+    <!-- Modal de Actualización Disponible (Aviso Invasivo) -->
     <div class="modal fade" id="updateAppModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content clean-card border-0 text-center p-4">
                 <div class="modal-body">
-                    <div class="display-4 text-primary mb-3">
+                    <div class="display-4 text-success mb-3">
                         <i class="bi bi-cloud-arrow-down-fill"></i>
                     </div>
                     <h3 class="prayer-title fw-bold mb-3 text-dark">¡Nueva versión disponible!</h3>
-                    <p class="text-secondary mb-4">Hemos lanzado una actualización con mejoras para tu devocionario. ¿Deseas instalarla ahora?</p>
-                    <button type="button" class="btn btn-primary btn-custom px-4 py-2 w-100 mb-2" id="btn-download-update">
-                        <i class="bi bi-download me-2"></i> Actualizar Ahora
+                    <p class="text-secondary mb-4">Hemos lanzado una actualización con mejoras. ¿Deseas instalarla ahora mismo de forma automática?</p>
+                    <button type="button" class="btn btn-success btn-custom fw-bold px-4 py-3 w-100 mb-2" id="btn-download-update">
+                        <i class="bi bi-download me-2"></i> Actualizar e Instalar Ahora
                     </button>
                     <button type="button" class="btn btn-light text-secondary btn-custom w-100 py-2" data-bs-dismiss="modal">
                         Más tarde
@@ -677,7 +674,7 @@ Ayúdame, oh Señor, a que mi corazón sea misericordioso para que yo sienta tod
         </div>
     </div>
 
-    <!-- NUEVO: Modal de Conexión Segura (PocketBase) -->
+    <!-- Modal de Conexión Segura (PocketBase Auth Oculto) -->
     <div class="modal fade" id="dbAuthModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content clean-card border-0 text-center p-4">
@@ -689,7 +686,7 @@ Ayúdame, oh Señor, a que mi corazón sea misericordioso para que yo sienta tod
                         <i class="bi bi-shield-lock-fill"></i>
                     </div>
                     <h3 class="prayer-title fw-bold mb-3 text-dark">Conexión Segura</h3>
-                    <p class="text-secondary mb-4 small">Ingresa las credenciales de administrador y el PIN para forzar la validación de la base de datos.</p>
+                    <p class="text-secondary mb-4 small">Ingresa las credenciales de administrador y el PIN para forzar la conexión a la base de datos central.</p>
                     
                     <div id="db-auth-error" class="alert alert-danger d-none small py-2 mb-3"></div>
 
@@ -711,7 +708,7 @@ Ayúdame, oh Señor, a que mi corazón sea misericordioso para que yo sienta tod
                     <div class="input-group mb-4">
                         <div class="form-floating flex-grow-1">
                             <input type="password" class="form-control border-end-0 rounded-start" id="db-pin" placeholder="PIN de Seguridad">
-                            <label for="db-pin">PIN de Seguridad (CR129...)</label>
+                            <label for="db-pin">PIN de Seguridad</label>
                         </div>
                         <span class="input-group-text bg-white border-start-0 rounded-end cursor-pointer" onclick="togglePasswordVisibility('db-pin', 'icono-ojo-pin')" style="cursor: pointer;">
                             <i class="bi bi-eye-slash" id="icono-ojo-pin"></i>
@@ -719,14 +716,14 @@ Ayúdame, oh Señor, a que mi corazón sea misericordioso para que yo sienta tod
                     </div>
 
                     <button type="button" class="btn btn-warning btn-custom px-4 py-2 w-100 mb-2 fw-bold text-dark" id="btn-force-connect" onclick="forzarConexionPB()">
-                        <i class="bi bi-plug-fill me-2"></i> Conectar a PocketBase
+                        <i class="bi bi-plug-fill me-2"></i> Forzar Conexión
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- SVG Definition para la Cruz de Plata -->
+    <!-- SVG Definition para la Cruz -->
     <svg width="0" height="0" class="position-absolute">
         <defs>
             <linearGradient id="silver-cross-grad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -749,167 +746,13 @@ Ayúdame, oh Señor, a que mi corazón sea misericordioso para que yo sienta tod
         </defs>
     </svg>
 
-    <!-- Bootstrap JS -->
+    <!-- Bootstrap JS y Scripts del Proyecto -->
     <script src="js/bootstrap.bundle.min.js"></script>
     <script src="js/api_db.js"></script>
     <script src="js/index.js"></script>
     <script src="js/ota_updater.js"></script>
     <script src="js/conexion_checker.js"></script>
-    
-    <!-- Script para Lógica de Conexión Segura (Botón Oculto) -->
-    <script>
-        function abrirModalConexion() {
-            const statusText = document.getElementById('db-status-text').innerText;
-            // Solo abrir el modal secreto si está sin conexión o verificando
-            if (statusText.includes('Sin conexión') || statusText.includes('Verificando')) {
-                // Ocultar modal de ajustes temporalmente
-                const settingsModal = bootstrap.Modal.getInstance(document.getElementById('settingsModal'));
-                if(settingsModal) settingsModal.hide(); 
-                
-                // Mostrar modal de Autenticación
-                const authModal = new bootstrap.Modal(document.getElementById('dbAuthModal'));
-                authModal.show();
-            }
-        }
+    <script src="js/conexion_segura.js"></script>
 
-        // Nueva función para alternar la visibilidad de contraseñas/PIN
-        function togglePasswordVisibility(inputId, iconId) {
-            const input = document.getElementById(inputId);
-            const icon = document.getElementById(iconId);
-            
-            if (input.type === "password") {
-                input.type = "text";
-                icon.classList.remove("bi-eye-slash");
-                icon.classList.add("bi-eye");
-            } else {
-                input.type = "password";
-                icon.classList.remove("bi-eye");
-                icon.classList.add("bi-eye-slash");
-            }
-        }
-
-        async function forzarConexionPB() {
-            const user = document.getElementById('db-user').value.trim();
-            const pass = document.getElementById('db-pass').value.trim();
-            const pin = document.getElementById('db-pin').value.trim();
-            const errorDiv = document.getElementById('db-auth-error');
-            const btn = document.getElementById('btn-force-connect');
-
-            errorDiv.classList.add('d-none');
-
-            // 1. Validación de campos vacíos
-            if (!user || !pass || !pin) {
-                errorDiv.innerText = "Por favor, completa todos los campos.";
-                errorDiv.classList.remove('d-none');
-                return;
-            }
-
-            // 2. Validación estricta del PIN de seguridad
-            if (pin !== "CR129x7848n") {
-                errorDiv.innerText = "El PIN de seguridad es incorrecto.";
-                errorDiv.classList.remove('d-none');
-                return;
-            }
-
-            // UI: Modo carga
-            btn.disabled = true;
-            btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Conectando...`;
-
-            try {
-                // 3. Intento de inicio de sesión a través del Funnel de Tailscale
-                const baseUrl = typeof POCKETBASE_URL !== 'undefined' ? POCKETBASE_URL : 'http://127.0.0.1:8090/api';
-                
-                // CORRECCIÓN APLICADA AQUÍ: Prueba la ruta _superusers (v0.23) y si falla hace fallback a admins (v0.22)
-                let response = await fetch(`${baseUrl}/collections/_superusers/auth-with-password`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ identity: user, password: pass })
-                });
-
-                if (response.status === 404 || response.status === 400) {
-                    response = await fetch(`${baseUrl}/admins/auth-with-password`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ identity: user, password: pass })
-                    });
-                }
-
-                if (response.ok) {
-                    // Éxito: Modificamos la UI a verde forzado
-                    const statusIcon = document.getElementById('db-status-icon');
-                    const statusText = document.getElementById('db-status-text');
-                    const statusBadge = document.getElementById('db-status-badge');
-                    
-                    statusIcon.className = 'bi bi-circle-fill text-success me-1';
-                    statusText.textContent = 'Base de datos en línea (Forzado)';
-                    statusText.className = 'text-success fw-bold';
-                    statusBadge.style.cursor = 'default';
-                    statusBadge.onclick = null; // Desactivar el botón oculto tras éxito
-
-                    // Cerrar este modal y volver al menú
-                    bootstrap.Modal.getInstance(document.getElementById('dbAuthModal')).hide();
-                    const settingsModal = new bootstrap.Modal(document.getElementById('settingsModal'));
-                    settingsModal.show();
-                    
-                } else {
-                    errorDiv.innerText = "Usuario o contraseña de PocketBase incorrectos.";
-                    errorDiv.classList.remove('d-none');
-                }
-            } catch (e) {
-                errorDiv.innerText = "Fallo crítico de red: El servidor Funnel sigue inalcanzable.";
-                errorDiv.classList.remove('d-none');
-            } finally {
-                btn.disabled = false;
-                btn.innerHTML = `<i class="bi bi-plug-fill me-2"></i> Conectar a PocketBase`;
-            }
-        }
-    </script>
-
-    <!-- Script de Lógica UI para OTA y Conexión (NUEVO) -->
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const btnContainer = document.getElementById('update-button-container');
-            const badge = document.getElementById('badge-update-available');
-            let modalMostrado = false;
-
-            // 1. Enlazar el botón del Modal gigante a la función de descarga
-            const btnDescargaModal = document.getElementById('btn-download-update');
-            if (btnDescargaModal) {
-                btnDescargaModal.addEventListener('click', function() {
-                    this.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Descargando e Instalando...`;
-                    this.disabled = true;
-                    if (typeof descargarActualizacionDirecta === 'function') {
-                        descargarActualizacionDirecta();
-                    }
-                });
-            }
-
-            // 2. Vigilar la conexión y la disponibilidad de actualizaciones cada 2 segundos
-            setInterval(() => {
-                const statusText = document.getElementById('db-status-text')?.innerText || '';
-                
-                // A. Mostrar u ocultar el contenedor del botón OTA dependiendo de si hay conexión a la BD
-                if (statusText.includes('en línea')) {
-                    btnContainer.classList.remove('d-none');
-                } else {
-                    btnContainer.classList.add('d-none');
-                }
-
-                // B. Si el puntito verde animado (badge) aparece, significa que hay actualización.
-                // Automáticamente cerramos el menú y le lanzamos el cartel gigante a la cara.
-                if (badge && !badge.classList.contains('d-none') && !modalMostrado) {
-                    modalMostrado = true; // Flag para no abrirlo 100 veces por segundo
-                    
-                    // Cerrar modal de ajustes si el usuario lo tiene abierto
-                    const settingsModal = bootstrap.Modal.getInstance(document.getElementById('settingsModal'));
-                    if(settingsModal) settingsModal.hide();
-                    
-                    // Mostrar alerta gigante e invasiva de actualización
-                    const updateModal = new bootstrap.Modal(document.getElementById('updateAppModal'));
-                    updateModal.show();
-                }
-            }, 2000);
-        });
-    </script>
 </body>
 </html>

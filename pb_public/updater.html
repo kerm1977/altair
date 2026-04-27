@@ -4,17 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestor OTA - Máquina del Tiempo</title>
-    <!-- Bootstrap CSS -->
+    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-    <!-- JSZip para comprimir carpetas en el navegador -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         body { background-color: #f8f9fa; }
         .card { border: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         .folder-upload { border: 2px dashed #0d6efd; background-color: #f1f7ff; cursor: pointer; transition: 0.3s; }
         .folder-upload:hover { background-color: #e2efff; }
+        /* Estilo para input bloqueado (readonly) */
+        input[readonly] { background-color: #e9ecef; cursor: not-allowed; border-color: #198754; color: #198754; }
     </style>
 </head>
 <body class="py-5">
@@ -26,18 +26,13 @@
             <div class="text-center mb-4">
                 <div class="display-3 text-primary mb-2"><i class="bi bi-rocket-takeoff-fill"></i></div>
                 <h2 class="fw-bold">Gestor de Actualizaciones OTA</h2>
-                <p class="text-muted">Publica nuevas versiones y gestiona rollbacks para tus apps</p>
+                <p class="text-muted">Publica nuevas versiones de forma automatizada</p>
             </div>
 
-            <!-- SECCIÓN 1: LOGIN AL SERVIDOR -->
             <div class="card mb-4" id="section-login">
                 <div class="card-body p-4">
                     <h5 class="fw-bold mb-3"><i class="bi bi-server me-2 text-primary"></i>Conexión a PocketBase</h5>
-                    <div class="alert alert-info small mb-3">
-                        <i class="bi bi-info-circle-fill me-2"></i><strong>Atención:</strong> Usa el correo y la contraseña de <strong>Administrador</strong> de tu base de datos.
-                    </div>
                     
-                    <!-- ALERTA DE ERRORES DIAGNÓSTICO -->
                     <div id="login-error-alert" class="alert alert-danger d-none small fw-bold"></div>
 
                     <div class="row g-3">
@@ -51,14 +46,12 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small text-muted">Contraseña</label>
-                            
                             <div class="input-group">
                                 <input type="password" class="form-control border-end-0" id="pb-pass">
                                 <span class="input-group-text bg-white cursor-pointer" onclick="togglePass()" style="cursor: pointer;">
                                     <i class="bi bi-eye-slash" id="icon-pass"></i>
                                 </span>
                             </div>
-                            
                         </div>
                         <div class="col-12 mt-4">
                             <button class="btn btn-primary w-100 fw-bold" id="btn-login" onclick="iniciarSesion()">
@@ -69,19 +62,17 @@
                 </div>
             </div>
 
-            <!-- SECCIÓN 2: PANEL PRINCIPAL -->
             <div id="section-panel" class="d-none">
                 
-                <!-- PUBLICAR NUEVA ACTUALIZACIÓN -->
                 <div class="card mb-4 border-primary border-2" id="upload-card">
                     <div class="card-body p-4">
                         <h5 class="fw-bold mb-3 text-primary"><i class="bi bi-cloud-upload-fill me-2"></i>Lanzar Nueva Versión</h5>
                         
                         <div class="row g-3">
                             <div class="col-md-4">
-                                <label class="form-label fw-bold">Número de Versión:</label>
-                                <input type="text" class="form-control form-control-lg" id="app-version" placeholder="Ej: 1.0.5">
-                                <small class="text-muted">Debe ser diferente a la anterior.</small>
+                                <label class="form-label fw-bold text-success"><i class="bi bi-cpu me-1"></i>Siguiente Versión:</label>
+                                <input type="text" class="form-control form-control-lg fw-bold text-center fs-3" id="app-version" value="1.0.0" readonly>
+                                <small class="text-success d-block mt-1 text-center fw-bold">Generada Automáticamente</small>
                             </div>
                             
                             <div class="col-md-8">
@@ -96,23 +87,18 @@
 
                             <div class="col-12 mt-4">
                                 <button class="btn btn-success btn-lg w-100 fw-bold shadow-sm" id="btn-upload" onclick="procesarYSubir()" disabled>
-                                    <i class="bi bi-box-seam-fill me-2"></i> Empaquetar ZIP y Publicar al Mundo
+                                    <i class="bi bi-box-seam-fill me-2"></i> Empaquetar y Publicar Automáticamente
                                 </button>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- HISTORIAL Y ROLLBACK -->
                 <div class="card mb-4">
                     <div class="card-body p-4">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="fw-bold mb-0"><i class="bi bi-clock-history me-2 text-dark"></i>Historial de Versiones (Rollback)</h5>
+                            <h5 class="fw-bold mb-0"><i class="bi bi-clock-history me-2 text-dark"></i>Historial de Versiones</h5>
                             <button class="btn btn-sm btn-outline-secondary" onclick="cargarHistorial()"><i class="bi bi-arrow-clockwise"></i> Refrescar</button>
-                        </div>
-                        
-                        <div class="alert alert-warning small">
-                            <i class="bi bi-exclamation-triangle-fill me-2"></i> <strong>¿Una actualización causó un error?</strong> Elimina la última versión de la lista. Las apps móviles retrocederán automáticamente a la versión anterior estable disponible.
                         </div>
 
                         <div class="table-responsive">
@@ -133,27 +119,6 @@
                     </div>
                 </div>
 
-                <!-- HERRAMIENTAS DE ADMINISTRADOR (NUEVO) -->
-                <div class="card mb-4 border-warning border-2">
-                    <div class="card-body p-4">
-                        <h5 class="fw-bold mb-3 text-warning"><i class="bi bi-tools me-2"></i>Herramientas de Administrador</h5>
-                        
-                        <div class="d-flex flex-column flex-md-row align-items-md-center justify-content-between bg-light p-3 rounded">
-                            <div class="mb-3 mb-md-0">
-                                <h6 class="fw-bold mb-1 text-dark">Límite de Tamaño de Archivos (ZIP)</h6>
-                                <small class="text-muted">Establece el peso máximo permitido para subir actualizaciones.</small>
-                                <div class="input-group mt-2 shadow-sm" style="max-width: 200px;">
-                                    <input type="number" class="form-control fw-bold" id="input-limit-mb" value="50" min="1" step="1">
-                                    <span class="input-group-text bg-white">MB</span>
-                                </div>
-                            </div>
-                            <button class="btn btn-warning fw-bold text-dark text-nowrap mt-2 mt-md-0" id="btn-fix-limit" onclick="aumentarLimiteZip()">
-                                <i class="bi bi-cloud-check me-1"></i> Aplicar Límite
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
             </div>
 
         </div>
@@ -163,66 +128,6 @@
 <script>
     let adminToken = "";
     let selectedFiles = [];
-
-    // ==========================================
-    // SISTEMA INDEXEDDB PARA GUARDAR CONFIGURACIÓN
-    // ==========================================
-    const DB_NAME = 'OTA_Manager_DB';
-    const DB_VERSION = 1;
-    const STORE_NAME = 'settings';
-
-    function getDB() {
-        return new Promise((resolve, reject) => {
-            const request = indexedDB.open(DB_NAME, DB_VERSION);
-            request.onerror = event => reject("Error abriendo IndexedDB");
-            request.onsuccess = event => resolve(event.target.result);
-            request.onupgradeneeded = event => {
-                const db = event.target.result;
-                if (!db.objectStoreNames.contains(STORE_NAME)) {
-                    db.createObjectStore(STORE_NAME);
-                }
-            };
-        });
-    }
-
-    async function setSetting(key, value) {
-        try {
-            const db = await getDB();
-            return new Promise((resolve, reject) => {
-                const transaction = db.transaction([STORE_NAME], 'readwrite');
-                const store = transaction.objectStore(STORE_NAME);
-                const request = store.put(value, key);
-                request.onsuccess = () => resolve();
-                request.onerror = () => reject(request.error);
-            });
-        } catch (e) {
-            console.error("IndexedDB Set Error:", e);
-        }
-    }
-
-    async function getSetting(key, defaultValue) {
-        try {
-            const db = await getDB();
-            return new Promise((resolve, reject) => {
-                const transaction = db.transaction([STORE_NAME], 'readonly');
-                const store = transaction.objectStore(STORE_NAME);
-                const request = store.get(key);
-                request.onsuccess = () => resolve(request.result !== undefined ? request.result : defaultValue);
-                request.onerror = () => resolve(defaultValue);
-            });
-        } catch (e) {
-            console.error("IndexedDB Get Error:", e);
-            return defaultValue;
-        }
-    }
-
-    // Inicializar valores al cargar la página
-    window.addEventListener('DOMContentLoaded', async () => {
-        const savedLimit = await getSetting('maxZipSizeMB', 50);
-        const limitInput = document.getElementById('input-limit-mb');
-        if (limitInput) limitInput.value = savedLimit;
-    });
-    // ==========================================
 
     function togglePass() {
         const input = document.getElementById('pb-pass');
@@ -263,7 +168,7 @@
                     body: JSON.stringify({ identity: email, password: pass })
                 });
             } catch (networkError) {
-                throw new Error("Error de red. Verifica que PocketBase esté encendido y que uses http://127.0.0.1:8090/updater.html");
+                throw new Error("Error de red. Verifica que PocketBase esté encendido.");
             }
 
             if (res.status === 404 || res.status === 400) {
@@ -274,10 +179,7 @@
                 });
             }
 
-            if (!res.ok) {
-                const errorData = await res.json();
-                throw new Error(errorData.message || "Credenciales incorrectas");
-            }
+            if (!res.ok) throw new Error("Credenciales incorrectas");
 
             const data = await res.json();
             adminToken = data.token; 
@@ -312,7 +214,7 @@
 
         const hasIndexHtml = selectedFiles.some(f => f.webkitRelativePath.includes('/index.html'));
         if (!hasIndexHtml) {
-            alert("⚠️ La carpeta seleccionada no parece contener un 'index.html'.");
+            alert("⚠️ La carpeta seleccionada no parece contener un 'index.html'. Asegúrate de seleccionar la carpeta 'www'.");
             label.classList.replace('text-primary', 'text-danger');
             label.innerText = "Carpeta inválida seleccionada";
             btnUpload.disabled = true;
@@ -334,7 +236,6 @@
         const url = document.getElementById('pb-url').value.trim();
         const btnUpload = document.getElementById('btn-upload');
 
-        if (!version) return alert("Ingresa un número de versión");
         btnUpload.disabled = true;
         btnUpload.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Empaquetando...`;
 
@@ -364,81 +265,59 @@
 
             if (!res.ok) {
                 const err = await res.json();
-                
-                if (err.data && err.data.archivo_zip && err.data.archivo_zip.code === "validation_file_size_limit") {
-                    throw new Error("⚠️ EL ARCHIVO ES DEMASIADO PESADO.\n\nPor favor, ve a la sección 'Herramientas de Administrador' abajo, aumenta el límite en MB y haz clic en 'Aplicar Límite' antes de intentar de nuevo.");
-                }
-
                 let errMsg = err.message || "Error al subir a PocketBase";
-                if (err.data && Object.keys(err.data).length > 0) {
-                    errMsg += "\n\nDetalles de PocketBase:\n" + JSON.stringify(err.data, null, 2);
+                if (err.data && err.data.archivo_zip && err.data.archivo_zip.code === "validation_file_size_limit") {
+                    errMsg = "⚠️ EL ARCHIVO EXCEDE EL LÍMITE DE 500MB.";
                 }
                 throw new Error(errMsg);
             }
 
             alert(`✅ ¡Versión ${version} publicada con éxito!`);
-            document.getElementById('app-version').value = "";
             document.getElementById('folder-input').value = "";
-            analizarCarpeta();
-            cargarHistorial();
+            analizarCarpeta(); // Resetear el botón de subida
+            cargarHistorial(); // Recargar la tabla y calcular la próxima versión
 
         } catch (error) {
             alert("❌ Falló la subida:\n\n" + error.message);
         } finally {
             btnUpload.disabled = false;
-            btnUpload.innerHTML = `<i class="bi bi-box-seam-fill me-2"></i> Empaquetar ZIP y Publicar al Mundo`;
+            btnUpload.innerHTML = `<i class="bi bi-box-seam-fill me-2"></i> Empaquetar y Publicar Automáticamente`;
         }
     }
 
     async function cargarHistorial() {
         const url = document.getElementById('pb-url').value.trim();
         const tbody = document.getElementById('history-table');
-        const uploadCard = document.getElementById('upload-card');
         
         try {
-            const colRes = await fetch(`${url}/api/collections/ota_updates`, {
-                headers: { 'Authorization': `Bearer ${adminToken}` }
-            });
-
-            if (colRes.status === 404) {
-                uploadCard.classList.add('d-none');
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="4" class="text-center py-5">
-                            <div class="text-warning mb-3"><i class="bi bi-exclamation-triangle-fill" style="font-size: 3rem;"></i></div>
-                            <h4 class="fw-bold">La tabla "ota_updates" no existe</h4>
-                            <p class="text-muted mb-4">Para poder publicar actualizaciones, PocketBase necesita una tabla especial.</p>
-                            <button class="btn btn-warning btn-lg fw-bold shadow-sm" id="btn-crear-tabla" onclick="crearTablaOTA()">
-                                <i class="bi bi-magic me-2"></i> Crear Tabla Automáticamente
-                            </button>
-                        </td>
-                    </tr>`;
-                return;
-            }
-
-            if (!colRes.ok) {
-                const errData = await colRes.json();
-                throw new Error(errData.message || `Error verificando tabla (Código ${colRes.status})`);
-            }
-
             const res = await fetch(`${url}/api/collections/ota_updates/records`, {
                 headers: { 'Authorization': `Bearer ${adminToken}` }
             });
 
             const data = await res.json();
+            if (!res.ok) throw new Error(data.message || "Error al obtener historial.");
 
-            if (!res.ok) {
-                let errorDetails = data.message || `Error del servidor (Código ${res.status})`;
-                if (data.data && Object.keys(data.data).length > 0) errorDetails += " | Detalles: " + JSON.stringify(data.data);
-                throw new Error(errorDetails);
-            }
-
-            uploadCard.classList.remove('d-none');
             tbody.innerHTML = "";
-
             const items = data.items || [];
 
+            // Ordenamos por fecha descendente
             items.sort((a, b) => new Date(b.created || 0) - new Date(a.created || 0));
+
+            // LOGICA MATEMÁTICA: Auto-incrementar versión
+            let nextVersion = "1.0.0";
+            if (items.length > 0) {
+                let lastVerString = items[0].version;
+                let lastVerNumRaw = lastVerString.replace(/\D/g, '');
+                
+                if (lastVerNumRaw.length === 3) {
+                    let nextVerNum = parseInt(lastVerNumRaw, 10) + 1;
+                    let nextVerStr = nextVerNum.toString().padStart(3, '0');
+                    nextVersion = nextVerStr[0] + '.' + nextVerStr[1] + '.' + nextVerStr[2];
+                }
+            }
+            
+            // Asignar automáticamente al input bloqueado
+            document.getElementById('app-version').value = nextVersion;
 
             if (items.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Aún no has publicado ninguna actualización.</td></tr>`;
@@ -446,13 +325,22 @@
             }
 
             items.forEach((item, index) => {
-                const fecha = new Date(item.created).toLocaleString('es-ES');
+                let fecha = "";
+                if (item.created) {
+                    // Reemplazamos el espacio por 'T' para que cualquier navegador lo parsee sin dar "Invalid Date"
+                    const dateParsed = new Date(item.created.replace(' ', 'T'));
+                    fecha = dateParsed.toLocaleString('es-ES', { 
+                        year: 'numeric', month: '2-digit', day: '2-digit',
+                        hour: '2-digit', minute: '2-digit'
+                    });
+                }
+
                 const isLatest = index === 0;
                 let badge = isLatest ? `<span class="badge bg-success ms-2">ACTIVA</span>` : '';
                 
                 tbody.innerHTML += `
                     <tr class="${isLatest ? 'table-success' : ''}">
-                        <td class="fw-bold">${item.version} ${badge}</td>
+                        <td class="fw-bold fs-5">${item.version} ${badge}</td>
                         <td>${fecha}</td>
                         <td><code class="text-muted">${item.archivo_zip}</code></td>
                         <td class="text-end">
@@ -465,98 +353,14 @@
 
         } catch (e) {
             tbody.innerHTML = `<tr><td colspan="4" class="text-center text-danger py-4">
-                <i class="bi bi-bug-fill me-2"></i> Error al cargar historial: <br> <strong>${e.message}</strong>
+                <i class="bi bi-bug-fill me-2"></i> Error: <br> <strong>${e.message}</strong>
             </td></tr>`;
-        }
-    }
-
-    async function crearTablaOTA() {
-        const url = document.getElementById('pb-url').value.trim();
-        const btnCrear = document.getElementById('btn-crear-tabla');
-        btnCrear.disabled = true;
-        btnCrear.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Creando...`;
-
-        try {
-            let systemFields = [];
-            try {
-                const usersRes = await fetch(`${url}/api/collections/users`, {
-                    headers: { 'Authorization': `Bearer ${adminToken}` }
-                });
-                if (usersRes.ok) {
-                    const usersCol = await usersRes.json();
-                    if (usersCol.fields) {
-                        systemFields = usersCol.fields.filter(f => f.system === true);
-                    }
-                }
-            } catch (e) { console.log("No se pudo leer fields del sistema."); }
-
-            // Leemos de la UI o de IndexedDB
-            let inputMB = parseFloat(document.getElementById('input-limit-mb').value);
-            if (isNaN(inputMB) || inputMB <= 0) inputMB = 50; // Fallback
-            const maxBytesLimit = Math.floor(inputMB * 1024 * 1024);
-
-            const payloadV23 = {
-                name: "ota_updates",
-                type: "base",
-                listRule: "", 
-                viewRule: "", 
-                fields: [
-                    ...systemFields, 
-                    { name: "version", type: "text", required: true },
-                    { name: "archivo_zip", type: "file", required: true, options: { maxSelect: 1, maxSize: maxBytesLimit } }
-                ]
-            };
-
-            let res = await fetch(`${url}/api/collections`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${adminToken}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify(payloadV23)
-            });
-
-            if (!res.ok) {
-                const payloadV22 = {
-                    name: "ota_updates",
-                    type: "base",
-                    listRule: "",
-                    viewRule: "",
-                    schema: [
-                        { name: "version", type: "text", required: true },
-                        { name: "archivo_zip", type: "file", required: true, options: { maxSelect: 1, maxSize: maxBytesLimit } }
-                    ]
-                };
-                
-                const resV22 = await fetch(`${url}/api/collections`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${adminToken}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payloadV22)
-                });
-
-                if (resV22.ok) {
-                    res = resV22; 
-                } else {
-                    const errData = await res.json(); 
-                    let msjError = errData.message || "Error al crear tabla.";
-                    if (errData.data) msjError += "\nDetalles:\n" + JSON.stringify(errData.data, null, 2);
-                    throw new Error(msjError);
-                }
-            }
-
-            // Guardar configuración en IndexedDB
-            await setSetting('maxZipSizeMB', inputMB);
-
-            alert(`✅ ¡Tabla 'ota_updates' creada exitosamente con soporte para ${inputMB} MB!`);
-            cargarHistorial(); 
-
-        } catch (error) {
-            alert("❌ Falló al crear tabla:\n" + error.message);
-            btnCrear.disabled = false;
-            btnCrear.innerHTML = `<i class="bi bi-magic me-2"></i> Crear Tabla Automáticamente`;
         }
     }
 
     async function eliminarVersion(id, version) {
         const url = document.getElementById('pb-url').value.trim();
-        if (!confirm(`¿Eliminar versión ${version}?`)) return;
+        if (!confirm(`¿Seguro que deseas eliminar la versión ${version}?`)) return;
 
         try {
             const res = await fetch(`${url}/api/collections/ota_updates/records/${id}`, {
@@ -566,75 +370,6 @@
             if (res.ok) cargarHistorial();
         } catch (error) {
             alert("Error: " + error.message);
-        }
-    }
-
-    // MAGIA ADMINISTRATIVA: AUMENTAR LÍMITE DE TAMAÑO DINÁMICO Y SEGURO
-    async function aumentarLimiteZip() {
-        const url = document.getElementById('pb-url').value.trim();
-        const btn = document.getElementById('btn-fix-limit');
-        const inputMB = parseFloat(document.getElementById('input-limit-mb').value);
-
-        if (isNaN(inputMB) || inputMB <= 0) {
-            return alert("Por favor ingresa una cantidad válida de MB (mayor a 0).");
-        }
-
-        const newLimitBytes = Math.floor(inputMB * 1024 * 1024);
-
-        btn.disabled = true;
-        btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Aplicando...`;
-
-        try {
-            const resGet = await fetch(`${url}/api/collections/ota_updates`, {
-                headers: { 'Authorization': `Bearer ${adminToken}` }
-            });
-
-            if (!resGet.ok) throw new Error("No se pudo obtener la información de la tabla. ¿Estás seguro que existe?");
-            const collection = await resGet.json();
-
-            let modificado = false;
-            // Clonamos el arreglo correcto dependiendo de la versión de PocketBase
-            const arrayCampos = collection.fields ? [...collection.fields] : (collection.schema ? [...collection.schema] : []);
-
-            for (let i = 0; i < arrayCampos.length; i++) {
-                if (arrayCampos[i].name === 'archivo_zip') {
-                    if (!arrayCampos[i].options) arrayCampos[i].options = {};
-                    arrayCampos[i].options.maxSize = newLimitBytes;
-                    modificado = true;
-                    break;
-                }
-            }
-
-            if (!modificado) throw new Error("No se encontró el campo 'archivo_zip' en la tabla.");
-
-            // PREPARAR PAYLOAD LIMPIO: Enviar solo la configuración de campos para no colisionar con variables del sistema
-            const patchPayload = {};
-            if (collection.fields) patchPayload.fields = arrayCampos;
-            else patchPayload.schema = arrayCampos;
-
-            const resPatch = await fetch(`${url}/api/collections/${collection.id}`, {
-                method: 'PATCH',
-                headers: { 'Authorization': `Bearer ${adminToken}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify(patchPayload)
-            });
-
-            if (!resPatch.ok) {
-                const errData = await resPatch.json();
-                let msjError = errData.message || "Fallo al actualizar la tabla en el servidor.";
-                if(errData.data) msjError += "\n\nDetalles del rechazo:\n" + JSON.stringify(errData.data, null, 2);
-                throw new Error(msjError);
-            }
-
-            // Guardar configuración en IndexedDB
-            await setSetting('maxZipSizeMB', inputMB);
-
-            alert(`✅ ¡LÍMITE AMPLIADO A ${inputMB} MB EXITOSAMENTE!\n\nTu base de datos ha sido actualizada.`);
-
-        } catch (error) {
-            alert("❌ Error al aplicar el límite:\n\n" + error.message);
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = `<i class="bi bi-cloud-check me-1"></i> Aplicar Límite`;
         }
     }
 </script>

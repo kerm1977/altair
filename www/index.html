@@ -11,6 +11,18 @@
     
     <!-- Tu archivo CSS principal que importa a los demás -->
     <link rel="stylesheet" type="text/css" href="css/main.css">
+
+    <!-- NUEVO: Estilos para la animación del indicador de actualizaciones -->
+    <style>
+        @keyframes pulse-green {
+            0% { transform: translate(-50%, -50%) scale(0.95); box-shadow: 0 0 0 0 rgba(25, 135, 84, 0.7); }
+            70% { transform: translate(-50%, -50%) scale(1); box-shadow: 0 0 0 10px rgba(25, 135, 84, 0); }
+            100% { transform: translate(-50%, -50%) scale(0.95); box-shadow: 0 0 0 0 rgba(25, 135, 84, 0); }
+        }
+        .pulse-badge {
+            animation: pulse-green 1.5s infinite;
+        }
+    </style>
 </head>
 <body>
 
@@ -35,7 +47,7 @@
         <span id="step-badge" class="fw-bold text-dark">Inicio</span>
     </div>
 
-    <!-- Container Principal (Alineación forzada al tope con align-items-start) -->
+    <!-- Container Principal -->
     <div class="container main-content pb-5">
         <div class="px-2 px-md-4 pb-2 pb-md-4">
             
@@ -65,7 +77,6 @@
                 <div class="col-md-7 col-lg-7 prayer-content-wrapper">
                     <div class="d-flex flex-column text-center text-md-start">
                         <div id="prayer-card-content">
-                            <!-- Título y Texto principal -->
                             <h2 id="prayer-title" class="prayer-title mb-2 fw-bold text-dark fs-2">
                                 Cargando...
                             </h2>
@@ -89,7 +100,6 @@
                 <div class="modal-body pt-0">
                     <h5 class="modal-title prayer-title fw-bold text-dark w-100 text-center mb-4" id="fullPrayerTitle">Oración Completa</h5>
                     <div class="text-secondary" style="font-size: 1.15rem; white-space: pre-wrap; line-height: 1.6;" id="fullPrayerText">
-                        <!-- Oración inyectada por JS -->
                     </div>
                 </div>
             </div>
@@ -110,7 +120,7 @@
                     <h1 class="fs-2 fw-bold mb-1 text-dark prayer-title">Mi Decenario</h1>
                     <p class="text-muted fst-italic fs-6 mb-4">Un momento de paz y oración</p>
 
-                    <!-- NUEVO: Indicador de Conexión a la Base de Datos (Ahora con click oculto) -->
+                    <!-- Indicador de Conexión a la Base de Datos -->
                     <div class="d-flex justify-content-center align-items-center mb-4">
                         <div class="badge bg-light text-secondary border shadow-sm px-3 py-2 fs-6 rounded-pill cursor-pointer" id="db-status-badge" onclick="abrirModalConexion()" style="cursor: pointer;" title="Toca aquí si estás sin conexión">
                             <i class="bi bi-circle-fill text-warning me-1" id="db-status-icon"></i>
@@ -118,7 +128,6 @@
                         </div>
                     </div>
                     
-                    <!-- Tu Progreso Dinámico Independiente -->
                     <div class="bg-white rounded-4 p-3 mb-4 shadow-sm border">
                         <h6 class="fw-bold text-dark mb-2 text-start" id="progress-title"><i class="bi bi-trophy text-warning me-1"></i> Tu Progreso</h6>
                         <div class="d-flex justify-content-between align-items-center mb-2">
@@ -134,7 +143,7 @@
                         </div>
                     </div>
 
-                    <h5 class="mb-3 text-secondary" style="font-weight: 500;"><strong>Selecciona tu devoción</strong></h5>
+                    <h5 class="mb-3 text-secondary" style="font-weight: 500;">Selecciona tu devoción</h5>
                     
                     <div class="btn-group shadow-sm w-100 mb-3" role="group" aria-label="Selección de devoción">
                         <input type="radio" class="btn-check" name="devotion" id="devMisericordia" value="misericordia" autocomplete="off" onchange="changeDevotion()">
@@ -144,7 +153,6 @@
                         <label class="btn btn-outline-danger px-2 px-md-3 fw-bold" for="devRosario">Santo Rosario</label>
                     </div>
 
-                    <!-- Selector de Misterios (Oculto por defecto) -->
                     <div id="mystery-selector-container" class="mb-3 d-none">
                         <label for="mysterySelector" class="form-label text-muted small">Día de los Misterios:</label>
                         <select class="form-select bg-light text-dark shadow-sm" id="mysterySelector" onchange="changeDevotion()">
@@ -156,17 +164,13 @@
                         </select>
                     </div>
 
-                    <!-- Botones de Guías de Oraciones y Resumen -->
                     <div class="mt-4 mb-4 d-flex flex-column gap-2">
                         <button class="btn btn-outline-secondary btn-custom w-100 py-2 shadow-sm bg-white-hover-fix" data-bs-toggle="modal" data-bs-target="#prayersModal" onclick="hideSettingsModal()">
                             <i class="bi bi-journal-text me-1"></i> Guía de oraciones comunes
                         </button>
-                        
-                        <!-- NUEVO BOTÓN: Guía de la Coronilla -->
                         <button class="btn btn-outline-info btn-custom w-100 py-2 shadow-sm bg-white-hover-fix" data-bs-toggle="modal" data-bs-target="#guiaCoronillaModal" onclick="hideSettingsModal()">
                             <i class="bi bi-list-ol me-1"></i> Guía para la Coronilla
                         </button>
-
                         <button class="btn btn-outline-danger btn-custom w-100 py-2 shadow-sm bg-white-hover-fix" data-bs-toggle="modal" data-bs-target="#faustinaModal" onclick="hideSettingsModal()">
                             <i class="bi bi-suit-heart-fill me-1"></i> Oraciones de Santa Faustina
                         </button>
@@ -177,14 +181,18 @@
                             <i class="bi bi-info-circle me-1"></i> Acerca de La Tribu
                         </button>
                         
-                        <!-- NUEVO BOTÓN: Buscar actualizaciones manualmente -->
-                        <button class="btn btn-outline-dark btn-custom w-100 py-2 shadow-sm bg-white-hover-fix mt-2 position-relative" id="btn-check-update" onclick="descargarActualizacionDirecta()" disabled>
-                            <i class="bi bi-arrow-repeat me-1" id="icon-check-update"></i> 
-                            <span id="text-check-update">Buscando actualizaciones...</span>
-                            <span class="position-absolute top-0 start-100 translate-middle p-2 bg-success border border-light rounded-circle d-none" id="badge-update-available">
-                                <span class="visually-hidden">Actualización disponible</span>
-                            </span>
-                        </button>
+                        <!-- NUEVO: CONTENEDOR DEL BOTÓN DE ACTUALIZACIÓN (Oculto si no hay BD) -->
+                        <div id="update-button-container" class="w-100 d-none mt-2">
+                            <button class="btn btn-outline-dark btn-custom w-100 py-2 shadow-sm bg-white-hover-fix position-relative" id="btn-check-update" onclick="descargarActualizacionDirecta()" disabled>
+                                <i class="bi bi-arrow-repeat me-1" id="icon-check-update"></i> 
+                                <span id="text-check-update">Buscando actualizaciones...</span>
+                                
+                                <!-- Indicador Palpitante -->
+                                <span class="position-absolute top-0 start-100 translate-middle p-2 bg-success border border-light rounded-circle d-none pulse-badge" id="badge-update-available">
+                                    <span class="visually-hidden">Actualización disponible</span>
+                                </span>
+                            </button>
+                        </div>
                     </div>
 
                     <button type="button" class="btn btn-outline-custom btn-custom px-5 w-100 py-2 mb-2 mt-2" data-bs-dismiss="modal">
@@ -811,12 +819,20 @@ Ayúdame, oh Señor, a que mi corazón sea misericordioso para que yo sienta tod
                 // 3. Intento de inicio de sesión a través del Funnel de Tailscale
                 const baseUrl = typeof POCKETBASE_URL !== 'undefined' ? POCKETBASE_URL : 'http://127.0.0.1:8090/api';
                 
-                // Probamos conectar como Admin (o usuario, PocketBase validará)
-                const response = await fetch(`${baseUrl}/admins/auth-with-password`, {
+                // CORRECCIÓN APLICADA AQUÍ: Prueba la ruta _superusers (v0.23) y si falla hace fallback a admins (v0.22)
+                let response = await fetch(`${baseUrl}/collections/_superusers/auth-with-password`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ identity: user, password: pass })
                 });
+
+                if (response.status === 404 || response.status === 400) {
+                    response = await fetch(`${baseUrl}/admins/auth-with-password`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ identity: user, password: pass })
+                    });
+                }
 
                 if (response.ok) {
                     // Éxito: Modificamos la UI a verde forzado
@@ -847,6 +863,53 @@ Ayúdame, oh Señor, a que mi corazón sea misericordioso para que yo sienta tod
                 btn.innerHTML = `<i class="bi bi-plug-fill me-2"></i> Conectar a PocketBase`;
             }
         }
+    </script>
+
+    <!-- Script de Lógica UI para OTA y Conexión (NUEVO) -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const btnContainer = document.getElementById('update-button-container');
+            const badge = document.getElementById('badge-update-available');
+            let modalMostrado = false;
+
+            // 1. Enlazar el botón del Modal gigante a la función de descarga
+            const btnDescargaModal = document.getElementById('btn-download-update');
+            if (btnDescargaModal) {
+                btnDescargaModal.addEventListener('click', function() {
+                    this.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Descargando e Instalando...`;
+                    this.disabled = true;
+                    if (typeof descargarActualizacionDirecta === 'function') {
+                        descargarActualizacionDirecta();
+                    }
+                });
+            }
+
+            // 2. Vigilar la conexión y la disponibilidad de actualizaciones cada 2 segundos
+            setInterval(() => {
+                const statusText = document.getElementById('db-status-text')?.innerText || '';
+                
+                // A. Mostrar u ocultar el contenedor del botón OTA dependiendo de si hay conexión a la BD
+                if (statusText.includes('en línea')) {
+                    btnContainer.classList.remove('d-none');
+                } else {
+                    btnContainer.classList.add('d-none');
+                }
+
+                // B. Si el puntito verde animado (badge) aparece, significa que hay actualización.
+                // Automáticamente cerramos el menú y le lanzamos el cartel gigante a la cara.
+                if (badge && !badge.classList.contains('d-none') && !modalMostrado) {
+                    modalMostrado = true; // Flag para no abrirlo 100 veces por segundo
+                    
+                    // Cerrar modal de ajustes si el usuario lo tiene abierto
+                    const settingsModal = bootstrap.Modal.getInstance(document.getElementById('settingsModal'));
+                    if(settingsModal) settingsModal.hide();
+                    
+                    // Mostrar alerta gigante e invasiva de actualización
+                    const updateModal = new bootstrap.Modal(document.getElementById('updateAppModal'));
+                    updateModal.show();
+                }
+            }, 2000);
+        });
     </script>
 </body>
 </html>

@@ -131,8 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnDescargaModal = document.getElementById('btn-download-update');
     if (btnDescargaModal) {
         btnDescargaModal.addEventListener('click', function() {
-            this.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Descargando e Instalando...`;
-            this.disabled = true;
+            // Se delega el control total de la interfaz a ota_updater.js
             if (typeof descargarActualizacionDirecta === 'function') {
                 descargarActualizacionDirecta();
             }

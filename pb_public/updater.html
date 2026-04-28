@@ -4,17 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestor OTA - Máquina del Tiempo</title>
-    <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- JSZip para comprimir carpetas en el navegador -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
         body { background-color: #f8f9fa; }
         .card { border: none; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         .folder-upload { border: 2px dashed #0d6efd; background-color: #f1f7ff; cursor: pointer; transition: 0.3s; }
         .folder-upload:hover { background-color: #e2efff; }
-        /* Estilo para input bloqueado (readonly) */
-        input[readonly] { background-color: #e9ecef; cursor: not-allowed; border-color: #198754; color: #198754; }
     </style>
 </head>
 <body class="py-5">
@@ -26,15 +26,13 @@
             <div class="text-center mb-4">
                 <div class="display-3 text-primary mb-2"><i class="bi bi-rocket-takeoff-fill"></i></div>
                 <h2 class="fw-bold">Gestor de Actualizaciones OTA</h2>
-                <p class="text-muted">Publica nuevas versiones de forma automatizada</p>
+                <p class="text-muted">Publica nuevas versiones y gestiona rollbacks para tus apps</p>
             </div>
 
+            <!-- SECCIÓN 1: LOGIN AL SERVIDOR -->
             <div class="card mb-4" id="section-login">
                 <div class="card-body p-4">
                     <h5 class="fw-bold mb-3"><i class="bi bi-server me-2 text-primary"></i>Conexión a PocketBase</h5>
-                    
-                    <div id="login-error-alert" class="alert alert-danger d-none small fw-bold"></div>
-
                     <div class="row g-3">
                         <div class="col-md-12">
                             <label class="form-label small text-muted">URL del Servidor</label>
@@ -42,16 +40,18 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small text-muted">Email de Administrador</label>
-                            <input type="email" class="form-control" id="pb-email" placeholder="admin@tudominio.com" value="kenth1977@gmail.com">
+                            <input type="email" class="form-control" id="pb-email" placeholder="admin@tudominio.com">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small text-muted">Contraseña</label>
+                            
                             <div class="input-group">
                                 <input type="password" class="form-control border-end-0" id="pb-pass">
                                 <span class="input-group-text bg-white cursor-pointer" onclick="togglePass()" style="cursor: pointer;">
                                     <i class="bi bi-eye-slash" id="icon-pass"></i>
                                 </span>
                             </div>
+                            
                         </div>
                         <div class="col-12 mt-4">
                             <button class="btn btn-primary w-100 fw-bold" id="btn-login" onclick="iniciarSesion()">
@@ -62,17 +62,18 @@
                 </div>
             </div>
 
+            <!-- SECCIÓN 2: PANEL PRINCIPAL (Oculto al inicio) -->
             <div id="section-panel" class="d-none">
                 
-                <div class="card mb-4 border-primary border-2" id="upload-card">
+                <!-- PUBLICAR NUEVA ACTUALIZACIÓN -->
+                <div class="card mb-4 border-primary border-2">
                     <div class="card-body p-4">
                         <h5 class="fw-bold mb-3 text-primary"><i class="bi bi-cloud-upload-fill me-2"></i>Lanzar Nueva Versión</h5>
                         
                         <div class="row g-3">
                             <div class="col-md-4">
-                                <label class="form-label fw-bold text-success"><i class="bi bi-cpu me-1"></i>Siguiente Versión:</label>
-                                <input type="text" class="form-control form-control-lg fw-bold text-center fs-3" id="app-version" value="1.0.0" readonly>
-                                <small class="text-success d-block mt-1 text-center fw-bold">Generada Automáticamente</small>
+                                <label class="form-label fw-bold">Número de Versión:</label>
+                                <input type="text" class="form-control form-control-lg fw-bold" id="app-version" placeholder="Ej: 1.0.5">
                             </div>
                             
                             <div class="col-md-8">
@@ -85,20 +86,37 @@
                                 <small class="text-muted d-block mt-1" id="folder-stats">Esperando archivos...</small>
                             </div>
 
+                            <!-- BARRA DE PROGRESO PROFESIONAL -->
+                            <div class="col-12 mt-3 d-none" id="upload-progress-container">
+                                <div class="d-flex justify-content-between small fw-bold text-muted mb-1">
+                                    <span id="upload-status-text" class="text-primary">Preparando archivos...</span>
+                                    <span id="upload-percent-text" class="text-primary">0%</span>
+                                </div>
+                                <div class="progress" style="height: 25px; border-radius: 12px; background-color: #e9ecef; box-shadow: inset 0 1px 2px rgba(0,0,0,.1);">
+                                    <div id="upload-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated bg-primary fw-bold" role="progressbar" style="width: 0%; transition: width 0.2s ease;"></div>
+                                </div>
+                            </div>
+
                             <div class="col-12 mt-4">
                                 <button class="btn btn-success btn-lg w-100 fw-bold shadow-sm" id="btn-upload" onclick="procesarYSubir()" disabled>
-                                    <i class="bi bi-box-seam-fill me-2"></i> Empaquetar y Publicar Automáticamente
+                                    <i class="bi bi-box-seam-fill me-2"></i> Empaquetar ZIP y Publicar al Mundo
                                 </button>
                             </div>
+
                         </div>
                     </div>
                 </div>
 
+                <!-- HISTORIAL Y ROLLBACK -->
                 <div class="card mb-4">
                     <div class="card-body p-4">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="fw-bold mb-0"><i class="bi bi-clock-history me-2 text-dark"></i>Historial de Versiones</h5>
+                            <h5 class="fw-bold mb-0"><i class="bi bi-clock-history me-2 text-dark"></i>Historial de Versiones (Rollback)</h5>
                             <button class="btn btn-sm btn-outline-secondary" onclick="cargarHistorial()"><i class="bi bi-arrow-clockwise"></i> Refrescar</button>
+                        </div>
+                        
+                        <div class="alert alert-warning small">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i> <strong>Gestión Manual:</strong> Puedes activar cualquier versión anterior tocando en "Activar". La app descargará automáticamente la versión que elijas.
                         </div>
 
                         <div class="table-responsive">
@@ -146,32 +164,20 @@
         const email = document.getElementById('pb-email').value.trim();
         const pass = document.getElementById('pb-pass').value.trim();
         const btn = document.getElementById('btn-login');
-        const errorDiv = document.getElementById('login-error-alert');
 
-        errorDiv.classList.add('d-none');
-
-        if (!email || !pass) {
-            errorDiv.innerText = "Por favor ingresa tu correo y contraseña.";
-            errorDiv.classList.remove('d-none');
-            return;
-        }
+        if (!email || !pass) return alert("Ingresa tus credenciales de PocketBase");
 
         btn.disabled = true;
         btn.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Conectando...`;
 
         try {
-            let res;
-            try {
-                res = await fetch(`${url}/api/collections/_superusers/auth-with-password`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ identity: email, password: pass })
-                });
-            } catch (networkError) {
-                throw new Error("Error de red. Verifica que PocketBase esté encendido.");
-            }
+            let res = await fetch(`${url}/api/collections/_superusers/auth-with-password`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ identity: email, password: pass })
+            });
 
-            if (res.status === 404 || res.status === 400) {
+            if (res.status === 404) {
                 res = await fetch(`${url}/api/admins/auth-with-password`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -179,7 +185,10 @@
                 });
             }
 
-            if (!res.ok) throw new Error("Credenciales incorrectas");
+            if (!res.ok) {
+                const errorData = await res.json();
+                throw new Error(errorData.message || "Credenciales inválidas o servidor apagado.");
+            }
 
             const data = await res.json();
             adminToken = data.token; 
@@ -187,11 +196,10 @@
             document.getElementById('section-login').classList.add('d-none');
             document.getElementById('section-panel').classList.remove('d-none');
             
-            cargarHistorial();
+            cargarHistorial(); 
 
         } catch (error) {
-            errorDiv.innerText = "❌ " + error.message;
-            errorDiv.classList.remove('d-none');
+            alert("Error: " + error.message);
             btn.disabled = false;
             btn.innerHTML = "Conectar al Servidor";
         }
@@ -214,7 +222,7 @@
 
         const hasIndexHtml = selectedFiles.some(f => f.webkitRelativePath.includes('/index.html'));
         if (!hasIndexHtml) {
-            alert("⚠️ La carpeta seleccionada no parece contener un 'index.html'. Asegúrate de seleccionar la carpeta 'www'.");
+            alert("⚠️ La carpeta seleccionada no parece contener un 'index.html'. Asegúrate de seleccionar la carpeta 'www' de tu proyecto.");
             label.classList.replace('text-primary', 'text-danger');
             label.innerText = "Carpeta inválida seleccionada";
             btnUpload.disabled = true;
@@ -231,57 +239,185 @@
         btnUpload.disabled = false;
     }
 
+    async function desactivarOtrasVersiones(activeId, url) {
+        try {
+            const res = await fetch(`${url}/api/collections/ota_updates/records`, {
+                headers: { 'Authorization': `Bearer ${adminToken}` }
+            });
+            if (!res.ok) return;
+            const data = await res.json();
+            const items = data.items || [];
+            for (let item of items) {
+                if (item.id !== activeId && (item.activa === true || item.activa === 'true')) {
+                    await fetch(`${url}/api/collections/ota_updates/records/${item.id}`, {
+                        method: 'PATCH',
+                        headers: { 
+                            'Authorization': `Bearer ${adminToken}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ activa: false })
+                    });
+                }
+            }
+        } catch (e) {}
+    }
+
+    async function activarVersion(id, btnElement) {
+        const url = document.getElementById('pb-url').value.trim();
+        if (!confirm(`¿Seguro que deseas ACTIVAR esta versión?\nTodos los celulares descargarán esta actualización la próxima vez que se abran.`)) return;
+
+        if (btnElement) {
+            btnElement.disabled = true;
+            btnElement.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Activando...`;
+        }
+
+        try {
+            const res = await fetch(`${url}/api/collections/ota_updates/records/${id}`, {
+                method: 'PATCH',
+                headers: { 
+                    'Authorization': `Bearer ${adminToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ activa: true })
+            });
+
+            if (!res.ok) throw new Error("Error desconocido en el servidor");
+
+            await desactivarOtrasVersiones(id, url);
+            cargarHistorial();
+        } catch(e) {
+            alert("❌ Error al activar:\n" + e.message);
+            if (btnElement) {
+                btnElement.disabled = false;
+                btnElement.innerHTML = `<i class="bi bi-check2-circle"></i> Activar`;
+            }
+        }
+    }
+
+    // --- PROCESO DE COMPRESIÓN Y SUBIDA (CON DOBLE BARRA DE PROGRESO) ---
     async function procesarYSubir() {
         const version = document.getElementById('app-version').value.trim();
         const url = document.getElementById('pb-url').value.trim();
         const btnUpload = document.getElementById('btn-upload');
+        
+        const progressContainer = document.getElementById('upload-progress-container');
+        const progressBar = document.getElementById('upload-progress-bar');
+        const percentText = document.getElementById('upload-percent-text');
+        const statusText = document.getElementById('upload-status-text');
+
+        if (!version) return alert("Por favor ingresa un número de versión (Ej: 1.0.2)");
+        if (selectedFiles.length === 0) return alert("No hay archivos seleccionados");
 
         btnUpload.disabled = true;
-        btnUpload.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Empaquetando...`;
+        btnUpload.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Procesando...`;
+        
+        // REINICIAR BARRA DE PROGRESO
+        progressContainer.classList.remove('d-none');
+        progressBar.className = 'progress-bar progress-bar-striped progress-bar-animated bg-primary fw-bold';
+        progressBar.style.width = '0%';
+        percentText.innerText = '0%';
+        statusText.innerText = 'Fase 1: Comprimiendo archivos (ZIP)...';
+        statusText.className = 'text-primary';
+        percentText.className = 'text-primary';
 
         try {
+            // FASE 1: CREAR ZIP CON PROGRESO
             const zip = new JSZip();
             selectedFiles.forEach(file => {
                 const pathParts = file.webkitRelativePath.split('/');
-                pathParts.shift();
+                pathParts.shift(); 
                 const cleanPath = pathParts.join('/');
                 if (cleanPath) zip.file(cleanPath, file);
             });
 
-            const zipBlobRaw = await zip.generateAsync({ type: "blob", compression: "DEFLATE" });
-            const zipBlob = new Blob([zipBlobRaw], { type: 'application/zip' });
+            // Se monitorea la compresión del ZIP
+            const zipBlob = await zip.generateAsync({ type: "blob", compression: "DEFLATE" }, function updateCallback(metadata) {
+                const percent = Math.round(metadata.percent);
+                progressBar.style.width = percent + '%';
+                percentText.innerText = percent + '%';
+            });
             
-            btnUpload.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span> Subiendo...`;
+            // FASE 2: PREPARAR SUBIDA A POCKETBASE
+            statusText.innerText = 'Fase 2: Subiendo a PocketBase...';
+            statusText.className = 'text-success';
+            percentText.className = 'text-success';
+            progressBar.className = 'progress-bar progress-bar-striped progress-bar-animated bg-success fw-bold';
+            progressBar.style.width = '0%';
+            percentText.innerText = '0%';
 
             const formData = new FormData();
             formData.append('version', version);
             formData.append('archivo_zip', zipBlob, `update_v${version}.zip`);
+            formData.append('activa', "true"); 
 
-            const res = await fetch(`${url}/api/collections/ota_updates/records`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${adminToken}` },
-                body: formData
+            // FASE 2: SUBIDA VÍA XHR CON PROGRESO
+            const newRecord = await new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', `${url}/api/collections/ota_updates/records`);
+                xhr.setRequestHeader('Authorization', `Bearer ${adminToken}`);
+
+                // Monitorear progreso de red (Upload)
+                xhr.upload.onprogress = function(event) {
+                    if (event.lengthComputable) {
+                        const percentComplete = Math.round((event.loaded / event.total) * 100);
+                        progressBar.style.width = percentComplete + '%';
+                        percentText.innerText = percentComplete + '%';
+                        
+                        if (percentComplete === 100) {
+                            statusText.innerText = "Guardando en Base de Datos (Esperando respuesta)...";
+                        }
+                    }
+                };
+
+                xhr.onload = function() {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        resolve(JSON.parse(xhr.responseText));
+                    } else {
+                        let errMsg = `Error HTTP ${xhr.status}`;
+                        try {
+                            const errData = JSON.parse(xhr.responseText);
+                            errMsg = errData.message || errMsg;
+                        } catch(e) {}
+                        reject(new Error(errMsg));
+                    }
+                };
+
+                xhr.onerror = function() {
+                    reject(new Error("La conexión se interrumpió o falló. Revisa si el archivo excede los límites del servidor."));
+                };
+                
+                // Tiempo máximo de espera 2 minutos (120000 ms) para evitar que se quede pegado
+                xhr.timeout = 120000; 
+                xhr.ontimeout = function () {
+                    reject(new Error("Tiempo de espera agotado. Tu conexión a internet puede ser muy lenta o el archivo es muy pesado."));
+                }
+
+                xhr.send(formData);
             });
 
-            if (!res.ok) {
-                const err = await res.json();
-                let errMsg = err.message || "Error al subir a PocketBase";
-                if (err.data && err.data.archivo_zip && err.data.archivo_zip.code === "validation_file_size_limit") {
-                    errMsg = "⚠️ EL ARCHIVO EXCEDE EL LÍMITE DE 500MB.";
-                }
-                throw new Error(errMsg);
-            }
+            // FASE 3: ÉXITO TOTAL
+            statusText.innerText = "¡Subida completa! Activando versión...";
+            progressBar.classList.remove('progress-bar-animated');
 
-            alert(`✅ ¡Versión ${version} publicada con éxito!`);
+            await desactivarOtrasVersiones(newRecord.id, url);
+
+            alert(`✅ ¡Versión ${version} publicada con éxito! Los celulares comenzarán a actualizarse.`);
             document.getElementById('folder-input').value = "";
-            analizarCarpeta(); // Resetear el botón de subida
-            cargarHistorial(); // Recargar la tabla y calcular la próxima versión
+            analizarCarpeta(); 
+            cargarHistorial(); 
+
+            setTimeout(() => { progressContainer.classList.add('d-none'); }, 3000);
 
         } catch (error) {
-            alert("❌ Falló la subida:\n\n" + error.message);
+            progressBar.className = 'progress-bar bg-danger fw-bold';
+            statusText.innerText = "Error en la subida";
+            statusText.className = 'text-danger';
+            percentText.className = 'text-danger';
+            percentText.innerText = "Fallo";
+            alert("❌ Error: " + error.message);
         } finally {
             btnUpload.disabled = false;
-            btnUpload.innerHTML = `<i class="bi bi-box-seam-fill me-2"></i> Empaquetar y Publicar Automáticamente`;
+            btnUpload.innerHTML = `<i class="bi bi-box-seam-fill me-2"></i> Empaquetar ZIP y Publicar al Mundo`;
         }
     }
 
@@ -295,18 +431,16 @@
             });
 
             const data = await res.json();
-            if (!res.ok) throw new Error(data.message || "Error al obtener historial.");
+            if (!res.ok) throw new Error(data.message || `Error del servidor`);
 
             tbody.innerHTML = "";
             const items = data.items || [];
 
-            // Ordenamos por fecha descendente
             items.sort((a, b) => new Date(b.created || 0) - new Date(a.created || 0));
 
-            // LOGICA MATEMÁTICA: Auto-incrementar versión
             let nextVersion = "1.0.0";
             if (items.length > 0) {
-                let lastVerString = items[0].version;
+                let lastVerString = items[0].version || "1.0.0";
                 let lastVerNumRaw = lastVerString.replace(/\D/g, '');
                 
                 if (lastVerNumRaw.length === 3) {
@@ -315,8 +449,6 @@
                     nextVersion = nextVerStr[0] + '.' + nextVerStr[1] + '.' + nextVerStr[2];
                 }
             }
-            
-            // Asignar automáticamente al input bloqueado
             document.getElementById('app-version').value = nextVersion;
 
             if (items.length === 0) {
@@ -324,50 +456,54 @@
                 return;
             }
 
-            items.forEach((item, index) => {
-                let fecha = "";
-                if (item.created) {
-                    // Reemplazamos el espacio por 'T' para que cualquier navegador lo parsee sin dar "Invalid Date"
-                    const dateParsed = new Date(item.created.replace(' ', 'T'));
-                    fecha = dateParsed.toLocaleString('es-ES', { 
-                        year: 'numeric', month: '2-digit', day: '2-digit',
-                        hour: '2-digit', minute: '2-digit'
-                    });
-                }
-
-                const isLatest = index === 0;
-                let badge = isLatest ? `<span class="badge bg-success ms-2">ACTIVA</span>` : '';
+            items.forEach((item) => {
+                const fecha = item.created ? new Date(item.created).toLocaleString('es-ES') : "Fecha desconocida";
+                const isLatest = (item.activa === true || item.activa === 'true'); 
                 
+                let badge = isLatest ? `<span class="badge bg-success ms-2 shadow-sm">ACTIVA</span>` : '';
+                let btnActivar = !isLatest 
+                    ? `<button class="btn btn-sm btn-success me-1 shadow-sm" onclick="activarVersion('${item.id}', this)" title="Activar"><i class="bi bi-check2-circle"></i> Activar</button>` 
+                    : '';
+
+                let btnHtml = `
+                    ${btnActivar}
+                    <button class="btn btn-sm btn-outline-danger" onclick="eliminarVersion('${item.id}', '${item.version}')">
+                        <i class="bi bi-trash-fill"></i>
+                    </button>
+                `;
+
                 tbody.innerHTML += `
                     <tr class="${isLatest ? 'table-success' : ''}">
-                        <td class="fw-bold fs-5">${item.version} ${badge}</td>
+                        <td class="fw-bold">${item.version || 'S/N'} ${badge}</td>
                         <td>${fecha}</td>
-                        <td><code class="text-muted">${item.archivo_zip}</code></td>
-                        <td class="text-end">
-                            <button class="btn btn-sm btn-outline-danger" onclick="eliminarVersion('${item.id}', '${item.version}')">
-                                <i class="bi bi-trash-fill"></i> ${isLatest ? 'Revertir' : 'Eliminar'}
-                            </button>
-                        </td>
-                    </tr>`;
+                        <td><code class="text-muted">${item.archivo_zip || 'N/A'}</code></td>
+                        <td class="text-end text-nowrap">${btnHtml}</td>
+                    </tr>
+                `;
             });
 
         } catch (e) {
-            tbody.innerHTML = `<tr><td colspan="4" class="text-center text-danger py-4">
-                <i class="bi bi-bug-fill me-2"></i> Error: <br> <strong>${e.message}</strong>
-            </td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i> Error: <strong>${e.message}</strong></td></tr>`;
         }
     }
 
+    // ELIMINAR CON CORRECCIÓN DEL ERROR 404
     async function eliminarVersion(id, version) {
         const url = document.getElementById('pb-url').value.trim();
-        if (!confirm(`¿Seguro que deseas eliminar la versión ${version}?`)) return;
+        if (!confirm(`¿Estás seguro que deseas eliminar la versión ${version}?`)) return;
 
         try {
             const res = await fetch(`${url}/api/collections/ota_updates/records/${id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${adminToken}` }
             });
-            if (res.ok) cargarHistorial();
+
+            // Si se elimina correctamente (204) o si el archivo YA NO EXISTÍA (404), recargamos la tabla
+            if (res.ok || res.status === 404) {
+                cargarHistorial(); 
+            } else {
+                throw new Error("No se pudo eliminar el registro (Error del servidor)");
+            }
         } catch (error) {
             alert("Error: " + error.message);
         }

@@ -13,8 +13,12 @@ document.addEventListener("DOMContentLoaded", function() {
                 <i class="bi bi-tree"></i>
             </div>
             <h2 class="prayer-title fw-bold mb-3 text-dark fs-3">La Tribu de Los Libres</h2>
-            <p class="text-secondary small mb-4" style="line-height: 1.6;">
-                Este devocionario fue creado por el equipo de Senderismo de <strong>La Tribu de Los Libres</strong> de La Unión de Cartago, Costa Rica, en honor a las compañeras y compañeros creyentes.
+            
+            <p class="text-secondary small mb-3" style="line-height: 1.6;">
+                Este devocionario fue creado por el equipo de Senderismo de <strong>La Tribu de Los Libres</strong> de La Unión de Cartago, Costa Rica, utilizando las bases del sitio <a href="https://www.vatican.va/special/rosary/index_rosary_sp.htm" target="_blank" class="text-decoration-none fw-bold text-primary">VATICAN</a> en memoria a las compañeras y compañeros creyentes que perdieron a un ser querido o simplemente son creyentes y seguidores de el Santo Rosario y la Divina Misericordia.
+            </p>
+            <p class="text-secondary small mb-4 fw-bold" style="line-height: 1.6;">
+                Esta app es de uso Libre sin costo alguno para toda la comunidad Católica y todas aquellas personas que encuentren consuelo en la Oración.
             </p>
             
             <hr class="w-50 mx-auto text-muted mb-4 opacity-25">

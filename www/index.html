@@ -32,7 +32,7 @@
         .action-sidebar {
             position: fixed;
             right: 15px;
-            bottom: 50px;
+            bottom: 18vh; /* Ajustado para alinear la base del botón con la cruz */
             z-index: 1050;
             display: flex;
             flex-direction: column;
@@ -61,12 +61,44 @@
             padding: 0;
             border: none;
         }
+
+        /* Ajustes específicos para mantener alineación en pantallas pequeñas a partir de 418px */
+        @media (max-width: 418px) {
+            .action-sidebar {
+                bottom: 24vh;
+            }
+        }
+        @media (max-width: 390px) {
+            .action-sidebar {
+                bottom: 26vh;
+            }
+        }
+        @media (max-width: 360px) {
+            .action-sidebar {
+                bottom: 28vh;
+            }
+        }
     </style>
 </head>
 <body>
 
-    <!-- Aquí deben estar tus SVGs ocultos originales (incluyendo silver-cross-icon) -->
-    <!-- <svg style="display: none;"> <symbol id="silver-cross-icon" ...> ... </symbol> </svg> -->
+    <!-- SVG Ocultos -->
+    <svg style="display: none;">
+        <!-- CRUZ DE PLATA RESTAURADA EXACTAMENTE COMO TU IMAGEN -->
+        <symbol id="silver-cross-icon" viewBox="0 0 100 150">
+            <filter id="cross-shadow">
+                <feDropShadow dx="2" dy="4" stdDeviation="3" flood-opacity="0.4"/>
+            </filter>
+            <g filter="url(#cross-shadow)">
+                <!-- Borde exterior metálico oscuro -->
+                <path d="M 38 0 L 62 0 L 62 40 L 100 40 L 100 64 L 62 64 L 62 150 L 38 150 L 38 64 L 0 64 L 0 40 L 38 40 Z" fill="#8c9298" />
+                <!-- Línea interior blanca brillante -->
+                <path d="M 41 3 L 59 3 L 59 43 L 97 43 L 97 61 L 59 61 L 59 147 L 41 147 L 41 61 L 3 61 L 3 43 L 41 43 Z" fill="#ffffff" />
+                <!-- Centro de plata claro -->
+                <path d="M 44 6 L 56 6 L 56 46 L 94 46 L 94 58 L 56 58 L 56 144 L 44 144 L 44 58 L 6 58 L 6 46 L 44 46 Z" fill="#cfd4d9" />
+            </g>
+        </symbol>
+    </svg>
 
     <!-- BARRA LATERAL DERECHA (Sustituye a los botones flotantes esparcidos) -->
     <div class="action-sidebar">
@@ -551,7 +583,16 @@
                     <button class="btn btn-success btn-lg w-100 fw-bold shadow-sm" id="btn-download-update">
                         <i class="bi bi-download me-2"></i> Descargar e Instalar
                     </button>
-                    <button type="button" class="btn btn-light text-muted w-100 mt-2" data-bs-dismiss="modal">
+
+                    <!-- NUEVA BARRA DE PROGRESO (Oculta por defecto) -->
+                    <div id="update-progress-container" class="d-none mt-4">
+                        <div class="progress" style="height: 25px; border-radius: 15px; background-color: #e9ecef;">
+                            <div id="update-progress-bar" class="progress-bar progress-bar-striped progress-bar-animated bg-success fw-bold fs-6" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+                        </div>
+                        <p id="update-progress-text" class="text-muted small mt-2 fw-bold mb-0">Preparando descarga...</p>
+                    </div>
+
+                    <button type="button" id="btn-later-update" class="btn btn-light text-muted w-100 mt-2" data-bs-dismiss="modal">
                         Más tarde
                     </button>
                 </div>
@@ -655,5 +696,39 @@
     <script src="js/conexion_checker.js"></script>
     <script src="js/conexion_segura.js"></script>
 
+    <!-- Script de Reposicionamiento de Botones en PC -->
+    <script>
+        function ajustarBotonesNavegacion() {
+            const prevBtn = document.getElementById('sidebar-btn-prev');
+            const nextBtn = document.getElementById('sidebar-btn-next');
+            const sidebar = document.querySelector('.action-sidebar');
+            const rosaryWrapper = document.querySelector('.rosary-wrapper');
+            const readBtn = document.getElementById('sidebar-btn-read');
+
+            if (!prevBtn || !nextBtn || !sidebar || !rosaryWrapper || !readBtn) return;
+
+            if (window.innerWidth >= 768) {
+                // Modo PC: A los lados de la cruz
+                if (prevBtn.parentElement !== rosaryWrapper) {
+                    rosaryWrapper.appendChild(prevBtn);
+                    rosaryWrapper.appendChild(nextBtn);
+                }
+                const baseStyle = "position: absolute !important; top: 95% !important; transform: translateY(-50%) !important; margin: 0 !important; z-index: 1050 !important;";
+                prevBtn.style.cssText = baseStyle + "left: 10px !important;";
+                nextBtn.style.cssText = baseStyle + "right: 10px !important;";
+            } else {
+                // Modo Móvil: En la barra lateral
+                if (prevBtn.parentElement !== sidebar) {
+                    readBtn.after(nextBtn);
+                    nextBtn.after(prevBtn);
+                }
+                prevBtn.style.cssText = "";
+                nextBtn.style.cssText = "";
+            }
+        }
+        window.addEventListener('resize', ajustarBotonesNavegacion);
+        document.addEventListener('DOMContentLoaded', ajustarBotonesNavegacion);
+        ajustarBotonesNavegacion();
+    </script>
 </body>
 </html>

@@ -1,7 +1,7 @@
 {
   "name": "divina-misericordia",
   "version": "1.0.0",
-  "description": "Plantilla de App con PocketBase",
+  "description": "Divina Misericordia",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -9,7 +9,7 @@
     "start-global": "node runserver.js"
   },
   "keywords": [],
-  "author": "La Tribu De Los Libres",
+  "author": "La Tribu de Los Libres",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
